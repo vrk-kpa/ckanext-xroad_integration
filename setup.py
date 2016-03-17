@@ -80,6 +80,7 @@ setup(
     entry_points='''
         [ckan.plugins]
         xroad_integration=ckanext.xroad_integration.plugin:Xroad_IntegrationPlugin
+        xroad_harvester=ckanext.xroad_integration.harvesters.xroad_harvester:XRoadHarvesterPlugin
 	[babel.extractors]
 	ckan = ckan.lib.extract:extract_ckan
     ''',
