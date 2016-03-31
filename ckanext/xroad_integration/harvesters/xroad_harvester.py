@@ -10,6 +10,7 @@ import logging
 import json
 import requests
 import os
+import tempfile
 
 from ckan import logic
 NotFound = logic.NotFound
@@ -44,7 +45,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
             # Generate GUID
-            guid = member.get('memberCode')
+            guid = str(member.get('instance', '')) + '.' + str(member.get('memberClass', '')) + '.' + str(member.get('memberCode', '')) + '.' + str(member.get('subsystemCode', ''))
             # Create harvest object
             obj = HarvestObject(guid=guid, job=harvest_job,
                                 content=json.dumps(member))
@@ -76,47 +77,52 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
-        # Get existing dataset
-        existing_dataset = None
-        try:
-            existing_dataset = p.toolkit.get_action('package_show')(context, {'id': str(dataset['memberCode'])})
-        except NotFound:
-            pass
-        if existing_dataset:
-            dataset['name'] = existing_dataset['name']
-            dataset['id'] = existing_dataset['id']
+        # Set id
+        dataset['id'] = harvest_object.guid
 
-            try:
-                p.toolkit.get_action('package_update')(context, dataset)
-            except p.toolkit.ValidationError, e:
-                self._save_object_error('Update validation Error: %s' % str(e.error_summary), harvest_object, 'Import')
-                return False
+        # Local harvest source organization
+        source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
+        local_org = source_dataset.get('owner_org')
 
-            log.info('Updated dataset %s', dataset['name'])
+        dataset['owner_org'] = local_org
 
-        else:
-            # Local harvest source organization
-            source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
-            local_org = source_dataset.get('owner_org')
-
-            dataset['owner_org'] = local_org
-
-            # Munge name
-            dataset['name'] = munge_title_to_name(dataset['name'])
-
-            # Set id
-            dataset['id'] = dataset['memberCode']
-            try:
-                p.toolkit.get_action('package_create')(context, dataset)
-            except p.toolkit.ValidationError, e:
-                log.info('Create validation Error: %s' % str(e.error_summary))
-                self._save_object_error('Create validation Error: %s' % str(e.error_summary), harvest_object, 'Import')
-                return False
-
-            log.info('Created dataset %s', dataset['name'])
+        # Munge name
+        dataset['title'] = dataset['name']
+        dataset['name'] = munge_title_to_name(dataset['name'])
 
 
-        return True
+        result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
+        if result:
+            subsystems = dataset.get('subsystems', None)
+            if subsystems:
+                services = subsystems['subsystem'].get('services', None)
+                if services:
+                    log.info(services['service'])
+                    log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
+                    if 'wsdl' in services['service'] and 'data' in services['service']['wsdl']:
+                        log.info(services['service']['wsdl']['data'])
+                        f = tempfile.NamedTemporaryFile(delete=False)
+                        f.write(services['service']['wsdl']['data'])
+                        f.close()
+                        response = requests.post('https://0.0.0.0/api/action/resource_create',
+                                                 data={
+                                                     "package_id":dataset['id'],
+                                                     "url": "",
+                                                     "name": services['service']['serviceCode'] + "." + services['service']['serviceVersion']
+                                                 },
+                                                 headers={"X-CKAN-API-Key": '1cae37bb-eda1-4a20-aa74-53d522055a99' },
+                                                 files={'upload': ('service.wsdl',file(f.name))}, verify=False)
+                        log.info(response.json())
+
+                        os.unlink(f.name)
+                    else:
+                        return False
+
+
+        log.info('Created dataset %s', dataset['name'])
+
+
+        return result
 
     def _get_xroad_catalog(self, url, changed_after):
         r = requests.get(url, parameters = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
