@@ -134,7 +134,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         #return res.json()['ListMembersResponse']['memberList']['members']
         return res['ListMembersResponse']['memberList']['members']
 
-    def _get_wsdl(external_id):
+    def _get_wsdl(self, external_id):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
         r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         if r.status_code != requests.codes.ok:
