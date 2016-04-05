@@ -133,3 +133,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
         return res['ListMembersResponse']['memberList']['members']
+
+    def _get_wsdl(external_id):
+        url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
+        r = requests.get(url, parameters = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+        if r.status_code != requests.codes.ok:
+            raise HarvestGatherError(msg = "Calling XRoad service GetWsdl failed!")
+        return r.json()
