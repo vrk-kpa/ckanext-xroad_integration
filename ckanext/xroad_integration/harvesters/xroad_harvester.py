@@ -35,7 +35,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         log.debug('In xroad harvester gather_stage')
 
         #members = self.get_xroad_catalog(harvest_job.source.url, harvest_job.since_date)
-        #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
         file = open(os.path.join(os.path.dirname(__file__), '../tests/catalog-mock.json'))
         members = json.load(file)
 
@@ -124,10 +123,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return result
 
-    def _get_xroad_catalog(self, url, changed_after):
+    def _get_xroad_catalog(self, changed_after):
+        url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
         r = requests.get(url, parameters = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         if r.status_code != requests.codes.ok:
-            raise HarvestGatherError(msg = "Harvest failed!")
+            raise HarvestGatherError(msg = "Calling XRoad service ListMembers failed!")
         return r.json()
 
     def _parse_xroad_data(self, res):
