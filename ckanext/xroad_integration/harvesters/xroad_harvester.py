@@ -125,7 +125,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_xroad_catalog(self, changed_after):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
-        r = requests.get(url, parameters = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+        r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         if r.status_code != requests.codes.ok:
             raise HarvestGatherError(msg = "Calling XRoad service ListMembers failed!")
         return r.json()
@@ -136,7 +136,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_wsdl(external_id):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
-        r = requests.get(url, parameters = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+        r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         if r.status_code != requests.codes.ok:
             raise HarvestGatherError(msg = "Calling XRoad service GetWsdl failed!")
         return r.json()
