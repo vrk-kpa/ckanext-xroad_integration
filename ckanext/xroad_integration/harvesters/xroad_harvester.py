@@ -130,7 +130,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         dataset['title'] = dataset['subsystem']['subsystemCode']
         dataset['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
         #dataset['notes'] = "this is example"
-
+        dataset['shared_resource'] = "no"
         log.info(dataset)
 
 
