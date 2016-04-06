@@ -3,7 +3,7 @@ from ckanext.harvest.interfaces import IHarvester
 from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
 import ckan.plugins as p
-from ckan.lib.munge import munge_title_to_name
+from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 
 
 import logging
@@ -11,6 +11,8 @@ import json
 import requests
 import os
 import tempfile
+from sqlalchemy import exists
+from ckan import model
 
 from ckan import logic
 NotFound = logic.NotFound
@@ -34,28 +36,58 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def gather_stage(self, harvest_job):
         log.debug('In xroad harvester gather_stage')
 
+        last_error_free_job = self._last_error_free_job(harvest_job)
+        if last_error_free_job:
+            last_time = last_error_free_job.gather_started
+        else:
+            last_time = "2011-01-01"
+
+        log.info('Searching for apis modified since: %s UTC',
+                 last_time)
+
         #members = self.get_xroad_catalog(harvest_job.source.url, harvest_job.since_date)
-        file = open(os.path.join(os.path.dirname(__file__), '../tests/catalog-mock.json'))
+        #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
+        file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
         members = json.load(file)
 
         object_ids = []
         for member in self._parse_xroad_data(members):
             log.info(json.dumps(member))
+            #log.info(type(member['subsystems']['subsystem']))
+            if member['subsystems'] and (type(member['subsystems']['subsystem']) is list):
+                for subsystem in member['subsystems']['subsystem']:
 
+                    # Generate GUID
+                    guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
+                    # Create harvest object
+                    obj = HarvestObject(guid=guid, job=harvest_job,
+                                        content=json.dumps({
+                                            'owner': member['name'],
+                                            'subsystem': subsystem
+                                        }))
 
-            # Generate GUID
-            guid = str(member.get('instance', '')) + '.' + str(member.get('memberClass', '')) + '.' + str(member.get('memberCode', '')) + '.' + str(member.get('subsystemCode', ''))
-            # Create harvest object
-            obj = HarvestObject(guid=guid, job=harvest_job,
-                                content=json.dumps(member))
+                    obj.save()
+                    object_ids.append(obj.id)
 
-            obj.save()
-            object_ids.append(obj.id)
+            elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
+                # Generate GUID
+                guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
+                # Create harvest object
+                obj = HarvestObject(guid=guid, job=harvest_job,
+                                    content=json.dumps({
+                                    'owner': member['name'],
+                                     'subsystem': member['subsystems']['subsystem']
+                                        }))
+
+                obj.save()
+                object_ids.append(obj.id)
 
         return object_ids
 
     def fetch_stage(self, harvest_object):
         log.debug('Doing nothing in xroad harvester fetch stage')
+
+        # TODO: Should fetch WSDLs
         return True
 
     def import_stage(self, harvest_object):
@@ -85,37 +117,50 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         dataset['owner_org'] = local_org
 
+        # Create org
+        log.info("Organization: " + dataset['owner'] )
+
         # Munge name
-        dataset['title'] = dataset['name']
-        dataset['name'] = munge_title_to_name(dataset['name'])
+
+        dataset['title'] = dataset['subsystem']['subsystemCode']
+        dataset['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
+        #dataset['notes'] = "this is example"
+
+        log.info(dataset)
+
 
 
         result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
         if result:
-            subsystems = dataset.get('subsystems', None)
-            if subsystems:
-                services = subsystems['subsystem'].get('services', None)
+                log.info(dataset['subsystem'])
+                services = dataset['subsystem'].get('services', None)
                 if services:
+                    log.info("SERVICES")
                     log.info(services['service'])
-                    log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
-                    if 'wsdl' in services['service'] and 'data' in services['service']['wsdl']:
-                        log.info(services['service']['wsdl']['data'])
-                        f = tempfile.NamedTemporaryFile(delete=False)
-                        f.write(services['service']['wsdl']['data'])
-                        f.close()
-                        response = requests.post('https://0.0.0.0/api/action/resource_create',
-                                                 data={
-                                                     "package_id":dataset['id'],
-                                                     "url": "",
-                                                     "name": services['service']['serviceCode'] + "." + services['service']['serviceVersion']
-                                                 },
-                                                 headers={"X-CKAN-API-Key": '1cae37bb-eda1-4a20-aa74-53d522055a99' },
-                                                 files={'upload': ('service.wsdl',file(f.name))}, verify=False)
-                        log.info(response.json())
+                    #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
+                    for service in services['service']:
+                        if 'wsdl' in service:
+                            log.info("WSDL")
+                            log.info(service['wsdl'])
+                            '''
+                            f = tempfile.NamedTemporaryFile(delete=False)
+                            f.write(services['service']['wsdl']['data'])
+                            f.close()
+                            '''
+                            response = requests.post('https://0.0.0.0/api/action/resource_create',
+                                                     data={
+                                                         "package_id":dataset['id'],
+                                                         "url": "",
+                                                         "name": service['serviceCode'] + "." + service['serviceVersion']
+                                                     },
+                                                     headers={"X-CKAN-API-Key": '8011bfbf-ec1f-41d2-8d63-acd09a6df485' },
+                                                     files={'upload': ('service.wsdl',"asd")},
+                                                     verify=False)
+                            log.info(response.json())
 
-                        os.unlink(f.name)
-                    else:
-                        return False
+                            #os.unlink(f.name)
+                        else:
+                            return False
 
 
         log.info('Created dataset %s', dataset['name'])
@@ -140,3 +185,29 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if r.status_code != requests.codes.ok:
             raise HarvestGatherError(msg = "Calling XRoad service GetWsdl failed!")
         return r.json()
+
+    @classmethod
+    def _last_error_free_job(cls, harvest_job):
+        # TODO weed out cancelled jobs somehow.
+        # look for jobs with no gather errors
+        jobs = \
+            model.Session.query(HarvestJob) \
+                .filter(HarvestJob.source == harvest_job.source) \
+                .filter(HarvestJob.gather_started != None) \
+                .filter(HarvestJob.status == 'Finished') \
+                .filter(HarvestJob.id != harvest_job.id) \
+                .filter(
+                ~exists().where(
+                    HarvestGatherError.harvest_job_id == HarvestJob.id)) \
+                .order_by(HarvestJob.gather_started.desc())
+        # now check them until we find one with no fetch/import errors
+        # (looping rather than doing sql, in case there are lots of objects
+        # and lots of jobs)
+        for job in jobs:
+            for obj in job.objects:
+                if obj.current is False and \
+                                obj.report_status != 'not modified':
+                    # unsuccessful, so go onto the next job
+                    break
+            else:
+                return job
