@@ -9,6 +9,7 @@ from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 import logging
 import json
 import requests
+from requests.exceptions import ConnectionError
 import os
 import tempfile
 from sqlalchemy import exists
@@ -38,17 +39,21 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         last_error_free_job = self._last_error_free_job(harvest_job)
         if last_error_free_job:
-            last_time = last_error_free_job.gather_started
+            last_time = last_error_free_job.gather_started.isoformat()
         else:
             last_time = "2011-01-01"
 
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
 
-        #members = self.get_xroad_catalog(harvest_job.source.url, harvest_job.since_date)
+        try:
+            members = self._get_xroad_catalog(last_time)
+        except ContentFetchError, e:
+            self._save_gather_error('%r' % e.message, harvest_job)
+            return False
         #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
-        file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
-        members = json.load(file)
+        #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
+        #members = json.load(file)
 
         object_ids = []
         for member in self._parse_xroad_data(members):
@@ -170,20 +175,26 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_xroad_catalog(self, changed_after):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
-        r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+        try:
+            r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service ListMembers failed!")
         if r.status_code != requests.codes.ok:
-            raise HarvestGatherError(msg = "Calling XRoad service ListMembers failed!")
+            raise ContentFetchError("Calling XRoad service ListMembers failed!")
         return r.json()
 
     def _parse_xroad_data(self, res):
-        #return res.json()['ListMembersResponse']['memberList']['members']
-        return res['ListMembersResponse']['memberList']['members']
+        return res.json()['ListMembersResponse']['memberList']['members']
+        #return res['ListMembersResponse']['memberList']['members']
 
     def _get_wsdl(self, external_id):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
-        r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+        try:
+            r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         if r.status_code != requests.codes.ok:
-            raise HarvestGatherError(msg = "Calling XRoad service GetWsdl failed!")
+            raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         return r.json()
 
     @classmethod
@@ -211,3 +222,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     break
             else:
                 return job
+
+class ContentFetchError(Exception):
+    pass
