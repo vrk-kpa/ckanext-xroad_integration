@@ -111,9 +111,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if 'wsdl' in service:
                     log.info("WSDL")
                     log.info(service['wsdl'])
-                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])
+                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
 
-            harvest_object.content = dataset
+            harvest_object.content = json.dumps(dataset)
             harvest_object.save()
 
         # TODO: Should fetch WSDLs
@@ -174,7 +174,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             log.info(service['wsdl'])
 
                             f = tempfile.NamedTemporaryFile(delete=False)
-                            f.write(services['service']['wsdl']['data'])
+                            f.write(service['wsdl']['data'])
                             f.close()
 
 
