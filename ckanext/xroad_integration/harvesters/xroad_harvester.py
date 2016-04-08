@@ -45,7 +45,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
-
         try:
             members = self._get_xroad_catalog(last_time)
         except ContentFetchError, e:
@@ -90,7 +89,32 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return object_ids
 
     def fetch_stage(self, harvest_object):
-        log.debug('Doing nothing in xroad harvester fetch stage')
+        log.info('Doing nothing in xroad harvester fetch stage')
+
+        try:
+            dataset = json.loads(harvest_object.content)
+        except ValueError:
+            log.info('Could not parse content for object {0}'.format(harvest_object.id),
+                     harvest_object, 'Import')
+            self._save_object_error('Could not parse content for object {0}'.format(harvest_object.id),
+                                    harvest_object, 'Import')
+            return False
+
+
+
+        services = dataset['subsystem'].get('services', None)
+        if services:
+            log.info("SERVICES")
+            log.info(services['service'])
+            #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
+            for service in services['service']:
+                if 'wsdl' in service:
+                    log.info("WSDL")
+                    log.info(service['wsdl'])
+                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])
+
+            harvest_object.content = dataset
+            harvest_object.save()
 
         # TODO: Should fetch WSDLs
         return True
@@ -136,6 +160,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
         result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
+        apikey = self._get_api_key()
         if result:
                 log.info(dataset['subsystem'])
                 services = dataset['subsystem'].get('services', None)
@@ -147,23 +172,25 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         if 'wsdl' in service:
                             log.info("WSDL")
                             log.info(service['wsdl'])
-                            '''
+
                             f = tempfile.NamedTemporaryFile(delete=False)
                             f.write(services['service']['wsdl']['data'])
                             f.close()
-                            '''
+
+
+
                             response = requests.post('https://0.0.0.0/api/action/resource_create',
                                                      data={
                                                          "package_id":dataset['id'],
                                                          "url": "",
                                                          "name": service['serviceCode'] + "." + service['serviceVersion']
                                                      },
-                                                     headers={"X-CKAN-API-Key": '8011bfbf-ec1f-41d2-8d63-acd09a6df485' },
-                                                     files={'upload': ('service.wsdl',"asd")},
+                                                     headers={"X-CKAN-API-Key": apikey },
+                                                     files={'upload': ('service.wsdl',file(f.name))},
                                                      verify=False)
                             log.info(response.json())
 
-                            #os.unlink(f.name)
+                            os.unlink(f.name)
                         else:
                             return False
 
@@ -184,8 +211,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return r.json()
 
     def _parse_xroad_data(self, res):
-        return res.json()['ListMembersResponse']['memberList']['members']
-        #return res['ListMembersResponse']['memberList']['members']
+        #return res.json()['ListMembersResponse']['memberList']['members']
+        return res['ListMembersResponse']['memberList']['members']
 
     def _get_wsdl(self, external_id):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
@@ -222,6 +249,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     break
             else:
                 return job
+    def _get_api_key(self):
+
+        context = {'model': model,
+           'ignore_auth': True,
+        }
+
+        site_user = p.toolkit.get_action('get_site_user')(context, {})
+
+        return site_user['apikey']
 
 class ContentFetchError(Exception):
     pass
