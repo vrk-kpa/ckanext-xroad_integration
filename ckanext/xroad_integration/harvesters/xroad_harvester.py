@@ -144,11 +144,21 @@ class XRoadHarvesterPlugin(HarvesterBase):
         source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
         local_org = source_dataset.get('owner_org')
 
-        dataset['owner_org'] = local_org
 
         # Create org
         log.info("Organization: " + dataset['owner'] )
 
+        try:
+            org = p.toolkit.get_action('organization_show')(context, {'id': munge_title_to_name(dataset['owner'])})
+            log.info(org)
+        except NotFound:
+            log.info("Organization %s not found, creating...", dataset['owner'])
+            org = p.toolkit.get_action('organization_create')(context, {'title': dataset['owner'], 'name': munge_title_to_name(dataset['owner'])})
+
+        if org is not None:
+            local_org = org['name']
+
+        dataset['owner_org'] = local_org
         # Munge name
 
         dataset['title'] = dataset['subsystem']['subsystemCode']
@@ -193,7 +203,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             os.unlink(f.name)
                         else:
                             return False
-
 
         log.info('Created dataset %s', dataset['name'])
 
