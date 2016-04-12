@@ -45,14 +45,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
+        '''
         try:
             members = self._get_xroad_catalog(last_time)
         except ContentFetchError, e:
             self._save_gather_error('%r' % e.message, harvest_job)
             return False
+            '''
         #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
-        #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
-        #members = json.load(file)
+        file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
+        members = json.load(file)
 
         object_ids = []
         for member in self._parse_xroad_data(members):
@@ -90,7 +92,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def fetch_stage(self, harvest_object):
         log.info('Doing nothing in xroad harvester fetch stage')
-
+        '''
         try:
             dataset = json.loads(harvest_object.content)
         except ValueError:
@@ -115,7 +117,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             harvest_object.content = json.dumps(dataset)
             harvest_object.save()
-
+'''
         # TODO: Should fetch WSDLs
         return True
 
@@ -148,12 +150,26 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Create org
         log.info("Organization: " + dataset['owner'] )
 
+
+        context = {
+            'model': model,
+            'session': model.Session,
+            'user': self._get_user_name(),
+            'ignore_auth': True,
+        }
+
         try:
             org = p.toolkit.get_action('organization_show')(context, {'id': munge_title_to_name(dataset['owner'])})
             log.info(org)
         except NotFound:
             log.info("Organization %s not found, creating...", dataset['owner'])
+
+            # Get rid of auth audit on the context otherwise we'll get an
+            # exception
+            context.pop('__auth_audit', None)
+
             org = p.toolkit.get_action('organization_create')(context, {'title': dataset['owner'], 'name': munge_title_to_name(dataset['owner'])})
+            log.info(org)
 
         if org is not None:
             local_org = org['name']
@@ -171,6 +187,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
         apikey = self._get_api_key()
+        '''
         if result:
                 log.info(dataset['subsystem'])
                 services = dataset['subsystem'].get('services', None)
@@ -203,7 +220,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             os.unlink(f.name)
                         else:
                             return False
-
+        '''
         log.info('Created dataset %s', dataset['name'])
 
 
