@@ -59,15 +59,21 @@ class XRoadHarvesterPlugin(HarvesterBase):
         for member in self._parse_xroad_data(members):
             log.info(json.dumps(member))
             #log.info(type(member['subsystems']['subsystem']))
+            # Create organization id
+            org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
+
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is list):
                 for subsystem in member['subsystems']['subsystem']:
 
                     # Generate GUID
                     guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
+
+
+
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
                                         content=json.dumps({
-                                            'owner': member['name'],
+                                            'owner': {'id': org_id, 'name': member['name']},
                                             'subsystem': subsystem
                                         }))
 
@@ -80,7 +86,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 # Create harvest object
                 obj = HarvestObject(guid=guid, job=harvest_job,
                                     content=json.dumps({
-                                    'owner': member['name'],
+                                    'owner': {'id': org_id, 'name': member['name']},
                                      'subsystem': member['subsystems']['subsystem']
                                         }))
 
@@ -110,8 +116,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             for service in services['service']:
                 if 'wsdl' in service:
                     log.info("WSDL")
-                    log.info(service['wsdl'])
-                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
+                    #log.info(service['wsdl'])
+                    #service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
 
             harvest_object.content = json.dumps(dataset)
             harvest_object.save()
@@ -145,8 +151,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
         # Create org
-        log.info("Organization: " + dataset['owner'] )
-
+        log.info("Organization: " + dataset['owner']['name'] )
+        log.info(dataset)
 
         context = {
             'model': model,
@@ -156,16 +162,19 @@ class XRoadHarvesterPlugin(HarvesterBase):
         }
 
         try:
-            org = p.toolkit.get_action('organization_show')(context, {'id': munge_title_to_name(dataset['owner'])})
-            log.info(org)
+            log.info("Finding organization..")
+            log.info(dataset['owner']['id'])
+            org = p.toolkit.get_action('organization_show')(context, {'id': dataset['owner']['id']})
+            log.info("found", org)
+
         except NotFound:
-            log.info("Organization %s not found, creating...", dataset['owner'])
+            log.info("Organization %s not found, creating...", dataset['owner']['name'])
 
             # Get rid of auth audit on the context otherwise we'll get an
             # exception
             context.pop('__auth_audit', None)
 
-            org = p.toolkit.get_action('organization_create')(context, {'title': dataset['owner'], 'name': munge_title_to_name(dataset['owner'])})
+            org = p.toolkit.get_action('organization_create')(context, {'title': dataset['owner']['name'], 'name': munge_title_to_name(dataset['owner']['name']), 'id': dataset['owner']['id']})
             log.info(org)
 
         if org is not None:
@@ -192,7 +201,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     log.info(services['service'])
                     #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
                     for service in services['service']:
-                        if 'wsdl' in service:
+                        if 'wsdl' in service and 'data' in service['wsdl']:
                             log.info("WSDL")
                             log.info(service['wsdl'])
 
@@ -200,18 +209,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             f.write(service['wsdl']['data'])
                             f.close()
 
+                            service_code = service.get('serviceCode', None)
+                            service_version = service.get('serviceVersion', None)
 
-
-                            response = requests.post('https://0.0.0.0/api/action/resource_create',
+                            if service_code is not None and service_version is not None:
+                                response = requests.post('https://0.0.0.0/api/action/resource_create',
                                                      data={
                                                          "package_id":dataset['id'],
                                                          "url": "",
-                                                         "name": service['serviceCode'] + "." + service['serviceVersion']
+                                                         "name": service_code + "." + service_version
                                                      },
                                                      headers={"X-CKAN-API-Key": apikey },
                                                      files={'upload': ('service.wsdl',file(f.name))},
                                                      verify=False)
-                            log.info(response.json())
+                                log.info(response.json())
 
                             os.unlink(f.name)
                         else:
@@ -222,6 +233,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return result
 
     def _get_xroad_catalog(self, changed_after):
+        '''
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
         try:
             r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
@@ -230,6 +242,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if r.status_code != requests.codes.ok:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
         return r.json()
+        '''
+        file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
+        return json.load(file)
+
 
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
