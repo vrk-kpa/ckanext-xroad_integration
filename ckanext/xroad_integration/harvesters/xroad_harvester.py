@@ -125,7 +125,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if 'wsdl' in service:
                     log.info("WSDL")
                     #log.info(service['wsdl'])
-                    #service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
+                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
 
             harvest_object.content = json.dumps(dataset)
             harvest_object.save()
@@ -178,7 +178,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         dataset['title'] = dataset['subsystem']['subsystemCode']
         dataset['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
-        #dataset['notes'] = "this is example"
+        #dataset['notes'] = {'fi': 'this is example'}
         dataset['shared_resource'] = "no"
         log.info(dataset)
 
@@ -186,7 +186,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
         apikey = self._get_api_key()
-        '''
         if result:
                 log.info(dataset['subsystem'])
                 services = dataset['subsystem'].get('services', None)
@@ -219,16 +218,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 log.info(response.json())
 
                             os.unlink(f.name)
-                        #else:
-                            #return False
-                            '''
+                        else:
+                            return False
+
         log.info('Created dataset %s', dataset['name'])
 
 
         return result
 
     def _get_xroad_catalog(self, changed_after):
-        '''
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
         try:
             r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
@@ -237,8 +235,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if r.status_code != requests.codes.ok:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
         return r.json()
-        '''
-        file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
+
+        #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
         return json.load(file)
 
 
