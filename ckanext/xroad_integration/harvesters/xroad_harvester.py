@@ -46,23 +46,28 @@ class XRoadHarvesterPlugin(HarvesterBase):
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
         try:
-            members = self._get_xroad_catalog(last_time)
+            catalog = self._get_xroad_catalog(last_time)
+            members = self._parse_xroad_data(catalog)
         except ContentFetchError, e:
             self._save_gather_error('%r' % e.message, harvest_job)
             return False
-
+        except KeyError, e:
+            self._save_gather_error('Failed to parse response: %r' % e, harvest_job)
+            return False
         #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
         #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
         #members = json.load(file)
 
         object_ids = []
-        for member in self._parse_xroad_data(members):
+        for member in members:
             log.info(json.dumps(member))
             #log.info(type(member['subsystems']['subsystem']))
             # Create organization id
             org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
 
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is list):
+
+                org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
                 for subsystem in member['subsystems']['subsystem']:
 
                     # Generate GUID
@@ -73,7 +78,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
                                         content=json.dumps({
-                                            'owner': {'id': org_id, 'name': member['name']},
+                                            'owner': org,
                                             'subsystem': subsystem
                                         }))
 
@@ -81,12 +86,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     object_ids.append(obj.id)
 
             elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
+
+                org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
+
                 # Generate GUID
                 guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
                 # Create harvest object
                 obj = HarvestObject(guid=guid, job=harvest_job,
                                     content=json.dumps({
-                                    'owner': {'id': org_id, 'name': member['name']},
+                                    'owner': org,
                                      'subsystem': member['subsystems']['subsystem']
                                         }))
 
@@ -161,25 +169,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
-        try:
-            log.info("Finding organization..")
-            log.info(dataset['owner']['id'])
-            org = p.toolkit.get_action('organization_show')(context, {'id': dataset['owner']['id']})
-            log.info("found", org)
 
-        except NotFound:
-            log.info("Organization %s not found, creating...", dataset['owner']['name'])
-
-            # Get rid of auth audit on the context otherwise we'll get an
-            # exception
-            context.pop('__auth_audit', None)
-
-            org = p.toolkit.get_action('organization_create')(context, {'title': dataset['owner']['name'], 'name': munge_title_to_name(dataset['owner']['name']), 'id': dataset['owner']['id']})
-            log.info(org)
-
-        if org is not None:
-            local_org = org['name']
-
+        if dataset['owner'] is not None:
+            local_org = dataset['owner']['name']
+        log.info(local_org)
         dataset['owner_org'] = local_org
         # Munge name
 
@@ -193,6 +186,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
         apikey = self._get_api_key()
+        '''
         if result:
                 log.info(dataset['subsystem'])
                 services = dataset['subsystem'].get('services', None)
@@ -225,8 +219,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 log.info(response.json())
 
                             os.unlink(f.name)
-                        else:
-                            return False
+                        #else:
+                            #return False
+                            '''
         log.info('Created dataset %s', dataset['name'])
 
 
@@ -283,9 +278,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if obj.current is False and \
                                 obj.report_status != 'not modified':
                     # unsuccessful, so go onto the next job
+                    log.info("unsuccesfull")
                     break
             else:
+                log.info("Returning job", job)
                 return job
+
+    @classmethod
+    def _last_finished_job(self, harvest_job):
+        job = model.Session.query(HarvestJob)\
+            .filter(HarvestJob.source == harvest_job.source)\
+            .filter(HarvestJob.finished != None)\
+            .filter(HarvestJob.id != harvest_job.id)\
+            .order_by(HarvestJob.finished.desc()).first()
+
+        return job
+
     def _get_api_key(self):
 
         context = {'model': model,
@@ -295,6 +303,42 @@ class XRoadHarvesterPlugin(HarvesterBase):
         site_user = p.toolkit.get_action('get_site_user')(context, {})
 
         return site_user['apikey']
+
+    def _create_or_update_organization(self, data_dict, harvest_job):
+
+        context = {
+            'model': model,
+            'session': model.Session,
+            'user': self._get_user_name(),
+            'ignore_auth': True,
+        }
+
+        try:
+            log.info("Finding organization..")
+            log.info(data_dict['id'])
+            org = p.toolkit.get_action('organization_show')(context, {'id': data_dict['id']})
+            log.info("found", org)
+
+            last_finished_job = self._last_finished_job(harvest_job)
+            log.info(last_finished_job)
+            if last_finished_job and last_finished_job < data_dict['changed']:
+                log.info("updating organization")
+                org = p.toolkit.get_action('organization_update')(context, {'title': data_dict['name'],
+                                                                      'name': munge_title_to_name(data_dict['name']),
+                                                                      'id': data_dict['id']})
+        except NotFound:
+            log.info("Organization %s not found, creating...", data_dict['name'])
+
+            # Get rid of auth audit on the context otherwise we'll get an
+            # exception
+            context.pop('__auth_audit', None)
+
+            org = p.toolkit.get_action('organization_create')(context, {'title': data_dict['name'],
+                                                                        'name': munge_title_to_name(data_dict['name']),
+                                                                        'id': data_dict['id']})
+            log.info(org)
+
+        return org
 
 class ContentFetchError(Exception):
     pass
