@@ -117,18 +117,23 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
         services = dataset['subsystem'].get('services', None)
-        if services:
-            log.info("SERVICES")
-            log.info(services['service'])
-            #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
-            for service in services['service']:
-                if 'wsdl' in service:
-                    log.info("WSDL")
-                    #log.info(service['wsdl'])
-                    service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
+        try:
+            if services:
+                log.info("SERVICES")
+                log.info(services['service'])
+                #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
+                for service in services['service']:
+                    if 'wsdl' in service:
+                        log.info("WSDL")
+                        #log.info(service['wsdl'])
+                        service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
 
-            harvest_object.content = json.dumps(dataset)
-            harvest_object.save()
+                harvest_object.content = json.dumps(dataset)
+                harvest_object.save()
+        except TypeError:
+            self._save_object_error('Could not parse WSDL content for object {0}'.format(harvest_object.id),
+                                    harvest_object, 'Import')
+            return False
         # TODO: Should fetch WSDLs
         return True
 
