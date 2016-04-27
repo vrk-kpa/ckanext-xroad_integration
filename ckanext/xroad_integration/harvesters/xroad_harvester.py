@@ -62,6 +62,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
         for member in members:
             log.info(json.dumps(member))
             #log.info(type(member['subsystems']['subsystem']))
+
+            if member.get('removed', None) is not None:
+                log.info("Member has been removed, not creating..")
+                continue
+
             # Create organization id
             org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
 
@@ -70,8 +75,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
                 for subsystem in member['subsystems']['subsystem']:
 
+                    if subsystem.get('removed', None) is not None:
+                        log.info("Subsystem has been removed, not creating..")
+                        continue
+
                     # Generate GUID
                     guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
+
 
 
 
@@ -86,6 +96,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     object_ids.append(obj.id)
 
             elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
+
+                if member['subsystems']['subsystem'].get('removed', None) is not None:
+                    log.info("Subsystem has been removed, not creating..")
+                    continue
+
 
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
 
@@ -130,7 +145,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
-        except TypeError:
+        except TypeError, ContentFetchError:
             self._save_object_error('Could not parse WSDL content for object {0}'.format(harvest_object.id),
                                     harvest_object, 'Import')
             return False
@@ -155,12 +170,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
-        # Set id
-        dataset['id'] = harvest_object.guid
+        try:
+            package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid })
+        except NotFound:
+            # Set id
+            package_dict['id'] = harvest_object.guid
 
         # Local harvest source organization
         source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
         local_org = source_dataset.get('owner_org')
+
 
 
         # Create org
@@ -178,18 +197,18 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if dataset['owner'] is not None:
             local_org = dataset['owner']['name']
         log.info(local_org)
-        dataset['owner_org'] = local_org
+        package_dict['owner_org'] = local_org
         # Munge name
 
-        dataset['title'] = dataset['subsystem']['subsystemCode']
-        dataset['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
+        package_dict['title'] = dataset['subsystem']['subsystemCode']
+        package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
         #dataset['notes'] = {'fi': 'this is example'}
-        dataset['shared_resource'] = "no"
+        package_dict['shared_resource'] = "no"
         log.info(dataset)
 
 
 
-        result = self._create_or_update_package(dataset, harvest_object, package_dict_form='package_show')
+        result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
         apikey = self._get_api_key()
         if result:
                 log.info(dataset['subsystem'])
@@ -213,7 +232,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             if service_code is not None and service_version is not None:
                                 response = requests.post('https://0.0.0.0/api/action/resource_create',
                                                      data={
-                                                         "package_id":dataset['id'],
+                                                         "package_id":package_dict['id'],
                                                          "url": "",
                                                          "name": service_code + "." + service_version
                                                      },
@@ -226,7 +245,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             return False
 
-        log.info('Created dataset %s', dataset['name'])
+        log.info('Created dataset %s', package_dict['name'])
 
 
         return result
@@ -242,7 +261,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return r.json()
 
         #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
-        return json.load(file)
+        #return json.load(file)
 
 
     def _parse_xroad_data(self, res):
