@@ -174,7 +174,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid })
         except NotFound:
             # Set id
-            package_dict['id'] = harvest_object.guid
+            package_dict = {'id': harvest_object.guid }
+
+        # Get rid of auth audit on the context otherwise we'll get an
+        # exception
+        context.pop('__auth_audit', None)
 
         # Local harvest source organization
         source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
@@ -184,7 +188,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         # Create org
         log.info("Organization: " + dataset['owner']['name'] )
-        log.info(dataset)
 
         context = {
             'model': model,
@@ -196,7 +199,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         if dataset['owner'] is not None:
             local_org = dataset['owner']['name']
-        log.info(local_org)
         package_dict['owner_org'] = local_org
         # Munge name
 
@@ -204,7 +206,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
         #dataset['notes'] = {'fi': 'this is example'}
         package_dict['shared_resource'] = "no"
-        log.info(dataset)
 
 
 
@@ -214,13 +215,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 log.info(dataset['subsystem'])
                 services = dataset['subsystem'].get('services', None)
                 if services:
-                    log.info("SERVICES")
-                    log.info(services['service'])
                     #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
                     for service in services['service']:
                         if 'wsdl' in service and 'data' in service['wsdl']:
-                            log.info("WSDL")
-                            log.info(service['wsdl'])
 
                             f = tempfile.NamedTemporaryFile(delete=False)
                             f.write(service['wsdl']['data'])
@@ -229,8 +226,27 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             service_code = service.get('serviceCode', None)
                             service_version = service.get('serviceVersion', None)
 
+                            wsdl_exists = False
                             if service_code is not None and service_version is not None:
-                                response = requests.post('https://0.0.0.0/api/action/resource_create',
+
+                                for resource in package_dict['resources']:
+                                    if resource['name'] == service_code + "." + service_version:
+                                        wsdl_exists = True
+                                        changed = service.get('changed', None)
+                                        if changed and changed > resource['created']:
+                                            log.info('WSDL changed after last harvest, replacing...')
+                                            response = requests.post('https://0.0.0.0/api/action/resource_update',
+                                                                     data={
+                                                                         "package_id":package_dict['id'],
+                                                                         "url": "",
+                                                                         "name": service_code + "." + service_version
+                                                                     },
+                                                                     headers={"X-CKAN-API-Key": apikey },
+                                                                     files={'upload': ('service.wsdl',file(f.name))},
+                                                                     verify=False)
+
+                                if wsdl_exists is False:
+                                    response = requests.post('https://0.0.0.0/api/action/resource_create',
                                                      data={
                                                          "package_id":package_dict['id'],
                                                          "url": "",
@@ -239,7 +255,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                      headers={"X-CKAN-API-Key": apikey },
                                                      files={'upload': ('service.wsdl',file(f.name))},
                                                      verify=False)
-                                log.info(response.json())
 
                             os.unlink(f.name)
                         else:
