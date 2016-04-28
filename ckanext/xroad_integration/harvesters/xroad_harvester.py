@@ -60,8 +60,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         object_ids = []
         for member in members:
-            log.info(json.dumps(member))
-            #log.info(type(member['subsystems']['subsystem']))
 
             if member.get('removed', None) is not None:
                 log.info("Member has been removed, not creating..")
@@ -134,13 +132,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
         services = dataset['subsystem'].get('services', None)
         try:
             if services:
-                log.info("SERVICES")
-                log.info(services['service'])
-                #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
                 for service in services['service']:
                     if 'wsdl' in service:
-                        log.info("WSDL")
-                        #log.info(service['wsdl'])
                         service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
 
                 harvest_object.content = json.dumps(dataset)
@@ -211,11 +204,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
         apikey = self._get_api_key()
-        if result:
-                log.info(dataset['subsystem'])
+        if result is True or result is "unchanged":
                 services = dataset['subsystem'].get('services', None)
                 if services:
-                    #log.info( services['service']['serviceCode'] + '.' + services['service']['serviceVersion'])
                     for service in services['service']:
                         if 'wsdl' in service and 'data' in service['wsdl']:
 
@@ -232,21 +223,23 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 for resource in package_dict['resources']:
                                     if resource['name'] == service_code + "." + service_version:
                                         wsdl_exists = True
-                                        changed = service.get('changed', None)
+                                        changed = service['wsdl'].get('changed', None)
                                         if changed and changed > resource['created']:
                                             log.info('WSDL changed after last harvest, replacing...')
-                                            response = requests.post('https://0.0.0.0/api/action/resource_update',
+                                            requests.post('https://0.0.0.0/api/action/resource_update',
                                                                      data={
                                                                          "package_id":package_dict['id'],
                                                                          "url": "",
-                                                                         "name": service_code + "." + service_version
+                                                                         "name": service_code + "." + service_version,
+                                                                         "id": resource['id']
                                                                      },
                                                                      headers={"X-CKAN-API-Key": apikey },
                                                                      files={'upload': ('service.wsdl',file(f.name))},
                                                                      verify=False)
+                                            result = True
 
                                 if wsdl_exists is False:
-                                    response = requests.post('https://0.0.0.0/api/action/resource_create',
+                                    requests.post('https://0.0.0.0/api/action/resource_create',
                                                      data={
                                                          "package_id":package_dict['id'],
                                                          "url": "",
@@ -255,6 +248,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                      headers={"X-CKAN-API-Key": apikey },
                                                      files={'upload': ('service.wsdl',file(f.name))},
                                                      verify=False)
+                                    result = True
 
                             os.unlink(f.name)
                         else:
