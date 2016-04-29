@@ -220,7 +220,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             wsdl_exists = False
                             if service_code is not None and service_version is not None:
 
-                                for resource in package_dict['resources']:
+                                for resource in package_dict.get('resources', []):
                                     if resource['name'] == service_code + "." + service_version:
                                         wsdl_exists = True
                                         changed = service['wsdl'].get('changed', None)
