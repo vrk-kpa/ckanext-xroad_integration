@@ -71,6 +71,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is list):
 
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
+                if org is None:
+                    continue
                 for subsystem in member['subsystems']['subsystem']:
 
                     if subsystem.get('removed', None) is not None:
@@ -101,7 +103,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
-
+                if org is None:
+                    continue
                 # Generate GUID
                 guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
                 # Create harvest object
@@ -345,10 +348,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
         }
 
         try:
-            log.info("Finding organization..")
-            log.info(data_dict['id'])
             org = p.toolkit.get_action('organization_show')(context, {'id': data_dict['id']})
             log.info("found", org)
+
+            if data_dict['removed']:
+                log.info("Organization was removed, removing from catalog..")
+                p.toolkit.get_action('organization_delete')(context, org)
+                return None
 
             last_finished_job = self._last_finished_job(harvest_job)
             log.info(last_finished_job)
