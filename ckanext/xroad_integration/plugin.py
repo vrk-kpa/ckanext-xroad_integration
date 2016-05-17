@@ -11,3 +11,4 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'xroad_integration')
+

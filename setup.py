@@ -81,8 +81,9 @@ setup(
         [ckan.plugins]
         xroad_integration=ckanext.xroad_integration.plugin:Xroad_IntegrationPlugin
         xroad_harvester=ckanext.xroad_integration.harvesters.xroad_harvester:XRoadHarvesterPlugin
-	[babel.extractors]
-	ckan = ckan.lib.extract:extract_ckan
+        wsdl_view=ckanext.xroad_integration.view:WSDL_ViewPlugin
+        [babel.extractors]
+        ckan = ckan.lib.extract:extract_ckan
     ''',
 
     # If you are changing from the default layout of your extension, you may
