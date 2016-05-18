@@ -4,13 +4,9 @@
 
 {% block page %}
   <div>
-    <pre data-module="wsdl_view">
-      <div class="loading">
-        {{ _('Loading...') }}
-      </div>
-    </pre>
+    {{ h.render_wsdl(resource_url)|safe }}
   </div>
-
+  {#
   {% block scripts %}
     <script>
       var preload_resource = {{ h.literal(resource_json) }};
@@ -20,5 +16,5 @@
   {% endblock %}
 
 
-  {% resource 'ckanext-wsdlview/main' %}
+  {% resource 'ckanext-wsdlview/main' %}#}
 {% endblock %}
