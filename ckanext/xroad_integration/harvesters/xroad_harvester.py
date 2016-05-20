@@ -75,15 +75,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     continue
                 for subsystem in member['subsystems']['subsystem']:
 
-                    if subsystem.get('removed', None) is not None:
-                        log.info("Subsystem has been removed, not creating..")
-                        continue
 
                     # Generate GUID
                     guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
-
-
-
 
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
@@ -166,9 +160,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
+
+        removed = dataset['subsystem'].get('removed', None)
+
         try:
             package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid })
         except NotFound:
+            if removed is not None:
+                log.info("Service has been removed, not creating..")
+                return "unchanged"
+
             # Set id
             package_dict = {'id': harvest_object.guid }
 
@@ -192,6 +193,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
+        if removed is not None:
+            log.info("Removing service %s", package_dict['name'])
+            p.toolkit.get_action('package_delete')(context, {'id': package_dict['id']})
+            harvest_object.current = False
+            return True
 
         if dataset['owner'] is not None:
             local_org = dataset['owner']['name']
