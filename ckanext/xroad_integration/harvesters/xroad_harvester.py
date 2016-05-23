@@ -61,10 +61,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         object_ids = []
         for member in members:
 
-            if member.get('removed', None) is not None:
-                log.info("Member has been removed, not creating..")
-                continue
-
             # Create organization id
             org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
 
@@ -90,10 +86,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     object_ids.append(obj.id)
 
             elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
-
-                if member['subsystems']['subsystem'].get('removed', None) is not None:
-                    log.info("Subsystem has been removed, not creating..")
-                    continue
 
 
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
@@ -129,10 +121,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
         services = dataset['subsystem'].get('services', None)
         try:
             if services:
+                if type(services['service']) is dict:
+                    services['service'] = [services['service']]
                 for service in services['service']:
                     if 'wsdl' in service:
                         service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
-
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -167,7 +160,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid })
         except NotFound:
             if removed is not None:
-                log.info("Service has been removed, not creating..")
+                log.info("Subsystem has been removed, not creating..")
                 return "unchanged"
 
             # Set id
@@ -284,7 +277,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
-        return res['ListMembersResponse']['memberList']['members']
+        return res['ListMembersResponse']['memberList']['member']
 
     def _get_wsdl(self, external_id):
         url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
@@ -355,7 +348,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         try:
             org = p.toolkit.get_action('organization_show')(context, {'id': data_dict['id']})
-            log.info("found", org)
+            log.info("found %s", org)
 
             if data_dict['removed']:
                 log.info("Organization was removed, removing from catalog..")
@@ -370,6 +363,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                                       'name': munge_title_to_name(data_dict['name']),
                                                                       'id': data_dict['id']})
         except NotFound:
+            if data_dict['removed']:
+                log.info("Organization was removed, not creating..")
+                return None
             log.info("Organization %s not found, creating...", data_dict['name'])
 
             # Get rid of auth audit on the context otherwise we'll get an
