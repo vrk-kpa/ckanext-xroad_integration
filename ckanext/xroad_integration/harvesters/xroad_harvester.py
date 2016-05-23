@@ -46,7 +46,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
         try:
-            catalog = self._get_xroad_catalog(last_time)
+            catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
             members = self._parse_xroad_data(catalog)
         except ContentFetchError, e:
             self._save_gather_error('%r' % e.message, harvest_job)
@@ -106,7 +106,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return object_ids
 
     def fetch_stage(self, harvest_object):
-        log.info('Doing nothing in xroad harvester fetch stage')
+        log.info('In xroad harvester fetch_stage')
         try:
             dataset = json.loads(harvest_object.content)
         except ValueError:
@@ -125,7 +125,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     services['service'] = [services['service']]
                 for service in services['service']:
                     if 'wsdl' in service:
-                        service['wsdl']['data']  = self._get_wsdl(service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
+                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -261,8 +261,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return result
 
-    def _get_xroad_catalog(self, changed_after):
-        url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/ListMembers"
+    def _get_xroad_catalog(self, url, changed_after):
         try:
             r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         except ConnectionError:
@@ -279,8 +278,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         #return res.json()['ListMembersResponse']['memberList']['members']
         return res['ListMembersResponse']['memberList']['member']
 
-    def _get_wsdl(self, external_id):
-        url = "http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/GetWsdl"
+    def _get_wsdl(self, url, external_id):
         try:
             r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         except ConnectionError:
