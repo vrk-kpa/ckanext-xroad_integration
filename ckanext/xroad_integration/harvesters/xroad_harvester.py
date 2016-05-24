@@ -263,12 +263,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_xroad_catalog(self, url, changed_after):
         try:
-            r = requests.get(url, params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+            r = requests.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
         if r.status_code != requests.codes.ok:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
-        return r.json()
+        try:
+            result = r.json()
+        except ValueError:
+            raise ContentFetchError("ListMembers JSON parse failed")
+        return result
+
 
         #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
         #return json.load(file)
@@ -280,7 +285,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_wsdl(self, url, external_id):
         try:
-            r = requests.get(url, params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+            r = requests.get(url + '/Consumer/GetWsdl', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         if r.status_code != requests.codes.ok:
