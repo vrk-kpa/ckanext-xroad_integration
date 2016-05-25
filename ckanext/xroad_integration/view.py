@@ -1,30 +1,39 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-import ckanext.resourceproxy.plugin as proxy
-import pylons.config as config
+import ckan.lib.uploader as uploader
 import logging
-from ckan.common import json
 from pprint import pformat
 import lxml.etree as etree
 import urllib2
 import os
 import os.path
+import mimetypes
 
 log = logging.getLogger(__name__)
 
 
-def render_wsdl(wsdl_to_html):
-    def render(url):
-        try:
-            if url.startswith('/'):
-                url = config.get('ckan.site_url') + url
-            request = urllib2.urlopen(url)
-            wsdl_content = etree.parse(request)
-            html_content = wsdl_to_html(wsdl_content)
+def open_resource(resource):
+    if resource.get('url_type') == 'upload':
+        upload = uploader.ResourceUpload(resource)
+        filepath = upload.get_path(resource['id'])
+        return open(filepath)
+    else:
+        return urllib2.urlopen(resource['url'])
 
+
+def render_wsdl_resource(wsdl_to_html):
+    def render(resource):
+        try:
+            resource_file = open_resource(resource)
+            wsdl_content = etree.parse(resource_file)
+            html_content = wsdl_to_html(wsdl_content)
             return etree.tostring(html_content, pretty_print=True, method='html', encoding='utf-8')
+        except urllib2.HTTPError as e:
+            return "HTTP error: %s" % e
         except etree.XMLSyntaxError as e:
-            return "XML syntax error: %s -- %s" % (e, request.read())
+            return "XML syntax error: %s" % e
+        except OSError:
+            return "Server error: uploaded file not found"
 
     return render
 
@@ -43,6 +52,7 @@ class WSDL_ViewPlugin(plugins.SingletonPlugin):
         relpath = "./xslt/wsdl_to_html.xslt"
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), relpath)
         self.wsdl_to_html = etree.XSLT(etree.parse(path))
+        mimetypes.add_type('wsdl', '.wsdl')
 
     # IResourceView
 
@@ -67,10 +77,7 @@ class WSDL_ViewPlugin(plugins.SingletonPlugin):
     # ITemplateHelpers
 
     def get_helpers(self):
-        return {'render_wsdl': render_wsdl(self.wsdl_to_html)}
+        return {'render_wsdl_resource': render_wsdl_resource(self.wsdl_to_html)}
 
     def setup_template_variables(self, context, data_dict):
-        url = proxy.get_proxified_resource_url(data_dict)
-
-        return {'resource_json': json.dumps(data_dict['resource']),
-                'resource_url': url}
+        return {'resource': data_dict['resource']}
