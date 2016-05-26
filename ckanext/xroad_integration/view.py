@@ -28,12 +28,14 @@ def render_wsdl_resource(wsdl_to_html):
             wsdl_content = etree.parse(resource_file)
             html_content = wsdl_to_html(wsdl_content)
             return etree.tostring(html_content, pretty_print=True, method='html', encoding='utf-8')
+        except urllib2.URLError:
+            return '<div class="error-explanation alert alert-error">Invalid URL</div>'
         except urllib2.HTTPError as e:
-            return "HTTP error: %s" % e
+            return '<div class="error-explanation alert alert-error">HTTP error: %s</div>' % e
         except etree.XMLSyntaxError as e:
-            return "XML syntax error: %s" % e
+            return '<div class="error-explanation alert alert-error">XML syntax error: %s</div>' % e
         except OSError:
-            return "Server error: uploaded file not found"
+            return '<div class="error-explanation alert alert-error">Server error: uploaded file not found</div>'
 
     return render
 

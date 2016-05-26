@@ -3,6 +3,19 @@
 {% block subtitle %}{% endblock %}
 
 {% block page %}
+  <style>
+    .alert-error {
+      background-color: #ffdcdc;
+      border: 1px solid #ff5353;
+      color: #333;
+    }
+    .alert {
+      margin-top: 20px;
+      padding: 15px;
+      margin-bottom: 22px;
+      border-radius: 4px;
+    }
+  </style>
   <div>
     {{ h.render_wsdl_resource(resource)|safe }}
   </div>
