@@ -281,6 +281,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
+        if isinstance(res['ListMembersResponse']['memberList'], basestring):
+            return []
         return res['ListMembersResponse']['memberList']['member']
 
     def _get_wsdl(self, url, external_id):
