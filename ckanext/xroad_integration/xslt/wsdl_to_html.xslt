@@ -244,7 +244,7 @@ body {
     height: auto;
     color: white;
     //background-color: teal;
-    font: normal 80%/120% Arial, Helvetica, sans-serif;
+    font: normal 80%/120% SourceSans, Arial, Helvetica, sans-serif;
 }
 
 #outer_box {
@@ -353,7 +353,7 @@ body {
     border-top: 1px solid #d9d9d9;
     border-bottom: 3px solid #d9d9d9;
     z-index: 100;
-    font: bold 90%/120% Arial, Helvetica, sans-serif;
+    font: bold 90%/120% SourceSans, Arial, Helvetica, sans-serif;
     letter-spacing: 2px;
 } 
 
@@ -484,7 +484,7 @@ html&gt;body #rightColumn {
 */
 
 .page {
-    border-bottom: 3px dotted #2c2c2c;
+//border-bottom: 3px dotted #2c2c2c;
     margin: 0;
     padding: 10px 0 20px 0;
 }
@@ -530,7 +530,7 @@ a.local:visited {
     margin-left: 10px;
     border-bottom: 1px dotted blue;
     text-decoration: none;
-    font-style: italic;
+    /*    font-style: italic;*/
 }
 
 a.local:hover {
@@ -558,8 +558,8 @@ a.target:hover
 .box {
     padding: 6px;
     color: black;
-    background-color: #ececec;
-    border: 1px solid #d9d9d9;
+    background-color: transparent;
+    border: 1px solid #ececec;
 }
 
 .shadow {
@@ -653,13 +653,13 @@ html .floatcontainer {
 .xml-proc {
     color: darkred;
     font-weight: normal;
-    font-style: italic;
+    // font-style: italic;
 }
 
 .xml-comment {
     color: green;
     font-weight: normal;
-    font-style: italic;
+    // font-style: italic;
 }
 
 .xml-text {
@@ -676,7 +676,7 @@ html .floatcontainer {
 */
 h1, h2, h3 {
     margin: 10px 10px 2px;
-    font-family: Georgia, Times New Roman, Times, Serif;
+    font-family: Roboto, Georgia, Times New Roman, Times, Serif;
     font-weight: normal;
     }
 
@@ -696,7 +696,7 @@ h2 {
 h3 {
     font-size: 150%;
     line-height: 150%;
-    font-style: italic;
+    // font-style: italic;
 }
 
 /**
@@ -716,7 +716,36 @@ h3 {
     border-bottom: 1px dashed #d9d9d9;
 }
 
+/**
+=========================================
+    Custom formatting
+=========================================
+*/
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: bold;
+  src: url("/base/vendor/fonts//RobotoBold.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//RobotoBold.woff") format("woff"), url("/base/vendor/fonts//RobotoBold.ttf") format("truetype"), url("/base/vendor/fonts//RobotoBold.svg") format("svg");
+  }
+  @font-face {
+  font-family: "SourceSans";
+  font-style: normal;
+  font-weight: normal;
+  src: url("/base/vendor/fonts//SourceSansProRegular.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//SourceSansProRegular.woff") format("woff"), url("/base/vendor/fonts//SourceSansProRegular.ttf") format("truetype"), url("/base/vendor/fonts//SourceSansProRegular.svg") format("svg");
+  }
+  @font-face {
+  font-family: "SourceSans";
+  font-style: normal;
+  font-weight: bold;
+  src: url("/base/vendor/fonts//SourceSansProBold.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//SourceSansProBold.woff") format("woff"), url("/base/vendor/fonts//SourceSansProBold.ttf") format("truetype"), url("/base/vendor/fonts//SourceSansProBold.svg") format("svg");
+  }
+i {
+  font-style: normal;
+}
 
+big {
+  font-size: inherit;
+}
 /* --------------------------------------------------------
     Printing
 */
@@ -1401,7 +1430,7 @@ h3 {
                      </xsl:apply-templates>
                </xsl:when>
                <xsl:otherwise>
-                     <small style="color:blue">
+                     <small style="color:#222">
                            <xsl:value-of select="$RECURSIVE"/>
                      </small>
                </xsl:otherwise>
@@ -1435,7 +1464,7 @@ h3 {
                      </ul>
                </xsl:when>
                <xsl:otherwise>
-                     <small style="color:blue">
+                     <small style="color:#222">
                            <xsl:value-of select="$RECURSIVE"/>
                      </small>
                </xsl:otherwise>
@@ -1562,7 +1591,7 @@ h3 {
                      </xsl:if>
                </xsl:when>
                <xsl:otherwise>
-                     <small style="color:blue">
+                     <small style="color:#222">
                            <xsl:value-of select="$RECURSIVE"/>
                      </small>
                </xsl:otherwise>
@@ -1630,7 +1659,7 @@ h3 {
                      </xsl:apply-templates>
                </xsl:when>
                <xsl:otherwise>
-                     <small style="color:blue">
+                     <small style="color:#222">
                            <xsl:value-of select="$RECURSIVE"/>
                      </small>
                </xsl:otherwise>
@@ -1714,7 +1743,7 @@ h3 {
                </xsl:variable>
 
                <xsl:if test="string-length($recursion.test) != 0">
-                     <small style="color:blue">
+                     <small style="color:#222">
                            <xsl:value-of select="$properties"/>
                            <xsl:variable name="elem-type"
                              select="$consolidated-xsd[@name = $type-local-name and (not(contains(local-name(current()), 'element')) or contains(local-name(), 'Type'))][1]"/>
@@ -2287,7 +2316,7 @@ h3 {
       <body id="operations">
          <div id="outer_box">
             <div id="inner_box" onload="pagingInit()">
-                  <xsl:call-template name="title.render"/>
+              <!--<xsl:call-template name="title.render"/>-->
 
 
                <!-- TODO: pages with tabs for selecting some aspect of the WSDL
@@ -2295,7 +2324,7 @@ h3 {
 -->
 
     <xsl:call-template name="content.render"/>
-                  <xsl:call-template name="footer.render"/>
+    <!--<xsl:call-template name="footer.render"/>-->
             </div>
          </div>
       </body>
