@@ -27,8 +27,8 @@ def render_wsdl_resource(wsdl_to_html):
             resource_file = open_resource(resource)
             wsdl_content = etree.parse(resource_file)
 
-            # FIXME: Remove XSD imports in WSDL documents until dependency resolution can be made
-            for element in wsdl_content.xpath('//xsd:import', namespaces={'xsd': 'http://www.w3.org/2001/XMLSchema'}):
+            # FIXME: Remove XSD imports and includes in WSDL documents until dependency resolution can be made
+            for element in wsdl_content.xpath('//xsd:import|//xsd:include', namespaces={'xsd': 'http://www.w3.org/2001/XMLSchema'}):
                 element.getparent().remove(element)
             html_content = wsdl_to_html(wsdl_content)
             return etree.tostring(html_content, pretty_print=True, method='html', encoding='utf-8')
