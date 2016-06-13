@@ -199,9 +199,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         package_dict['title'] = dataset['subsystem']['subsystemCode']
         package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
-        #dataset['notes'] = {'fi': 'this is example'}
         package_dict['shared_resource'] = "no"
-
+        package_dict['private'] = True
 
 
         result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
