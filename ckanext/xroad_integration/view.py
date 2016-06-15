@@ -22,24 +22,43 @@ def open_resource(resource):
 
 
 def render_wsdl_resource(wsdl_to_html):
+    ERROR_HTML = '<div class="error-explanation alert alert-error">%s</div>'
+
     def render(resource):
         try:
             resource_file = open_resource(resource)
             wsdl_content = etree.parse(resource_file)
 
+            xml_namespaces = {
+                    'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
+                    'xsd': 'http://www.w3.org/2001/XMLSchema'}
+
+            # FIXME: Should be handled at harvester, temporary cosmetic fix
+            soap_faults = wsdl_content.xpath('//soap-env:Fault', namespaces=xml_namespaces)
+            if len(soap_faults) > 0:
+                try:
+                    soap_fault = soap_faults[0]
+                    faultcode = soap_fault.find('faultcode', namespaces=xml_namespaces).text
+                    faultstring = soap_fault.find('faultstring', namespaces=xml_namespaces).text
+                    error_form = ERROR_HTML % 'SOAP error harvesting WSDL: (faultcode: "%s", faultstring: "%s")'
+                    error_message = error_form % (faultcode, faultstring)
+                except:
+                    error_message = ERROR_HTML % 'SOAP error harvesting WSDL'
+                return error_message
+
             # FIXME: Remove XSD imports and includes in WSDL documents until dependency resolution can be made
-            for element in wsdl_content.xpath('//xsd:import|//xsd:include', namespaces={'xsd': 'http://www.w3.org/2001/XMLSchema'}):
+            for element in wsdl_content.xpath('//xsd:import|//xsd:include', namespaces=xml_namespaces):
                 element.getparent().remove(element)
             html_content = wsdl_to_html(wsdl_content)
             return etree.tostring(html_content, pretty_print=True, method='html', encoding='utf-8')
         except urllib2.URLError:
-            return '<div class="error-explanation alert alert-error">Invalid URL</div>'
+            return ERROR_HTML % 'Invalid URL'
         except urllib2.HTTPError as e:
-            return '<div class="error-explanation alert alert-error">HTTP error: %s</div>' % e
+            return ERROR_HTML % 'HTTP error: %s' % e
         except etree.XMLSyntaxError as e:
-            return '<div class="error-explanation alert alert-error">XML syntax error: %s</div>' % e
+            return ERROR_HTML % 'XML syntax error: %s' % e
         except OSError:
-            return '<div class="error-explanation alert alert-error">Server error: uploaded file not found</div>'
+            return ERROR_HTML % 'Server error: uploaded file not found'
 
     return render
 
