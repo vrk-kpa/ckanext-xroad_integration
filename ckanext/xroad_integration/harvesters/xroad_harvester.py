@@ -125,7 +125,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     services['service'] = [services['service']]
                 for service in services['service']:
                     if 'wsdl' in service:
-                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId'])['GetWsdlResponse']['wsdl']
+                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId'])['wsdl']
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -212,7 +212,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         if 'wsdl' in service and 'data' in service['wsdl']:
 
                             f = tempfile.NamedTemporaryFile(delete=False)
-                            f.write(service['wsdl']['data'])
+                            f.write(service['wsdl']['data'].encode('utf-8'))
                             f.close()
 
                             service_code = service.get('serviceCode', None)
@@ -280,9 +280,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
-        if isinstance(res['ListMembersResponse']['memberList'], basestring):
+        if isinstance(res['memberList'], basestring):
             return []
-        return res['ListMembersResponse']['memberList']['member']
+        return res['memberList']['member']
 
     def _get_wsdl(self, url, external_id):
         try:
