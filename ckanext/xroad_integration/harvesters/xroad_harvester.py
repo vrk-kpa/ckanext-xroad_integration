@@ -192,22 +192,28 @@ class XRoadHarvesterPlugin(HarvesterBase):
             harvest_object.current = False
             return True
 
-        if dataset['owner'] is not None:
-            local_org = dataset['owner']['name']
-        package_dict['owner_org'] = local_org
-        # Munge name
+        contains_wsdls = False
+        services = dataset['subsystem'].get('services', None)
+        for service in services['service']:
+            if 'wsdl' in service and 'data' in service['wsdl']:
+                contains_wsdls = True
 
-        package_dict['title'] = dataset['subsystem']['subsystemCode']
-        package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
-        package_dict['shared_resource'] = "no"
-        package_dict['private'] = True
+        if contains_wsdls:
+            if dataset['owner'] is not None:
+                local_org = dataset['owner']['name']
+            package_dict['owner_org'] = local_org
+            # Munge name
+
+            package_dict['title'] = dataset['subsystem']['subsystemCode']
+            package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
+            package_dict['shared_resource'] = "no"
+            package_dict['private'] = True
 
 
-        result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
-        apikey = self._get_api_key()
-        if result is True or result is "unchanged":
-                services = dataset['subsystem'].get('services', None)
-                if services:
+            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+            apikey = self._get_api_key()
+            if result is True or result is "unchanged":
+
                     for service in services['service']:
                         if 'wsdl' in service and 'data' in service['wsdl']:
 
@@ -255,10 +261,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             return False
 
-        log.info('Created dataset %s', package_dict['name'])
+            log.info('Created API %s', package_dict['name'])
 
 
-        return result
+            return result
+
+        log.info("API %s did not have WSDLs, not creating..", dataset['subsystem']['subsystemCode'])
+        return True
 
     def _get_xroad_catalog(self, url, changed_after):
         try:
