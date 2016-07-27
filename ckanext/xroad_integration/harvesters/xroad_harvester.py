@@ -58,19 +58,26 @@ class XRoadHarvesterPlugin(HarvesterBase):
         #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
         #members = json.load(file)
 
+        # Member = organization
+        # Subsystem = package = API
+        # Service = resource = WSDL
+
         object_ids = []
         for member in members:
 
-            # Create organization id
-            org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
+            # if there is only 1 subsystem, wrap it with list
+            if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
+                member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
 
-            if member['subsystems'] and (type(member['subsystems']['subsystem']) is list):
+            if self._organization_has_wsdls(member):
+                # Create organization id
+                org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
+
 
                 org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
                 if org is None:
                     continue
                 for subsystem in member['subsystems']['subsystem']:
-
 
                     # Generate GUID
                     guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
@@ -85,24 +92,24 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     obj.save()
                     object_ids.append(obj.id)
 
-            elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
+                '''
+                elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
 
+                    org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
+                    if org is None:
+                        continue
+                    # Generate GUID
+                    guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
+                    # Create harvest object
+                    obj = HarvestObject(guid=guid, job=harvest_job,
+                                        content=json.dumps({
+                                        'owner': org,
+                                        'subsystem': member['subsystems']['subsystem']
+                                            }))
 
-                org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
-                if org is None:
-                    continue
-                # Generate GUID
-                guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
-                # Create harvest object
-                obj = HarvestObject(guid=guid, job=harvest_job,
-                                    content=json.dumps({
-                                    'owner': org,
-                                     'subsystem': member['subsystems']['subsystem']
-                                        }))
-
-                obj.save()
-                object_ids.append(obj.id)
-
+                    obj.save()
+                    object_ids.append(obj.id)
+                '''
         return object_ids
 
     def fetch_stage(self, harvest_object):
@@ -121,6 +128,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         services = dataset['subsystem'].get('services', None)
         try:
             if services:
+                # If there is only 1 service, wrap it with a list
                 if type(services['service']) is dict:
                     services['service'] = [services['service']]
                 for service in services['service']:
@@ -224,10 +232,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             service_code = service.get('serviceCode', None)
                             service_version = service.get('serviceVersion', None)
 
+                            # TODO: resource_create and resource_update should not create resources without wsdls
                             wsdl_exists = False
                             if service_code is not None and service_version is not None:
 
-                                for resource in package_dict.get('resources', []):
+                                for resource in package_dict.get('resources', {}):
                                     if resource['name'] == service_code + "." + service_version:
                                         wsdl_exists = True
                                         changed = service['wsdl'].get('changed', None)
@@ -290,7 +299,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _parse_xroad_data(self, res):
         #return res.json()['ListMembersResponse']['memberList']['members']
         if isinstance(res['memberList'], basestring):
-            return []
+            return {}
         return res['memberList']['member']
 
     def _get_wsdl(self, url, external_id):
@@ -390,6 +399,29 @@ class XRoadHarvesterPlugin(HarvesterBase):
             log.info(org)
 
         return org
+
+    def _organization_has_apis(self, member):
+
+        if member['subsystems'] and len(member['subsystems']['subsystem']) > 0:
+            return True
+        return False
+
+    def _api_has_wsdls(self, subsystem):
+
+        services = subsystem.get('services', {})
+        if type(services['service']) is dict:
+            services['service'] = [services['service']]
+        for service in services['service']:
+            if 'wsdl' in service:
+                return True
+        return False
+
+    def _organization_has_wsdls(self, member):
+        if self._organization_has_apis(member):
+           for subsystem in member['subsystem']['subsystem']:
+              if self._api_has_wsdls(subsystem) is True:
+                  return True
+        return False
 
 class ContentFetchError(Exception):
     pass
