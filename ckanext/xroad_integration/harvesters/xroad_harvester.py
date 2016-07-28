@@ -37,9 +37,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def gather_stage(self, harvest_job):
         log.debug('In xroad harvester gather_stage')
 
-        last_finished_job = self._last_finished_job(harvest_job)
-        if last_finished_job:
-            last_time = last_finished_job.gather_started.isoformat()
+        last_error_free_job = self._last_error_free_job(harvest_job)
+        if last_error_free_job:
+            last_time = last_error_free_job.gather_started.isoformat()
         else:
             last_time = "2011-01-01"
 
@@ -335,7 +335,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     # unsuccessful, so go onto the next job
                     break
             else:
-                log.info("Returning job", job)
+                log.info("Returning job %", job)
                 return job
 
     @classmethod
