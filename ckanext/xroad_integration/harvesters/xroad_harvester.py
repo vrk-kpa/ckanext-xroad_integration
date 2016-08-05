@@ -13,12 +13,28 @@ from requests.exceptions import ConnectionError
 import os
 import tempfile
 from sqlalchemy import exists
+import lxml.etree as etree
 from ckan import model
 
 from ckan import logic
 NotFound = logic.NotFound
 
 log = logging.getLogger(__name__)
+
+def is_valid_wsdl(text_content):
+    try:
+        wsdl_content = etree.parse(text_content)
+        xml_namespaces = {
+                'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
+                'xsd': 'http://www.w3.org/2001/XMLSchema'}
+
+        soap_faults = wsdl_content.xpath('//soap-env:Fault', namespaces=xml_namespaces)
+        if len(soap_faults) > 0:
+            return False
+    except etree.XMLSyntaxError as e:
+        return False
+
+    return True
 
 class XRoadHarvesterPlugin(HarvesterBase):
 
@@ -224,6 +240,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                     for service in services['service']:
                         if 'wsdl' in service and 'data' in service['wsdl']:
+                            valid_wsdl = is_valid_wsdl(service['wsdl']['data'])
 
                             f = tempfile.NamedTemporaryFile(delete=False)
                             f.write(service['wsdl']['data'].encode('utf-8'))
@@ -247,7 +264,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                                          "package_id":package_dict['id'],
                                                                          "url": "",
                                                                          "name": service_code + "." + service_version,
-                                                                         "id": resource['id']
+                                                                         "id": resource['id'],
+                                                                         "valid_content": "yes" if valid_wsdl else "no"
                                                                      },
                                                                      headers={"X-CKAN-API-Key": apikey },
                                                                      files={'upload': ('service.wsdl',file(f.name))},
@@ -259,7 +277,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                      data={
                                                          "package_id":package_dict['id'],
                                                          "url": "",
-                                                         "name": service_code + "." + service_version
+                                                         "name": service_code + "." + service_version,
+                                                         "valid_content": "yes" if valid_wsdl else "no"
                                                      },
                                                      headers={"X-CKAN-API-Key": apikey },
                                                      files={'upload': ('service.wsdl',file(f.name))},
