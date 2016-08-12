@@ -21,6 +21,17 @@ NotFound = logic.NotFound
 log = logging.getLogger(__name__)
 
 class XRoadHarvesterPlugin(HarvesterBase):
+    config = None
+
+    def _set_config(self, config_str):
+        if config_str:
+            self.config = json.loads(config_str)
+            if 'api_version' in self.config:
+                self.api_version = int(self.config['api_version'])
+
+            log.debug('Using config: %r', self.config)
+        else:
+            self.config = {}
 
     def info(self):
 
@@ -31,17 +42,32 @@ class XRoadHarvesterPlugin(HarvesterBase):
         }
 
     def validate_config(self, config):
+        if not config:
+            return config
+        try:
+            config_obj = json.loads(config)
+            for key in ('force_all'):
+                if key in config_obj:
+                    if not isinstance(config_obj[key], bool):
+                        raise ValueError('%s must be boolean' % key)
+        except ValueError, e:
+            raise e
 
-        return ""
+        return config
 
     def gather_stage(self, harvest_job):
         log.debug('In xroad harvester gather_stage')
 
-        last_error_free_job = self._last_error_free_job(harvest_job)
-        if last_error_free_job:
-            last_time = last_error_free_job.gather_started.isoformat()
-        else:
+        self._set_config(harvest_job.source.config)
+
+        if self.config.get('force_all', False) is True:
             last_time = "2011-01-01"
+        else:
+            last_error_free_job = self._last_error_free_job(harvest_job)
+            if last_error_free_job:
+                last_time = last_error_free_job.gather_started.isoformat()
+            else:
+                last_time = "2011-01-01"
 
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
@@ -64,6 +90,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         object_ids = []
         for member in members:
+            if isinstance(member, basestring):
+                continue
 
             # if there is only 1 subsystem, wrap it with list
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
