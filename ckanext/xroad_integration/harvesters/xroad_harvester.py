@@ -201,10 +201,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return True
 
         contains_wsdls = False
-        services = dataset['subsystem'].get('services', None)
-        for service in services['service']:
-            if 'wsdl' in service and 'data' in service['wsdl']:
-                contains_wsdls = True
+        services = dataset['subsystem'].get('services', {})
+        if not isinstance(services, basestring):
+            for service in services['service']:
+                if 'wsdl' in service and 'data' in service['wsdl']:
+                    contains_wsdls = True
 
         if contains_wsdls:
             if dataset['owner'] is not None:
@@ -409,11 +410,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _api_has_wsdls(self, subsystem):
 
         services = subsystem.get('services', {})
-        if type(services['service']) is dict:
-            services['service'] = [services['service']]
-        for service in services['service']:
-            if 'wsdl' in service:
-                return True
+        if not isinstance(services, basestring):
+            if type(services['service']) is dict:
+                services['service'] = [services['service']]
+            for service in services['service']:
+                if 'wsdl' in service:
+                    return True
         return False
 
     def _organization_has_wsdls(self, member):
