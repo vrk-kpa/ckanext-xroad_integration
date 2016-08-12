@@ -60,7 +60,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         self._set_config(harvest_job.source.config)
 
-        if self.config.get('force_all', False) is True:
+        if self.config.get('force_all', False)  == "true":
             last_time = "2011-01-01"
         else:
             last_error_free_job = self._last_error_free_job(harvest_job)
@@ -305,7 +305,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return result
 
         log.info("API %s did not have WSDLs, not creating..", dataset['subsystem']['subsystemCode'])
-        return True
+        return "unchanged"
 
     def _get_xroad_catalog(self, url, changed_after):
         try:
@@ -364,7 +364,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     # unsuccessful, so go onto the next job
                     break
             else:
-                log.info("Returning job %", job)
+                log.info("Returning job %s", job)
                 return job
 
     @classmethod
@@ -448,7 +448,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _organization_has_wsdls(self, member):
         if self._organization_has_apis(member):
-           for subsystem in member['subsystem']['subsystem']:
+           for subsystem in member['subsystems']['subsystem']:
               if self._api_has_wsdls(subsystem) is True:
                   return True
         return False
