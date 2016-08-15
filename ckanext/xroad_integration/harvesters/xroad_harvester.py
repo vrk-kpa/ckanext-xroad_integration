@@ -261,12 +261,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             service_code = service.get('serviceCode', None)
                             service_version = service.get('serviceVersion', None)
 
+                            if service_version is None:
+                                name = service_code
+                            else:
+                                name = service_code + "." + service_version
+
                             # TODO: resource_create and resource_update should not create resources without wsdls
                             wsdl_exists = False
-                            if service_code is not None and service_version is not None:
+                            if service_code is not None:
 
                                 for resource in package_dict.get('resources', {}):
-                                    if resource['name'] == service_code + "." + service_version:
+                                    if resource['name'] == name:
                                         wsdl_exists = True
                                         changed = service['wsdl'].get('changed', None)
                                         if changed and changed > resource['created']:
@@ -275,7 +280,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                                      data={
                                                                          "package_id":package_dict['id'],
                                                                          "url": "",
-                                                                         "name": service_code + "." + service_version,
+                                                                         "name": name,
                                                                          "id": resource['id']
                                                                      },
                                                                      headers={"X-CKAN-API-Key": apikey },
@@ -288,7 +293,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                      data={
                                                          "package_id":package_dict['id'],
                                                          "url": "",
-                                                         "name": service_code + "." + service_version
+                                                         "name": name
                                                      },
                                                      headers={"X-CKAN-API-Key": apikey },
                                                      files={'upload': ('service.wsdl',file(f.name))},
