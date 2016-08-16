@@ -276,7 +276,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                         changed = service['wsdl'].get('changed', None)
                                         if changed and changed > resource['created']:
                                             log.info('WSDL changed after last harvest, replacing...')
-                                            requests.post('https://0.0.0.0/api/action/resource_update',
+                                            requests.post('https://0.0.0.0/api/action/resource_patch',
                                                                      data={
                                                                          "package_id":package_dict['id'],
                                                                          "url": "",
@@ -410,14 +410,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 p.toolkit.get_action('organization_delete')(context, org)
                 return None
 
-            last_error_free_job = self._last_error_free_job(harvest_job)
-            if last_error_free_job and last_error_free_job < data_dict['changed']:
-                log.info("updating organization")
-                org['title'] = data_dict['name']
-                org['name'] = munge_title_to_name(data_dict['name'])
-                org['id'] = data_dict['id']
-                org = p.toolkit.get_action('organization_update')(context, org)
-                
+            if self.config.get('force_all', False)  == "true":
+                last_time = "2011-01-01"
+            else:
+                last_time = self._last_error_free_job(harvest_job)
+            if last_time and last_time < data_dict['changed']:
+                org = p.toolkit.get_action('organization_patch')(context, {'title': data_dict['name'], 'name':
+                                                                  munge_title_to_name(data_dict['name']),
+                                                                            'id': data_dict['id']})
+
         except NotFound:
             if data_dict['removed']:
                 log.info("Organization was removed, not creating..")
