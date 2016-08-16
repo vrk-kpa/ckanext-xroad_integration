@@ -410,13 +410,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 p.toolkit.get_action('organization_delete')(context, org)
                 return None
 
-            last_finished_job = self._last_finished_job(harvest_job)
-            log.info(last_finished_job)
-            if last_finished_job and last_finished_job < data_dict['changed']:
+            last_error_free_job = self._last_error_free_job(harvest_job)
+            if last_error_free_job and last_error_free_job < data_dict['changed']:
                 log.info("updating organization")
-                org = p.toolkit.get_action('organization_update')(context, {'title': data_dict['name'],
-                                                                      'name': munge_title_to_name(data_dict['name']),
-                                                                      'id': data_dict['id']})
+                org['title'] = data_dict['name']
+                org['name'] = munge_title_to_name(data_dict['name'])
+                org['id'] = data_dict['id']
+                org = p.toolkit.get_action('organization_update')(context, org)
+                
         except NotFound:
             if data_dict['removed']:
                 log.info("Organization was removed, not creating..")
