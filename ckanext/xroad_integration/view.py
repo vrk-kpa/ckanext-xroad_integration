@@ -2,7 +2,6 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.uploader as uploader
 import logging
-from pprint import pformat
 import lxml.etree as etree
 import urllib2
 import os
@@ -82,7 +81,6 @@ class WSDL_ViewPlugin(plugins.SingletonPlugin):
     # IResourceView
 
     def info(self):
-        log.warn('WSDL_ViewPlugin::info')
         return {'name': 'wsdl_view',
                 'title': toolkit._('WSDL'),
                 'icon': 'file-text-alt',
@@ -90,13 +88,11 @@ class WSDL_ViewPlugin(plugins.SingletonPlugin):
                 }
 
     def can_view(self, data_dict):
-        log.warn('WSDL_ViewPlugin::can_view %s' % pformat(data_dict))
         resource = data_dict['resource']
         format_lower = resource.get('format', '').lower()
         return format_lower in ['wsdl', 'wsdl+xml']
 
     def view_template(self, context, data_dict):
-        log.warn('WSDL_ViewPlugin::can_view %s' % pformat(data_dict))
         return 'wsdl_view.html'
 
     # ITemplateHelpers
