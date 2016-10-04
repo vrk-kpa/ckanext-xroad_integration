@@ -23,7 +23,8 @@ log = logging.getLogger(__name__)
 
 def is_valid_wsdl(text_content):
     try:
-        wsdl_content = etree.parse(text_content)
+        text_bytes = text_content.encode('utf-8') if type(text_content) is unicode else text_content
+        wsdl_content = etree.parse(text_bytes)
         xml_namespaces = {
                 'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
                 'xsd': 'http://www.w3.org/2001/XMLSchema'}
@@ -177,7 +178,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     services['service'] = [services['service']]
                 for service in services['service']:
                     if 'wsdl' in service:
-                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId'])['wsdl']
+                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
