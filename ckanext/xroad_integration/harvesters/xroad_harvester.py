@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 def is_valid_wsdl(text_content):
     try:
         text_bytes = text_content.encode('utf-8') if type(text_content) is unicode else text_content
-        wsdl_content = etree.parse(text_bytes)
+        wsdl_content = etree.fromstring(text_bytes)
         xml_namespaces = {
                 'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
                 'xsd': 'http://www.w3.org/2001/XMLSchema'}
