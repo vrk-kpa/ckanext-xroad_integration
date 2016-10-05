@@ -258,7 +258,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             package_dict['owner_org'] = local_org
             # Munge name
 
-            package_dict['title'] = dataset['subsystem']['subsystemCode']
+            if not package_dict.get('title'):
+                package_dict['title'] = dataset['subsystem']['subsystemCode']
             package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
             package_dict['shared_resource'] = "no"
             package_dict['private'] = True
