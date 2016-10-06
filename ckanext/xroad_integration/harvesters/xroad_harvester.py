@@ -81,6 +81,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             self._save_gather_error('Failed to parse response: %r' % e, harvest_job)
             return False
 
+        # Member = organization
+        # Subsystem = package = API
+        # Service = resource = WSDL
+
         object_ids = []
         for member in members:
             if isinstance(member, basestring):
