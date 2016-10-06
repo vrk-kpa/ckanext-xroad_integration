@@ -21,22 +21,6 @@ NotFound = logic.NotFound
 
 log = logging.getLogger(__name__)
 
-def is_valid_wsdl(text_content):
-    try:
-        text_bytes = text_content.encode('utf-8') if type(text_content) is unicode else text_content
-        wsdl_content = etree.fromstring(text_bytes)
-        xml_namespaces = {
-                'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
-                'xsd': 'http://www.w3.org/2001/XMLSchema'}
-
-        soap_faults = wsdl_content.xpath('//soap-env:Fault', namespaces=xml_namespaces)
-        if len(soap_faults) > 0:
-            return False
-    except etree.XMLSyntaxError as e:
-        return False
-
-    return True
-
 class XRoadHarvesterPlugin(HarvesterBase):
     config = None
 
@@ -61,14 +45,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def validate_config(self, config):
         if not config:
             return config
-        try:
-            config_obj = json.loads(config)
-            for key in ('force_all',):
-                if key in config_obj:
-                    if not isinstance(config_obj[key], bool):
-                        raise ValueError('%s must be boolean' % key)
-        except ValueError, e:
-            raise e
+
+        config_obj = json.loads(config)
+        for key in ('force_all',):
+            if key in config_obj:
+                if not isinstance(config_obj[key], bool):
+                    raise ValueError('%s must be boolean' % key)
 
         return config
 
@@ -98,13 +80,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         except KeyError, e:
             self._save_gather_error('Failed to parse response: %r' % e, harvest_job)
             return False
-        #members = self.get_xroad_catalog("http://localhost:9090/rest-gateway-0.0.8-SNAPSHOT/Consumer/catalog", "2011-01-01")
-        #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
-        #members = json.load(file)
-
-        # Member = organization
-        # Subsystem = package = API
-        # Service = resource = WSDL
 
         object_ids = []
         for member in members:
@@ -115,18 +90,26 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
                 member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
 
+            # Create organization id
+            org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
+                for p in ('xRoadInstance', 'memberClass', 'memberCode')))
+
+            org = self._create_or_update_organization({
+                'id': org_id,
+                'name': member['name'],
+                'created': member['created'],
+                'changed': member['changed'],
+                'removed': member.get('removed', None)
+                }, harvest_job)
+
+            if org is None:
+                continue
+
             if self._organization_has_wsdls(member):
-                # Create organization id
-                org_id = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')))
-
-
-                org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
-                if org is None:
-                    continue
                 for subsystem in member['subsystems']['subsystem']:
 
                     # Generate GUID
-                    guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(subsystem.get('subsystemCode', '')))
+                    guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
 
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
@@ -138,24 +121,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     obj.save()
                     object_ids.append(obj.id)
 
-                '''
-                elif member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
-
-                    org = self._create_or_update_organization({'id': org_id, 'name': member['name'], 'created': member['created'], 'changed': member['changed'], 'removed': member.get('removed', None)}, harvest_job)
-                    if org is None:
-                        continue
-                    # Generate GUID
-                    guid = substitute_ascii_equivalents(unicode(member.get('xRoadInstance', '')) + '.' + unicode(member.get('memberClass', '')) + '.' + unicode(member.get('memberCode', '')) + '.' + unicode(member['subsystems']['subsystem'].get('subsystemCode', '')))
-                    # Create harvest object
-                    obj = HarvestObject(guid=guid, job=harvest_job,
-                                        content=json.dumps({
-                                        'owner': org,
-                                        'subsystem': member['subsystems']['subsystem']
-                                            }))
-
-                    obj.save()
-                    object_ids.append(obj.id)
-                '''
         return object_ids
 
     def fetch_stage(self, harvest_object):
@@ -168,8 +133,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             self._save_object_error('Could not parse content for object {0}'.format(harvest_object.id),
                                     harvest_object, 'Import')
             return False
-
-
 
         services = dataset['subsystem'].get('services', None)
         try:
@@ -207,7 +170,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
-
         removed = dataset['subsystem'].get('removed', None)
 
         try:
@@ -217,7 +179,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 log.info("Subsystem has been removed, not creating..")
                 return "unchanged"
 
-            # Set id
             package_dict = {'id': harvest_object.guid }
 
         # Get rid of auth audit on the context otherwise we'll get an
@@ -227,8 +188,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Local harvest source organization
         source_dataset = p.toolkit.get_action('package_show')(context, {'id': harvest_object.source.id})
         local_org = source_dataset.get('owner_org')
-
-
 
         # Create org
         log.info("Organization: " + dataset['owner']['name'] )
@@ -249,9 +208,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         contains_wsdls = False
         services = dataset['subsystem'].get('services', {})
         if not isinstance(services, basestring):
-            for service in services['service']:
-                if 'wsdl' in service and 'data' in service['wsdl']:
-                    contains_wsdls = True
+            contains_wsdls = any('data' in s.get('wsdl', {}) for s in services['service'])
 
         if contains_wsdls:
             if dataset['owner'] is not None:
@@ -265,69 +222,63 @@ class XRoadHarvesterPlugin(HarvesterBase):
             package_dict['shared_resource'] = "no"
             package_dict['private'] = True
 
-
             result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
             apikey = self._get_api_key()
-            if result is True or result is "unchanged":
 
-                    for service in services['service']:
-                        if 'wsdl' in service and 'data' in service['wsdl']:
-                            valid_wsdl = is_valid_wsdl(service['wsdl']['data'])
+            if result not in(True, "unchanged"):
+                return result
 
-                            f = tempfile.NamedTemporaryFile(delete=False)
-                            f.write(service['wsdl']['data'].encode('utf-8'))
-                            f.close()
+            for service in services['service']:
+                if not ('wsdl' in service and 'data' in service['wsdl']):
+                    return False
 
-                            service_code = service.get('serviceCode', None)
-                            service_version = service.get('serviceVersion', None)
+                valid_wsdl = self._is_valid_wsdl(service['wsdl']['data'])
 
-                            if service_version is None:
-                                name = service_code
-                            else:
-                                name = service_code + "." + service_version
+                service_code = service.get('serviceCode', None)
+                if service_code is None:
+                    continue
 
-                            # TODO: resource_create and resource_update should not create resources without wsdls
-                            wsdl_exists = False
-                            if service_code is not None:
+                service_version = service.get('serviceVersion', None)
 
-                                for resource in package_dict.get('resources', {}):
-                                    if resource['name'] == name:
-                                        wsdl_exists = True
-                                        changed = service['wsdl'].get('changed', None)
-                                        if changed and changed > resource['created']:
-                                            log.info('WSDL changed after last harvest, replacing...')
-                                            requests.post('https://0.0.0.0/api/action/resource_patch',
-                                                                     data={
-                                                                         "package_id":package_dict['id'],
-                                                                         "url": "",
-                                                                         "name": name,
-                                                                         "id": resource['id'],
-                                                                         "valid_content": "yes" if valid_wsdl else "no"
-                                                                     },
-                                                                     headers={"X-CKAN-API-Key": apikey },
-                                                                     files={'upload': ('service.wsdl',file(f.name))},
-                                                                     verify=False)
-                                            result = True
+                if service_version is None:
+                    name = service_code
+                else:
+                    name = '%s.%s' % (service_code, service_version)
 
-                                if wsdl_exists is False:
-                                    requests.post('https://0.0.0.0/api/action/resource_create',
-                                                     data={
-                                                         "package_id":package_dict['id'],
-                                                         "url": "",
-                                                         "name": name,
-                                                         "valid_content": "yes" if valid_wsdl else "no"
-                                                     },
-                                                     headers={"X-CKAN-API-Key": apikey },
-                                                     files={'upload': ('service.wsdl',file(f.name))},
-                                                     verify=False)
-                                    result = True
+                f = tempfile.NamedTemporaryFile(delete=False)
+                f.write(service['wsdl']['data'].encode('utf-8'))
+                f.close()
 
-                            os.unlink(f.name)
-                        else:
-                            return False
+                # TODO: resource_create and resource_update should not create resources without wsdls
+                named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+
+                for resource in named_resources:
+                    changed = service['wsdl'].get('changed', None)
+                    if changed and changed > resource['created']:
+                        log.info('WSDL changed after last harvest, replacing...')
+                        resource_data = {
+                                "package_id":package_dict['id'],
+                                "url": "",
+                                "name": name,
+                                "id": resource['id'],
+                                "valid_content": "yes" if valid_wsdl else "no"
+                                }
+                        self._patch_resource(resource_data, apikey, f.name)
+                        result = True
+
+                if not named_resources:
+                    resource_data = {
+                            "package_id":package_dict['id'],
+                            "url": "",
+                            "name": name,
+                            "valid_content": "yes" if valid_wsdl else "no"
+                            }
+                    self._create_resource(resource_data, apikey, f.name)
+                    result = True
+
+                os.unlink(f.name)
 
             log.info('Created API %s', package_dict['name'])
-
 
             return result
 
@@ -347,13 +298,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             raise ContentFetchError("ListMembers JSON parse failed")
         return result
 
-
-        #file = open(os.path.join(os.path.dirname(__file__), '../tests/response.json'))
-        #return json.load(file)
-
-
     def _parse_xroad_data(self, res):
-        #return res.json()['ListMembersResponse']['memberList']['members']
         if isinstance(res['memberList'], basestring):
             return {}
         return res['memberList']['member']
@@ -425,6 +370,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         try:
             org = p.toolkit.get_action('organization_show')(context, {'id': data_dict['id']})
+        except NotFound:
+            org = None
+
+        if org:
             log.info("found %s", org)
 
             if data_dict['removed']:
@@ -437,35 +386,37 @@ class XRoadHarvesterPlugin(HarvesterBase):
             else:
                 last_time = self._last_error_free_job(harvest_job)
             if last_time and last_time < data_dict['changed']:
-                org = p.toolkit.get_action('organization_patch')(context, {'title': data_dict['name'], 'name':
-                                                                  munge_title_to_name(data_dict['name']),
-                                                                            'id': data_dict['id']})
+                org_data = {
+                        'title': data_dict['name'],
+                        'name': munge_title_to_name(data_dict['name']),
+                        'id': data_dict['id']}
+                org = p.toolkit.get_action('organization_patch')(context, org_data)
 
-        except NotFound:
             if data_dict['removed']:
                 log.info("Organization was removed, not creating..")
                 return None
+        else:
             log.info("Organization %s not found, creating...", data_dict['name'])
 
             # Get rid of auth audit on the context otherwise we'll get an
             # exception
             context.pop('__auth_audit', None)
 
-            org = p.toolkit.get_action('organization_create')(context, {'title': data_dict['name'],
-                                                                        'name': munge_title_to_name(data_dict['name']),
-                                                                        'id': data_dict['id']})
+            org_data = {
+                    'title': data_dict['name'],
+                    'name': munge_title_to_name(data_dict['name']),
+                    'id': data_dict['id']}
+            org = p.toolkit.get_action('organization_create')(context, org_data)
             log.info(org)
 
         return org
 
     def _organization_has_apis(self, member):
-
         if member['subsystems'] and len(member['subsystems']['subsystem']) > 0:
             return True
         return False
 
     def _api_has_wsdls(self, subsystem):
-
         services = subsystem.get('services', {})
         if not isinstance(services, basestring):
             if type(services['service']) is dict:
@@ -481,6 +432,36 @@ class XRoadHarvesterPlugin(HarvesterBase):
               if self._api_has_wsdls(subsystem) is True:
                   return True
         return False
+
+    def _patch_resource(self, data, apikey, filename):
+        requests.post('https://0.0.0.0/api/action/resource_patch',
+                data=data,
+                headers={"X-CKAN-API-Key": apikey },
+                files={'upload': ('service.wsdl',file(filename))},
+                verify=False)
+
+    def _create_resource(self, data, apikey, filename):
+        requests.post('https://0.0.0.0/api/action/resource_create',
+                data=data,
+                headers={"X-CKAN-API-Key": apikey },
+                files={'upload': ('service.wsdl',file(filename))},
+                verify=False)
+
+    def _is_valid_wsdl(self, text_content):
+        try:
+            text_bytes = text_content.encode('utf-8') if type(text_content) is unicode else text_content
+            wsdl_content = etree.fromstring(text_bytes)
+            xml_namespaces = {
+                    'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
+                    'xsd': 'http://www.w3.org/2001/XMLSchema'}
+
+            soap_faults = wsdl_content.xpath('//soap-env:Fault', namespaces=xml_namespaces)
+            if len(soap_faults) > 0:
+                return False
+        except etree.XMLSyntaxError as e:
+            return False
+
+        return True
 
 class ContentFetchError(Exception):
     pass
