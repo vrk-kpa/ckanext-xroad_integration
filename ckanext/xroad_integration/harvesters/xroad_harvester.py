@@ -63,7 +63,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return config
         try:
             config_obj = json.loads(config)
-            for key in ('force_all'):
+            for key in ('force_all',):
                 if key in config_obj:
                     if not isinstance(config_obj[key], bool):
                         raise ValueError('%s must be boolean' % key)
@@ -77,7 +77,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         self._set_config(harvest_job.source.config)
 
-        if self.config.get('force_all', False)  == "true":
+        if self.config.get('force_all', False) is True:
+
             last_time = "2011-01-01"
         else:
             last_error_free_job = self._last_error_free_job(harvest_job)
@@ -431,7 +432,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 p.toolkit.get_action('organization_delete')(context, org)
                 return None
 
-            if self.config.get('force_all', False)  == "true":
+            if self.config.get('force_all', False) is True:
                 last_time = "2011-01-01"
             else:
                 last_time = self._last_error_free_job(harvest_job)
