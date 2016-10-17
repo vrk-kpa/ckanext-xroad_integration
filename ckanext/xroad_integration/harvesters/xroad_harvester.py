@@ -218,8 +218,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if dataset['owner'] is not None:
                 local_org = dataset['owner']['name']
             package_dict['owner_org'] = local_org
-            # Munge name
 
+            # Munge name
             if not package_dict.get('title'):
                 package_dict['title'] = dataset['subsystem']['subsystemCode']
             package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
@@ -233,10 +233,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 return result
 
             for service in services['service']:
-                if not ('wsdl' in service and 'data' in service['wsdl']):
-                    return False
+                wsdl_data = service.get('wsdl', {}).get('data')
+                if not wsdl_data:
+                    continue
 
-                valid_wsdl = self._is_valid_wsdl(service['wsdl']['data'])
+                wsdl_data_utf8 = wsdl_data.encode('utf-8')
+                valid_wsdl = self._is_valid_wsdl(wsdl_data_utf8)
 
                 service_code = service.get('serviceCode', None)
                 if service_code is None:
@@ -250,7 +252,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     name = '%s.%s' % (service_code, service_version)
 
                 f = tempfile.NamedTemporaryFile(delete=False)
-                f.write(service['wsdl']['data'].encode('utf-8'))
+                f.write(wsdl_data_utf8)
                 f.close()
 
                 # TODO: resource_create and resource_update should not create resources without wsdls
