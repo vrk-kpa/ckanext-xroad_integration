@@ -2,6 +2,7 @@ from ckan.plugins.core import SingletonPlugin, implements
 from ckanext.harvest.interfaces import IHarvester
 from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
+from sqlalchemy import text
 import ckan.plugins as p
 from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 
@@ -60,14 +61,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
         self._set_config(harvest_job.source.config)
 
         if self.config.get('force_all', False) is True:
-
             last_time = "2011-01-01"
         else:
-            last_error_free_job = self._last_error_free_job(harvest_job)
-            if last_error_free_job:
-                last_time = last_error_free_job.gather_started.isoformat()
-            else:
-                last_time = "2011-01-01"
+            last_time = self._last_error_free_job_time(harvest_job) or "2011-01-01"
 
         log.info('Searching for apis modified since: %s UTC',
                  last_time)
@@ -324,7 +320,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # look for jobs with no gather errors
         jobs = \
             model.Session.query(HarvestJob) \
-                .filter(HarvestJob.source == harvest_job.source) \
+                .filter(HarvestJob.source_id == harvest_job.source_id) \
                 .filter(HarvestJob.gather_started != None) \
                 .filter(HarvestJob.status == 'Finished') \
                 .filter(HarvestJob.id != harvest_job.id) \
@@ -344,6 +340,34 @@ class XRoadHarvesterPlugin(HarvesterBase):
             else:
                 log.info("Returning job %s", job)
                 return job
+
+    @classmethod
+    def _last_error_free_job_time(cls, harvest_job):
+        query =  model.Session.query(HarvestJob.gather_started).from_statement(text('''
+            select gather_started
+            from harvest_job hj
+            join (
+              select hj.id,
+                rank() over (partition by hj.source_id order by hj.gather_started desc, hj.id)
+              from harvest_job hj
+              left join harvest_gather_error hge on hj.id = hge.harvest_job_id
+              left join (
+                select distinct harvest_job_id as id
+                from harvest_object
+                where current = false
+                  and report_status <> 'not modified'
+              ) ushj on ushj.id = hj.id
+              where hj.gather_started is not null
+                and hj.source_id = :source
+                and hj.id <> :notid
+                and hj.status = 'Finished'
+                and hge.id is null
+                and ushj.id is null
+            ) ranked on ranked.id = hj.id
+            where ranked.rank = 1;
+            '''))
+        result = query.params(source=harvest_job.source_id, notid=harvest_job.id).first()
+        return result.gather_started.isoformat() if result else None
 
     @classmethod
     def _last_finished_job(self, harvest_job):
@@ -390,7 +414,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if self.config.get('force_all', False) is True:
                 last_time = "2011-01-01"
             else:
-                last_time = self._last_error_free_job(harvest_job)
+                last_time = self._last_error_free_job_time(harvest_job)
             if last_time and last_time < data_dict['changed']:
                 org_data = {
                         'title': data_dict['name'],
