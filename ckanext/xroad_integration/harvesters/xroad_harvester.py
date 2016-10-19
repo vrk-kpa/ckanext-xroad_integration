@@ -220,7 +220,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 package_dict['title'] = dataset['subsystem']['subsystemCode']
             package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
             package_dict['shared_resource'] = "no"
-            package_dict['private'] = True
+            package_dict['private'] = False
 
             result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
             apikey = self._get_api_key()
