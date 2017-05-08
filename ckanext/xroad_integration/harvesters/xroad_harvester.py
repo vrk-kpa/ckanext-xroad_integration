@@ -422,11 +422,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         'id': data_dict['id']}
                 org = p.toolkit.get_action('organization_patch')(context, org_data)
 
+        else:
+            log.info("Organization %s not found, creating...", data_dict['name'])
+
             if data_dict['removed']:
                 log.info("Organization was removed, not creating..")
                 return None
-        else:
-            log.info("Organization %s not found, creating...", data_dict['name'])
 
             # Get rid of auth audit on the context otherwise we'll get an
             # exception
