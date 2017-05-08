@@ -217,7 +217,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             # Munge name
             if not package_dict.get('title'):
-                package_dict['title'] = dataset['subsystem']['subsystemCode']
+                package_dict['title_translated'] = {"fi": dataset['subsystem']['subsystemCode'], "en": dataset['subsystem']['subsystemCode'], "sv": dataset['subsystem']['subsystemCode'] }
             package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
             package_dict['shared_resource'] = "no"
             package_dict['private'] = False
