@@ -114,6 +114,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
                                         content=json.dumps({
+                                            'xRoadInstance': member.get('xRoadInstance', ''),
+                                            'xRoadMemberClass': member.get('memberClass', ''),
+                                            'xRoadMemberCode': member.get('memberCode', ''),
                                             'owner': org,
                                             'subsystem': subsystem
                                         }))
@@ -217,10 +220,19 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             # Munge name
             if not package_dict.get('title'):
-                package_dict['title_translated'] = {"fi": dataset['subsystem']['subsystemCode'], "en": dataset['subsystem']['subsystemCode'], "sv": dataset['subsystem']['subsystemCode'] }
+                package_dict['title_translated'] = {
+                        "fi": dataset['subsystem']['subsystemCode'],
+                        "en": dataset['subsystem']['subsystemCode'],
+                        "sv": dataset['subsystem']['subsystemCode']}
+
             package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
             package_dict['shared_resource'] = "no"
             package_dict['private'] = False
+
+            package_dict['xroad_instance'] = dataset['xRoadInstance']
+            package_dict['xroad_memberclass'] = dataset['xRoadMemberClass']
+            package_dict['xroad_membercode'] = dataset['xRoadMemberCode']
+            package_dict['xroad_subsystemcode'] = dataset['subsystem']['subsystemCode']
 
             result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
             apikey = self._get_api_key()
@@ -263,7 +275,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "url": "",
                                 "name": name,
                                 "id": resource['id'],
-                                "valid_content": "yes" if valid_wsdl else "no"
+                                "valid_content": "yes" if valid_wsdl else "no",
+                                "xroad_servicecode": service_code,
+                                "xroad_serviceversion": service_version
                                 }
                         self._patch_resource(resource_data, apikey, f.name)
                         result = True
@@ -273,7 +287,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             "package_id":package_dict['id'],
                             "url": "",
                             "name": name,
-                            "valid_content": "yes" if valid_wsdl else "no"
+                            "valid_content": "yes" if valid_wsdl else "no",
+                            "xroad_servicecode": service_code,
+                            "xroad_serviceversion": service_version
                             }
                     self._create_resource(resource_data, apikey, f.name)
                     result = True
