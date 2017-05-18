@@ -5,7 +5,7 @@ from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
 from sqlalchemy import text
 import ckan.plugins as p
 from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
-
+from datetime import datetime
 
 import logging
 import json
@@ -267,8 +267,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
                 for resource in named_resources:
-                    changed = service['wsdl'].get('changed', None)
-                    if changed and changed > resource['created']:
+                    wsdl = service['wsdl']
+
+                    try:
+                        changed_string = wsdl.get('changed', wsdl.get('created'))
+                        changed = (
+                                datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                                if changed_string else None)
+                    except e:
+                        log.error('Error parsing WSDL timestamp: %s' % e)
+                        continue
+
+                    previous = resource.get('wsdl_timestamp', None)
+
+                    if not previous or (changed and changed > previous):
                         log.info('WSDL changed after last harvest, replacing...')
                         resource_data = {
                                 "package_id":package_dict['id'],
@@ -277,7 +289,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "id": resource['id'],
                                 "valid_content": "yes" if valid_wsdl else "no",
                                 "xroad_servicecode": service_code,
-                                "xroad_serviceversion": service_version
+                                "xroad_serviceversion": service_version,
+                                "wsdl_timestamp": changed
                                 }
                         self._patch_resource(resource_data, apikey, f.name)
                         result = True
