@@ -278,7 +278,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         log.error('Error parsing WSDL timestamp: %s' % e)
                         continue
 
-                    previous = resource.get('wsdl_timestamp', None)
+                    try:
+                        previous_string = resource.get('wsdl_timestamp', None)
+                        previous = (
+                                datetime.strptime(previous_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                                if previous_string else None)
+                    except e:
+                        log.error('Error parsing previous timestamp: %s' % e)
+                        continue
 
                     if not previous or (changed and changed > previous):
                         log.info('WSDL changed after last harvest, replacing...')
