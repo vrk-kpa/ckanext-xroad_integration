@@ -252,7 +252,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     changed = (
                             datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
                             if changed_string else None)
-                except e:
+                except ValueError as e:
                     log.error('Error parsing WSDL timestamp: %s' % e)
                     continue
 
@@ -261,7 +261,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     wsdl_removed = (
                             datetime.strptime(wsdl_removed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
                             if wsdl_removed_string else None)
-                except e:
+                except ValueError as e:
                     log.error('Error parsing WSDL remove timestamp: %s' % e)
                     wsdl_removed = None
 
@@ -299,7 +299,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         previous = (
                                 datetime.strptime(previous_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
                                 if previous_string else None)
-                    except e:
+                    except ValueError as e:
                         log.error('Error parsing previous timestamp: %s' % e)
                         continue
 
