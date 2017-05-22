@@ -203,7 +203,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         }
 
         if removed is not None:
-            log.info("Removing service %s", package_dict['name'])
+            log.info("Removing API %s", package_dict['name'])
             p.toolkit.get_action('package_delete')(context, {'id': package_dict['id']})
             harvest_object.current = False
             return True
@@ -241,7 +241,29 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 return result
 
             for service in services['service']:
-                wsdl_data = service.get('wsdl', {}).get('data')
+                wsdl = service['wsdl']
+                if not wsdl:
+                    continue
+
+                try:
+                    changed_string = wsdl.get('changed', wsdl.get('created'))
+                    changed = (
+                            datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                            if changed_string else None)
+                except e:
+                    log.error('Error parsing WSDL timestamp: %s' % e)
+                    continue
+
+                try:
+                    wsdl_removed_string = wsdl.get('removed')
+                    wsdl_removed = (
+                            datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                            if wsdl_removed_string else None)
+                except e:
+                    log.error('Error parsing WSDL remove timestamp: %s' % e)
+                    wsdl_removed = None
+
+                wsdl_data = wsdl.get('data')
                 if not wsdl_data:
                     continue
 
@@ -267,17 +289,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
                 for resource in named_resources:
-                    wsdl = service['wsdl']
-
-                    try:
-                        changed_string = wsdl.get('changed', wsdl.get('created'))
-                        changed = (
-                                datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
-                                if changed_string else None)
-                    except e:
-                        log.error('Error parsing WSDL timestamp: %s' % e)
+                    if wsdl_removed:
+                        self._delete_resource({"id": resource['id']}, apikey)
                         continue
-
                     try:
                         previous_string = resource.get('wsdl_timestamp', None)
                         previous = (
@@ -302,7 +316,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         self._patch_resource(resource_data, apikey, f.name)
                         result = True
 
-                if not named_resources:
+                if not named_resources and not wsdl_removed:
                     resource_data = {
                             "package_id":package_dict['id'],
                             "url": "",
@@ -512,6 +526,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 files={'upload': ('service.wsdl',file(filename))},
+                verify=False)
+
+    def _delete_resource(self, data, apikey, filename):
+        requests.post('https://0.0.0.0/api/action/resource_delete',
+                data=data,
+                headers={"X-CKAN-API-Key": apikey },
                 verify=False)
 
     def _is_valid_wsdl(self, text_content):
