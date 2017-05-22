@@ -257,7 +257,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 try:
                     wsdl_removed_string = wsdl.get('removed')
                     wsdl_removed = (
-                            datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                            datetime.strptime(wsdl_removed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
                             if wsdl_removed_string else None)
                 except e:
                     log.error('Error parsing WSDL remove timestamp: %s' % e)
