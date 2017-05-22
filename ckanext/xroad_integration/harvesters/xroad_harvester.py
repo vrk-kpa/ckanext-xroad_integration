@@ -22,6 +22,8 @@ NotFound = logic.NotFound
 
 log = logging.getLogger(__name__)
 
+LOCAL_API_URL = 'http://127.0.0.1:8080/api'
+
 class XRoadHarvesterPlugin(HarvesterBase):
     config = None
 
@@ -515,21 +517,21 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return False
 
     def _patch_resource(self, data, apikey, filename):
-        requests.post('https://0.0.0.0/api/action/resource_patch',
+        requests.post('%s/api/action/resource_patch' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 files={'upload': ('service.wsdl',file(filename))},
                 verify=False)
 
     def _create_resource(self, data, apikey, filename):
-        requests.post('https://0.0.0.0/api/action/resource_create',
+        requests.post('%s/api/action/resource_create' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 files={'upload': ('service.wsdl',file(filename))},
                 verify=False)
 
     def _delete_resource(self, data, apikey, filename):
-        requests.post('https://0.0.0.0/api/action/resource_delete',
+        requests.post('%s/api/action/resource_delete' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 verify=False)
