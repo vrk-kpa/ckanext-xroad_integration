@@ -250,16 +250,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 try:
                     changed_string = wsdl.get('changed', wsdl.get('created'))
                     changed = (
-                            datetime.strptime(changed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                            datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
                             if changed_string else None)
                 except ValueError as e:
                     log.error('Error parsing WSDL timestamp: %s' % e)
                     continue
 
                 try:
-                    wsdl_removed_string = wsdl.get('removed')
+                    wsdl_removed_string = service.get('removed')
                     wsdl_removed = (
-                            datetime.strptime(wsdl_removed_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                            datetime.strptime(wsdl_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
                             if wsdl_removed_string else None)
                 except ValueError as e:
                     log.error('Error parsing WSDL remove timestamp: %s' % e)
@@ -292,12 +292,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 for resource in named_resources:
                     if wsdl_removed:
+                        log.info("Service deleted: %s" % resource['name'])
                         self._delete_resource({"id": resource['id']}, apikey)
                         continue
                     try:
                         previous_string = resource.get('wsdl_timestamp', None)
                         previous = (
-                                datetime.strptime(previous_string.split('+', 2)[0], '%Y-%m-%dT%H:%M:%S.%f')
+                                datetime.strptime(previous_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
                                 if previous_string else None)
                     except ValueError as e:
                         log.error('Error parsing previous timestamp: %s' % e)
@@ -517,22 +518,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return False
 
     def _patch_resource(self, data, apikey, filename):
-        requests.post('%s/api/action/resource_patch' % LOCAL_API_URL,
+        requests.post('%s/action/resource_patch' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 files={'upload': ('service.wsdl',file(filename))},
                 verify=False)
 
     def _create_resource(self, data, apikey, filename):
-        requests.post('%s/api/action/resource_create' % LOCAL_API_URL,
+        requests.post('%s/action/resource_create' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
                 files={'upload': ('service.wsdl',file(filename))},
                 verify=False)
 
-    def _delete_resource(self, data, apikey, filename):
-        requests.post('%s/api/action/resource_delete' % LOCAL_API_URL,
-                data=data,
+    def _delete_resource(self, data, apikey):
+        requests.post('%s/action/resource_delete' % LOCAL_API_URL,
+                json=data,
                 headers={"X-CKAN-API-Key": apikey },
                 verify=False)
 
