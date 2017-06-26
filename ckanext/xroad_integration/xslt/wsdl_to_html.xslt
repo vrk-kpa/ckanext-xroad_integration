@@ -178,6 +178,7 @@
 <xsl:param name="ENABLE-SRC-CODE-PARAGRAPH" select="false()"/>
 <xsl:param name="ENABLE-ABOUT-PARAGRAPH" select="false()"/>
 <xsl:param name="ENABLE-OPERATIONS-TYPE" select="true()"/>
+<xsl:param name="ENABLE-LOCATION" select="false()"/>
 <xsl:param name="ENABLE-LINK" select="false()"/>
 <xsl:param name="ENABLE-INOUTFAULT" select="true()"/>
 <xsl:param name="ENABLE-STYLEOPTYPEPATH" select="true()"/>
@@ -912,10 +913,12 @@
     </xsl:choose>
   </xsl:variable>
 
-  <div class="label">Location:</div>
-  <div class="value">
-    <xsl:value-of select="@address"/>
-  </div>
+  <xsl:if test="$ENABLE-LOCATION">
+    <div class="label">Location:</div>
+    <div class="value">
+      <xsl:value-of select="@address"/>
+    </div>
+  </xsl:if>
 
   <div class="label">Protocol:</div>
   <div class="value">
@@ -1013,10 +1016,12 @@
     </xsl:if>
   </h3>
 
-  <div class="label">Location:</div>
-  <div class="value">
-    <xsl:value-of select="*[local-name() = 'address']/@location"/>
-  </div>
+  <xsl:if test="$ENABLE-LOCATION">
+    <div class="label">Location:</div>
+    <div class="value">
+      <xsl:value-of select="*[local-name() = 'address']/@location"/>
+    </div>
+  </xsl:if>
 
   <div class="label">Protocol:</div>
   <div class="value">
