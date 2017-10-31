@@ -56,8 +56,13 @@ def render_wsdl_resource(wsdl_to_html):
             return ERROR_HTML % 'HTTP error: %s' % e
         except etree.XMLSyntaxError as e:
             return ERROR_HTML % 'XML syntax error: %s' % e
+        except etree.XSLTApplyError as e:
+            return ERROR_HTML % 'Preview error: %s' % e
         except OSError:
             return ERROR_HTML % 'Server error: uploaded file not found'
+        except:
+            return ERROR_HTML % 'Invalid WSDL'
+
 
     return render
 
