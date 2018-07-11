@@ -21,7 +21,6 @@ def open_resource(resource):
 
 def render_wsdl_resource(wsdl_to_html):
     ERROR_HTML = '<div class="error-explanation alert alert-error">%s</div>'
-    TIMEOUT_ERROR = 'Preview generation timed out. The document may contain infinite recursion or be otherwise too complex to preview.'
 
     def render(resource):
         try:
@@ -48,9 +47,7 @@ def render_wsdl_resource(wsdl_to_html):
             # FIXME: Remove XSD imports and includes in WSDL documents until dependency resolution can be made
             for element in wsdl_content.xpath('//xsd:import|//xsd:include', namespaces=xml_namespaces):
                 element.getparent().remove(element)
-            log.warn('Applying XSLT')
             html_content = wsdl_to_html(wsdl_content)
-            log.warn('XSLT done')
             return etree.tostring(html_content, pretty_print=True, method='html', encoding=unicode)
         except urllib2.URLError:
             return ERROR_HTML % 'Invalid URL'
