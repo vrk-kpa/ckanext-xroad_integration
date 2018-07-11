@@ -8,12 +8,6 @@ import os
 import os.path
 import mimetypes
 
-from multiprocessing import Process, Queue
-from signal import SIGKILL
-
-MAX_TEMPLATE_RECURSION_DEPTH = 100
-MAX_TEMPLATE_RENDER_TIME = 5.0
-
 log = logging.getLogger(__name__)
 
 def open_resource(resource):
@@ -71,28 +65,7 @@ def render_wsdl_resource(wsdl_to_html):
         except:
             return ERROR_HTML % 'Invalid WSDL'
 
-
-    def render_to_queue(resource, queue):
-        queue.put(render(resource))
-
-    def render_in_process(resource):
-        queue = Queue()
-        process = Process(target=render_to_queue, args=(resource, queue))
-        process.start()
-        process.join(timeout=MAX_TEMPLATE_RENDER_TIME)
-        if process.is_alive():
-            # Timeout, attempt to terminate nicely
-            process.terminate()
-            process.join(timeout=0.1)
-            if process.is_alive():
-                # Process is not listening to reason
-                os.kill(process.pid, SIGKILL)
-
-            return ERROR_HTML % TIMEOUT_ERROR
-        else:
-            return queue.get(False)
-
-    return render_in_process
+    return render
 
 
 class WSDL_ViewPlugin(plugins.SingletonPlugin):
@@ -108,7 +81,6 @@ class WSDL_ViewPlugin(plugins.SingletonPlugin):
         toolkit.add_resource('fanstatic', 'wsdl_view')
         relpath = "./xslt/wsdl_to_html.xslt"
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), relpath)
-        etree.XSLT.set_global_max_depth(MAX_TEMPLATE_RECURSION_DEPTH)
         self.wsdl_to_html = etree.XSLT(etree.parse(path))
         mimetypes.add_type('wsdl', '.wsdl')
 
