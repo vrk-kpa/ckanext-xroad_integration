@@ -243,8 +243,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 return result
 
             for service in services['service']:
-                wsdl = service['wsdl']
+                if 'removed' in service:
+                    log.info('Service "%s" "%s" removed, skipping',
+                            service.get('serviceCode', ''),
+                            service.get('serviceVersion', ''))
+                    continue
+
+                wsdl = service.get('wsdl')
                 if not wsdl:
+                    log.info('Service "%s" "%s" has no WSDL, skipping',
+                            service.get('serviceCode', ''),
+                            service.get('serviceVersion', ''))
                     continue
 
                 try:
