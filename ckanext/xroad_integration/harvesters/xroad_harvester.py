@@ -337,7 +337,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     self._create_resource(resource_data, apikey, file_name)
                     result = True
 
-                os.unlink(file_name)
+                if not wsdl_removed:
+                    os.unlink(file_name)
 
             log.info('Created API %s', package_dict['name'])
 
