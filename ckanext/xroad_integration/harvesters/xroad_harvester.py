@@ -243,44 +243,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 return result
 
             for service in services['service']:
-                if 'removed' in service:
-                    log.info('Service "%s" "%s" removed, skipping',
-                            service.get('serviceCode', ''),
-                            service.get('serviceVersion', ''))
-                    continue
-
-                wsdl = service.get('wsdl')
-                if not wsdl:
-                    log.info('Service "%s" "%s" has no WSDL, skipping',
-                            service.get('serviceCode', ''),
-                            service.get('serviceVersion', ''))
-                    continue
-
-                try:
-                    changed_string = wsdl.get('changed', wsdl.get('created'))
-                    changed = (
-                            datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                            if changed_string else None)
-                except ValueError as e:
-                    log.error('Error parsing WSDL timestamp: %s' % e)
-                    continue
-
-                try:
-                    wsdl_removed_string = service.get('removed')
-                    wsdl_removed = (
-                            datetime.strptime(wsdl_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                            if wsdl_removed_string else None)
-                except ValueError as e:
-                    log.error('Error parsing WSDL remove timestamp: %s' % e)
-                    wsdl_removed = None
-
-                wsdl_data = wsdl.get('data')
-                if not wsdl_data:
-                    continue
-
-                wsdl_data_utf8 = wsdl_data.encode('utf-8')
-                valid_wsdl = self._is_valid_wsdl(wsdl_data_utf8)
-
+                # Parse service name and version
                 service_code = service.get('serviceCode', None)
                 if service_code is None:
                     continue
@@ -292,16 +255,50 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 else:
                     name = '%s.%s' % (service_code, service_version)
 
-                f = tempfile.NamedTemporaryFile(delete=False)
-                f.write(wsdl_data_utf8)
-                f.close()
+                # Parse WSDL if it exists
+                try:
+                    wsdl_removed_string = service.get('removed')
+                    wsdl_removed = (
+                            datetime.strptime(wsdl_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                            if wsdl_removed_string else None)
+                except ValueError as e:
+                    log.error('Error parsing WSDL remove timestamp: %s' % e)
+                    wsdl_removed = None
+
+                wsdl = service.get('wsdl')
+                if not wsdl and not wsdl_removed:
+                    log.info('Service "%s" has no WSDL, skipping', name)
+                    continue
+
+                if not wsdl_removed:
+                    wsdl_data = wsdl.get('data')
+                    if not wsdl_data and not wsdl_removed:
+                        log.info('Service "%s" has no WSDL data, skipping', name)
+                        continue
+
+                    wsdl_data_utf8 = wsdl_data.encode('utf-8')
+                    valid_wsdl = self._is_valid_wsdl(wsdl_data_utf8)
+
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    f.write(wsdl_data_utf8)
+                    f.close()
+                    file_name = f.name
+
+                try:
+                    changed_string = wsdl.get('changed', wsdl.get('created'))
+                    changed = (
+                            datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                            if changed_string else None)
+                except ValueError as e:
+                    log.error('Error parsing WSDL timestamp: %s' % e)
+                    continue
 
                 # TODO: resource_create and resource_update should not create resources without wsdls
                 named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
                 for resource in named_resources:
                     if wsdl_removed:
-                        log.info("Service deleted: %s" % resource['name'])
+                        log.info("Service deleted: %s", name)
                         self._delete_resource({"id": resource['id']}, apikey)
                         continue
                     try:
@@ -325,7 +322,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "xroad_serviceversion": service_version,
                                 "wsdl_timestamp": changed
                                 }
-                        self._patch_resource(resource_data, apikey, f.name)
+                        self._patch_resource(resource_data, apikey, file_name)
                         result = True
 
                 if not named_resources and not wsdl_removed:
@@ -337,10 +334,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             "xroad_servicecode": service_code,
                             "xroad_serviceversion": service_version
                             }
-                    self._create_resource(resource_data, apikey, f.name)
+                    self._create_resource(resource_data, apikey, file_name)
                     result = True
 
-                os.unlink(f.name)
+                os.unlink(file_name)
 
             log.info('Created API %s', package_dict['name'])
 
