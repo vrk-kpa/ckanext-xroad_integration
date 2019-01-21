@@ -284,14 +284,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     f.close()
                     file_name = f.name
 
-                try:
-                    changed_string = wsdl.get('changed', wsdl.get('created'))
-                    changed = (
-                            datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                            if changed_string else None)
-                except ValueError as e:
-                    log.error('Error parsing WSDL timestamp: %s' % e)
-                    continue
+                    try:
+                        changed_string = wsdl.get('changed', wsdl.get('created'))
+                        changed = (
+                                datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                                if changed_string else None)
+                    except ValueError as e:
+                        log.error('Error parsing WSDL timestamp: %s' % e)
+                        continue
 
                 # TODO: resource_create and resource_update should not create resources without wsdls
                 named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
