@@ -449,6 +449,50 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return site_user['apikey']
 
+
+    def _ensure_own_unique_name(self, org_id, org_name, context):
+        organization_show_action = p.toolkit.get_action('organization_show')
+
+        def organization_show(name_or_id):
+            return organization_show_action(context, {
+                'id': name_or_id,
+                'include_datasets': False,
+                'include_dataset_count': False,
+                'include_extras': False,
+                'include_users': False,
+                'include_groups': False,
+                'include_tags': False,
+                'include_followers': False})
+
+        # Find any existing organization with the name
+        try:
+            org_with_name = organization_show(org_name)
+        except NotFound:
+            org_with_name = None
+
+        # If the name is free or already reserved to this organization, reuse the name
+        if org_with_name is None or org_with_name['id'] == org_id:
+            return org_name
+
+        # Try to get current name as fallback
+        try:
+            org = organization_show(org_id)
+            return org['name']
+        except NotFound:
+            pass
+
+        # Try to find a fallback with a limited pool of variants
+        name_candidates = ('%s_%i' % (org_name, i) for i in range(2,20))
+        for name in name_candidates:
+            try:
+                organization_show(name)
+            except NotFound:
+                return name
+
+        # All variants were taken as well, probably some kind of error
+        return None
+
+
     def _create_or_update_organization(self, data_dict, harvest_job):
 
         context = {
@@ -476,9 +520,19 @@ class XRoadHarvesterPlugin(HarvesterBase):
             else:
                 last_time = self._last_error_free_job_time(harvest_job)
             if last_time and last_time < data_dict['changed']:
+                munged_title = munge_title_to_name(data_dict['name'])
+                if org['name'] == munged_title:
+                    org_name = munged_title
+                else:
+                    org_name = self._ensure_own_unique_name(data_dict['id'], munged_title, context)
+
+                if org_name is None:
+                    log.error("Organization name %s and tried variants already in use!" % munged_title)
+                    return None
+
                 org_data = {
                         'title': data_dict['name'],
-                        'name': munge_title_to_name(data_dict['name']),
+                        'name': org_name,
                         'id': data_dict['id']}
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
@@ -495,9 +549,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
             # exception
             context.pop('__auth_audit', None)
 
+            org_name = self._ensure_own_unique_name(
+                    data_dict['id'], munge_title_to_name(data_dict['name']), context)
+
+            if org_name is None:
+                log.error("Organization name %s and tried variants already in use!"
+                          % munge_title_to_name(data_dict['name']))
+                return None
+
             org_data = {
                     'title': data_dict['name'],
-                    'name': munge_title_to_name(data_dict['name']),
+                    'name': org_name,
                     'id': data_dict['id']}
             org = p.toolkit.get_action('organization_create')(context, org_data)
             log.info(org)
