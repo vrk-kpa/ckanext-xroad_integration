@@ -557,6 +557,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                           % munge_title_to_name(data_dict['name']))
                 return None
 
+            # Get rid of auth audit on the context otherwise we'll get an
+            # exception
+            context.pop('__auth_audit', None)
+
             org_data = {
                     'title': data_dict['name'],
                     'name': org_name,
