@@ -105,6 +105,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 }, harvest_job)
 
             if org is None:
+                self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
                 continue
 
             if self._organization_has_wsdls(member):
