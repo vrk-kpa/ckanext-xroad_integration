@@ -88,6 +88,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if isinstance(member, basestring):
                 continue
 
+            # If member has been deleted in exchange layer
+            if member['removed']:
+                continue
+
             # if there is only 1 subsystem, wrap it with list
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
                 member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
