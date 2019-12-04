@@ -89,7 +89,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 continue
 
             # If member has been deleted in exchange layer
-            if member['removed']:
+            if member.get('removed', None):
                 continue
 
             # if there is only 1 subsystem, wrap it with list
