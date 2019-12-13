@@ -244,8 +244,8 @@
   padding: 0;
   height: auto;
   color: white;
-  //background-color: teal;
-  font: normal 80%/120% SourceSans, Arial, Helvetica, sans-serif;
+  font-family: 'SourceSansPro-Regular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 12px;
   }
 
   #outer_box {
@@ -677,7 +677,7 @@
   */
   h1, h2, h3 {
   margin: 10px 10px 2px;
-  font-family: Roboto, Georgia, Times New Roman, Times, Serif;
+  font-family: 'SourceSansPro-SemiBold', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: normal;
   }
 
@@ -722,24 +722,7 @@
   Custom formatting
   =========================================
   */
-  @font-face {
-  font-family: "Roboto";
-  font-style: normal;
-  font-weight: bold;
-  src: url("/base/vendor/fonts//RobotoBold.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//RobotoBold.woff") format("woff"), url("/base/vendor/fonts//RobotoBold.ttf") format("truetype"), url("/base/vendor/fonts//RobotoBold.svg") format("svg");
-  }
-  @font-face {
-  font-family: "SourceSans";
-  font-style: normal;
-  font-weight: normal;
-  src: url("/base/vendor/fonts//SourceSansProRegular.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//SourceSansProRegular.woff") format("woff"), url("/base/vendor/fonts//SourceSansProRegular.ttf") format("truetype"), url("/base/vendor/fonts//SourceSansProRegular.svg") format("svg");
-  }
-  @font-face {
-  font-family: "SourceSans";
-  font-style: normal;
-  font-weight: bold;
-  src: url("/base/vendor/fonts//SourceSansProBold.eot?#iefix") format("embedded-opentype"), url("/base/vendor/fonts//SourceSansProBold.woff") format("woff"), url("/base/vendor/fonts//SourceSansProBold.ttf") format("truetype"), url("/base/vendor/fonts//SourceSansProBold.svg") format("svg");
-  }
+
   i {
   font-style: normal;
   }
