@@ -112,7 +112,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
                 continue
 
-            if self._organization_has_wsdls(member):
+            if self._organization_has_wsdls_or_openapis(member):
                 for subsystem in member['subsystems']['subsystem']:
 
                     # Generate GUID
@@ -153,6 +153,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 for service in services['service']:
                     if 'wsdl' in service:
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
+                    if 'openapi' in service:
+                        service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -216,11 +218,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return True
 
         contains_wsdls = False
+        contains_openapi_descriptions = False
         services = dataset['subsystem'].get('services', {})
         if not isinstance(services, basestring):
             contains_wsdls = any('data' in s.get('wsdl', {}) for s in services['service'])
+            contains_openapi_descriptions = any('data' in s.get('openapi', {}) for s in services['service'])
 
-        if contains_wsdls:
+        if contains_wsdls or contains_openapi_descriptions:
             if dataset['owner'] is not None:
                 local_org = dataset['owner']['name']
             package_dict['owner_org'] = local_org
@@ -262,88 +266,99 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 # Parse WSDL if it exists
                 try:
-                    wsdl_removed_string = service.get('removed')
-                    wsdl_removed = (
-                            datetime.strptime(wsdl_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                            if wsdl_removed_string else None)
+                    service_removed_string = service.get('removed')
+                    service_removed = (
+                            datetime.strptime(service_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                            if service_removed_string else None)
                 except ValueError as e:
-                    log.error('Error parsing WSDL remove timestamp: %s' % e)
-                    wsdl_removed = None
+                    log.error('Error parsing Service remove timestamp: %s' % e)
+                    service_removed = None
 
+                service_description = service.get('wsdl') or service.get('openapi')
                 wsdl = service.get('wsdl')
-                if not wsdl and not wsdl_removed:
-                    log.info('Service "%s" has no WSDL, skipping', name)
+                openapi = service.get('openapi')
+                if not service_description and not service_removed:
+                    log.info('Service "%s" has no WSDLs or OpenAPIs, skipping', name)
                     continue
 
-                if not wsdl_removed:
-                    wsdl_data = wsdl.get('data')
-                    if not wsdl_data and not wsdl_removed:
-                        log.info('Service "%s" has no WSDL data, skipping', name)
+                if not service_removed:
+                    service_description_data = service_description.get('data')
+                    if not service_description_data and not service_removed:
+                        log.info('Service "%s" has no WSDL or OpenAPI data, skipping', name)
                         continue
 
-                    wsdl_data_utf8 = wsdl_data.encode('utf-8')
-                    valid_wsdl = self._is_valid_wsdl(wsdl_data_utf8)
+                    service_description_data_utf8 = service_description_data.encode('utf-8')
 
                     f = tempfile.NamedTemporaryFile(delete=False)
-                    f.write(wsdl_data_utf8)
+                    f.write(service_description_data_utf8)
                     f.close()
                     file_name = f.name
 
+                    # Todo: Validity of openapi ?
+                    if wsdl:
+                        valid_wsdl = self._is_valid_wsdl(service_description_data_utf8)
+                        timestamp_field = "wsdl_timestamp"
+                        target_name = 'service.wsdl'
+                    else:
+                        valid_wsdl = True
+                        timestamp_field = "openapi_timestamp"
+                        target_name = 'service.json'
+
                     try:
-                        changed_string = wsdl.get('changed', wsdl.get('created'))
+                        changed_string = service_description.get('changed', service_description.get('created'))
                         changed = (
                                 datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
                                 if changed_string else None)
                     except ValueError as e:
-                        log.error('Error parsing WSDL timestamp: %s' % e)
+                        log.error('Error parsing service timestamp: %s' % e)
                         continue
 
-                # TODO: resource_create and resource_update should not create resources without wsdls
-                named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+                    # TODO: resource_create and resource_update should not create resources without wsdls
+                    named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
-                for resource in named_resources:
-                    if wsdl_removed:
-                        log.info("Service deleted: %s", name)
-                        self._delete_resource({"id": resource['id']}, apikey)
-                        continue
-                    try:
-                        previous_string = resource.get('wsdl_timestamp', None)
-                        previous = (
-                                datetime.strptime(previous_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                                if previous_string else None)
-                    except ValueError as e:
-                        log.error('Error parsing previous timestamp: %s' % e)
-                        continue
+                    for resource in named_resources:
+                        if service_removed:
+                            log.info("Service deleted: %s", name)
+                            self._delete_resource({"id": resource['id']}, apikey)
+                            continue
+                        try:
+                            previous_string = resource.get('wsdl_timestamp', None)
+                            previous = (
+                                    datetime.strptime(previous_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                                    if previous_string else None)
+                        except ValueError as e:
+                            log.error('Error parsing previous timestamp: %s' % e)
+                            continue
 
-                    if not previous or (changed and changed > previous):
-                        log.info('WSDL changed after last harvest, replacing...')
+                        if not previous or (changed and changed > previous):
+                            log.info('WSDL changed after last harvest, replacing...')
+                            resource_data = {
+                                    "package_id":package_dict['id'],
+                                    "url": "",
+                                    "name": name,
+                                    "id": resource['id'],
+                                    "valid_content": "yes" if valid_wsdl else "no",
+                                    "xroad_servicecode": service_code,
+                                    "xroad_serviceversion": service_version,
+                                    timestamp_field: changed
+                                    }
+                            self._patch_resource(resource_data, apikey, file_name, target_name)
+                            result = True
+
+                    if not named_resources and not service_removed:
                         resource_data = {
                                 "package_id":package_dict['id'],
                                 "url": "",
                                 "name": name,
-                                "id": resource['id'],
                                 "valid_content": "yes" if valid_wsdl else "no",
                                 "xroad_servicecode": service_code,
-                                "xroad_serviceversion": service_version,
-                                "wsdl_timestamp": changed
+                                "xroad_serviceversion": service_version
                                 }
-                        self._patch_resource(resource_data, apikey, file_name)
+                        self._create_resource(resource_data, apikey, file_name, target_name)
                         result = True
 
-                if not named_resources and not wsdl_removed:
-                    resource_data = {
-                            "package_id":package_dict['id'],
-                            "url": "",
-                            "name": name,
-                            "valid_content": "yes" if valid_wsdl else "no",
-                            "xroad_servicecode": service_code,
-                            "xroad_serviceversion": service_version
-                            }
-                    self._create_resource(resource_data, apikey, file_name)
-                    result = True
-
-                if not wsdl_removed:
-                    os.unlink(file_name)
+                    if not service_removed:
+                        os.unlink(file_name)
 
             log.info('Created API %s', package_dict['name'])
 
@@ -378,6 +393,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if r.status_code != requests.codes.ok:
             raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         return r.json()
+
+    def _get_openapi(self, url, external_id):
+        try:
+            r = requests.get(url + '/Consumer/GetOpenAPI', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service GetOpenAPI failed!")
+        if r.status_code != requests.codes.ok:
+            raise ContentFetchError("Calling XRoad service GetOpenAPI failed!")
+        return r.json()
+
 
     @classmethod
     def _last_error_free_job(cls, harvest_job):
@@ -580,35 +605,35 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return True
         return False
 
-    def _api_has_wsdls(self, subsystem):
+    def _api_has_wsdls_or_openapis(self, subsystem):
         services = subsystem.get('services', {})
         if not isinstance(services, basestring):
             if type(services['service']) is dict:
                 services['service'] = [services['service']]
             for service in services['service']:
-                if 'wsdl' in service:
+                if 'wsdl' in service or 'openapi' in service:
                     return True
         return False
 
-    def _organization_has_wsdls(self, member):
+    def _organization_has_wsdls_or_openapis(self, member):
         if self._organization_has_apis(member):
            for subsystem in member['subsystems']['subsystem']:
-              if self._api_has_wsdls(subsystem) is True:
+              if self._api_has_wsdls_or_openapis(subsystem) is True:
                   return True
         return False
 
-    def _patch_resource(self, data, apikey, filename):
+    def _patch_resource(self, data, apikey, filename, target_name):
         requests.post('%s/action/resource_patch' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
-                files={'upload': ('service.wsdl',file(filename))},
+                files={'upload': (target_name,file(filename))},
                 verify=False)
 
-    def _create_resource(self, data, apikey, filename):
+    def _create_resource(self, data, apikey, filename, target_name):
         requests.post('%s/action/resource_create' % LOCAL_API_URL,
                 data=data,
                 headers={"X-CKAN-API-Key": apikey },
-                files={'upload': ('service.wsdl',file(filename))},
+                files={'upload': (target_name,file(filename))},
                 verify=False)
 
     def _delete_resource(self, data, apikey):
