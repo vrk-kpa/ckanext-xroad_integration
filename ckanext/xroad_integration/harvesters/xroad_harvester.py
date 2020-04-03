@@ -155,6 +155,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
+                    service['type'] = self._get_provider_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'])
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -258,6 +259,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     continue
 
                 service_version = service.get('serviceVersion', None)
+                service_type = service.get('type')
 
                 if service_version is None:
                     name = service_code
@@ -340,6 +342,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     "valid_content": "yes" if valid_wsdl else "no",
                                     "xroad_servicecode": service_code,
                                     "xroad_serviceversion": service_version,
+                                    "xroad_service_type": service_type,
                                     timestamp_field: changed
                                     }
                             self._patch_resource(resource_data, apikey, file_name, target_name)
@@ -352,7 +355,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "name": name,
                                 "valid_content": "yes" if valid_wsdl else "no",
                                 "xroad_servicecode": service_code,
-                                "xroad_serviceversion": service_version
+                                "xroad_serviceversion": service_version,
+                                "xroad_service_type": service_type,
                                 }
                         self._create_resource(resource_data, apikey, file_name, target_name)
                         result = True
@@ -403,6 +407,27 @@ class XRoadHarvesterPlugin(HarvesterBase):
             raise ContentFetchError("Calling XRoad service GetOpenAPI failed!")
         return r.json()
 
+    @staticmethod
+    def _get_provider_type(url, subsystem, service_code):
+        try:
+            r = requests.get(url + '/Consumer/IsSoapProvider', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+                             headers = {'Accept': 'application/json'})
+            is_soap_provider = r.json()['provider']
+            if is_soap_provider is True:
+                log.info("returning soap")
+                return 'soap'
+
+            r = requests.get(url + '/Consumer/IsRestProvider', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+                             headers = {'Accept': 'application/json'})
+
+            is_rest_provider = r.json()['provider']
+            if is_rest_provider is True:
+                return 'rest'
+
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service IsSoapProvider or Is failed")
+
+        return ''
 
     @classmethod
     def _last_error_free_job(cls, harvest_job):
