@@ -301,10 +301,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         valid_wsdl = self._is_valid_wsdl(service_description_data_utf8)
                         timestamp_field = "wsdl_timestamp"
                         target_name = 'service.wsdl'
+                        resource_format = 'wsdl'
                     else:
                         valid_wsdl = True
                         timestamp_field = "openapi_timestamp"
                         target_name = 'service.json'
+                        resource_format = 'openapi-json'
 
                     try:
                         changed_string = service_description.get('changed', service_description.get('created'))
@@ -343,6 +345,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     "xroad_servicecode": service_code,
                                     "xroad_serviceversion": service_version,
                                     "xroad_service_type": service_type,
+                                    "format": resource_format,
                                     timestamp_field: changed
                                     }
                             self._patch_resource(resource_data, apikey, file_name, target_name)
@@ -357,6 +360,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "xroad_servicecode": service_code,
                                 "xroad_serviceversion": service_version,
                                 "xroad_service_type": service_type,
+                                "format": resource_format,
                                 }
                         self._create_resource(resource_data, apikey, file_name, target_name)
                         result = True
