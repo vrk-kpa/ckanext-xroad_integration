@@ -410,22 +410,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_provider_type(url, subsystem, service_code):
         try:
-            r = requests.get(url + '/Consumer/IsSoapProvider', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+            r = requests.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
-            is_soap_provider = r.json()['provider']
-            if is_soap_provider is True:
-                log.info("returning soap")
+
+            response_json = r.json()
+            if response_json.get('provider') and response_json.get('provider') is True:
                 return 'soap'
 
-            r = requests.get(url + '/Consumer/IsRestProvider', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+            r = requests.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
-            is_rest_provider = r.json()['provider']
-            if is_rest_provider is True:
+            response_json = r.json()
+            if response_json.get('provider') and response_json.get('provider') is True:
                 return 'rest'
 
         except ConnectionError:
-            raise ContentFetchError("Calling XRoad service IsSoapProvider or Is failed")
+            raise ContentFetchError("Calling XRoad service IsSoapService or IsRestService failed")
 
         return ''
 
