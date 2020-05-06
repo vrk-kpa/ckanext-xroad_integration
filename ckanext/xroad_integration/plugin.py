@@ -1,11 +1,11 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-import ckan.logic.get_action as get_action
-
+import helpers
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.IResourceController)
+    plugins.implements(plugins.IResourceController, inherit=True)
+    plugins.implements(plugins.ITemplateHelpers)
 
     # IConfigurer
 
@@ -27,7 +27,12 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
         if validity is False:
             package_id = resource['package_id']
 
-            data_dict = get_action('package_show')(context, {'id': package_id})
-            get_action('package_update')(
+            data_dict = toolkit.get_action('package_show')(context, {'id': package_id})
+            toolkit.get_action('package_update')(
                     dict(context, allow_state_change=True),
                     dict(data_dict, private=True))
+
+    # ITemplateHelpers
+
+    def get_helpers(self):
+        return {'xroad_subsystem_path': helpers.xroad_subsystem_path}
