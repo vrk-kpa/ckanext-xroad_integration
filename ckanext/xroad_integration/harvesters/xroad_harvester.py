@@ -11,6 +11,8 @@ import logging
 import json
 import requests
 from requests.exceptions import ConnectionError
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import os
 import tempfile
 from sqlalchemy import exists
@@ -23,6 +25,27 @@ NotFound = logic.NotFound
 log = logging.getLogger(__name__)
 
 LOCAL_API_URL = 'http://127.0.0.1:8080/api'
+
+DEFAULT_TIMEOUT = 3  # seconds
+
+# Add default timeout
+class TimeoutHTTPAdapter(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.timeout = DEFAULT_TIMEOUT
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super(TimeoutHTTPAdapter, self).__init__(*args, **kwargs)
+
+
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=1
+)
+
+adapter = TimeoutHTTPAdapter(max_retries=retry_strategy)
+http = requests.Session()
+http.mount("http://", adapter)
 
 class XRoadHarvesterPlugin(HarvesterBase):
     config = None
@@ -377,7 +400,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_xroad_catalog(self, url, changed_after):
         try:
-            r = requests.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
         if r.status_code != requests.codes.ok:
@@ -395,7 +418,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_wsdl(self, url, external_id):
         try:
-            r = requests.get(url + '/Consumer/GetWsdl', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/GetWsdl', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         if r.status_code != requests.codes.ok:
@@ -404,7 +427,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_openapi(self, url, external_id):
         try:
-            r = requests.get(url + '/Consumer/GetOpenAPI', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/GetOpenAPI', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetOpenAPI failed!")
         if r.status_code != requests.codes.ok:
@@ -414,14 +437,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_provider_type(url, subsystem, service_code):
         try:
-            r = requests.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+            r = http.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
             if response_json.get('provider') and response_json.get('provider') is True:
                 return 'soap'
 
-            r = requests.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
+            r = http.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
