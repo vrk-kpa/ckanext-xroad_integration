@@ -20,6 +20,13 @@ import lxml.etree as etree
 from ckan import model
 
 from ckan import logic
+
+try:
+    from ckan.common import asbool  # CKAN 2.9
+except ImportError:
+    from paste.deploy.converters import asbool
+
+
 NotFound = logic.NotFound
 
 log = logging.getLogger(__name__)
@@ -119,6 +126,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
                 member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
 
+            # Fetch member type
+            member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
+                                                member['memberCode'])
+
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
                 for p in ('xRoadInstance', 'memberClass', 'memberCode')))
@@ -126,6 +137,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org = self._create_or_update_organization({
                 'id': org_id,
                 'name': member['name'],
+                'member_type': member_type,
                 'created': member['created'],
                 'changed': member['changed'],
                 'removed': member.get('removed', None)
@@ -456,6 +468,25 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return ''
 
+    @staticmethod
+    def _get_member_type(url, xroad_instance, member_class, member_code):
+        try:
+            r = http.get(url + '/Consumer/IsProvider', params = {'xRoadInstance': xroad_instance, 'memberClass': member_class,
+                                                                 'memberCode': member_code},
+                         headers = {'Accept': 'application/json'})
+
+            is_provider = asbool(r.json().get('provider'))
+
+            if is_provider is True:
+                return "provider"
+            else:
+                return "consumer"
+
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service IsProvider failed")
+
+        return ""
+
     @classmethod
     def _last_error_free_job(cls, harvest_job):
         # TODO weed out cancelled jobs somehow.
@@ -646,9 +677,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org_data = {
                     'title': data_dict['name'],
                     'name': org_name,
-                    'id': data_dict['id']}
+                    'id': data_dict['id'],
+                    'member_type': data_dict['member_type']}
+
             org = p.toolkit.get_action('organization_create')(context, org_data)
-            log.info(org)
 
         return org
 
