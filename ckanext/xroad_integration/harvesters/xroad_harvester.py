@@ -130,6 +130,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
             member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
                                                 member['memberCode'])
 
+            # Fetch organization information
+            org_information_list = self._get_organization_information(harvest_job.source.url, member['memberCode'])
+            if org_information_list:
+                org_description = org_information_list[0].get('organizationDescriptions')[0].get('value')
+                log.info("Organization desciption is %s", org_description)
+
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
                 for p in ('xRoadInstance', 'memberClass', 'memberCode')))
@@ -479,13 +485,47 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             if is_provider is True:
                 return "provider"
-            else:
+            elif is_provider is False:
                 return "consumer"
 
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service IsProvider failed")
 
         return ""
+
+    @staticmethod
+    def _get_organization_information(url, business_code):
+        try:
+            r = http.get(url + '/Consumer/GetOrganizations', params = {'businessCode': business_code},
+            headers = {'Accept': 'application/json'})
+
+            response_json = r.json()
+            if response_json.get("error"):
+                log.info(response_json.get("error").get("string"))
+                return ""
+
+            if response_json['organization_list']['organization'] is dict:
+                return [response_json['organization_list']['organization']]
+
+            return response_json['organization_list']['organization']
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service GetOrganizations failed")
+
+    @staticmethod
+    def _get_companies_information(url, business_id):
+        try:
+            r = http.get(url + '/Consumer/GetCompanies', params = {'businessId': business_id},
+                         headers = {'Accept': 'application/json'})
+
+            response_json = r.json()
+            if response_json.get("error"):
+                log.info(response_json.get("error").get("string"))
+                return ""
+
+            return r.json()
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service GetCompanies failed")
+
 
     @classmethod
     def _last_error_free_job(cls, harvest_job):
