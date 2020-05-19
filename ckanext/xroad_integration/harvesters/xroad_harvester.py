@@ -526,6 +526,35 @@ class XRoadHarvesterPlugin(HarvesterBase):
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetCompanies failed")
 
+    @staticmethod
+    def _get_organization_changes(url, guid, changed_after ):
+        try:
+            r = http.get(url + '/Consumer/HasOrganizationChanged', params = {'guid': guid, 'changedAfter': changed_after},
+                         headers = {'Accept': 'application/json'})
+
+            response_json = r.json()
+            if response_json.get("error"):
+                log.info(response_json.get("error").get("string"))
+                return ""
+
+            return r.json()
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service HasOrganizationChanged failed")
+
+    @staticmethod
+    def _get_company_changes(url, business_id, changed_after ):
+        try:
+            r = http.get(url + '/Consumer/HasCompanyChanged', params = {'business_id': business_id, 'changedAfter': changed_after},
+                         headers = {'Accept': 'application/json'})
+
+            response_json = r.json()
+            if response_json.get("error"):
+                log.info(response_json.get("error").get("string"))
+                return ""
+
+            return r.json()
+        except ConnectionError:
+            raise ContentFetchError("Calling XRoad service HasCompanyChanged failed")
 
     @classmethod
     def _last_error_free_job(cls, harvest_job):
