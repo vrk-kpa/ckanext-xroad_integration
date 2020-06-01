@@ -176,6 +176,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def fetch_stage(self, harvest_object):
         log.info('In xroad harvester fetch_stage')
+
         try:
             dataset = json.loads(harvest_object.content)
         except ValueError:
@@ -375,7 +376,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             log.error('Error parsing previous timestamp: %s' % e)
                             continue
 
-                        if not previous or (changed and changed > previous):
+                        if not previous or (changed and changed > previous) or self.config.get('force_update'):
                             log.info('WSDL changed after last harvest, replacing...')
                             resource_data = {
                                     "package_id":package_dict['id'],
@@ -701,7 +702,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 last_time = "2011-01-01"
             else:
                 last_time = self._last_error_free_job_time(harvest_job)
-            if last_time and last_time < data_dict['changed']:
+            if (last_time and last_time < data_dict['changed']) or self.config.get('force_update'):
                 munged_title = munge_title_to_name(data_dict['name'])
                 if org['name'] == munged_title:
                     org_name = munged_title
