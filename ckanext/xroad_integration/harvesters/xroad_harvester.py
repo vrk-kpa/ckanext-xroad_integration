@@ -503,12 +503,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
             response_json = r.json()
             if response_json.get("error"):
                 log.info(response_json.get("error").get("string"))
-                return ""
+                return []
 
-            if response_json['organization_list']['organization'] is dict:
+            if response_json.get('organization_list', {}).get('organization') is dict:
                 return [response_json['organization_list']['organization']]
 
-            return response_json['organization_list']['organization']
+            return response_json.get('organization_list', {}).get('organization')
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetOrganizations failed")
 
