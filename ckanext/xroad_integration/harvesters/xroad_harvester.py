@@ -173,7 +173,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             organization_info = self._parse_organization_info(org_information_list, member['name'])
 
                         if organization_info:
-
+                            log.info("Parsing organization information for %s" % member['name'])
                             org_descriptions = _convert_xroad_value_to_uniform_list(
                                 organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
@@ -744,7 +744,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org = None
 
         if org:
-            log.info("found %s", org)
 
             if data_dict['removed']:
                 log.info("Organization was removed, removing from catalog..")
