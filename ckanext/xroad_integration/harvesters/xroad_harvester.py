@@ -162,6 +162,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 try:
                     org_information_list = self._get_organization_information(harvest_job.source.url, member['memberCode'])
 
+                    organization_info = None
                     # If PTV has only one matching organization
                     if type(org_information_list) is dict:
                         organization_info = org_information_list
