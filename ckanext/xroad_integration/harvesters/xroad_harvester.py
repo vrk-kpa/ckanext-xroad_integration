@@ -163,25 +163,27 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     org_information_list = self._get_organization_information(harvest_job.source.url, member['memberCode'])
 
                     organization_info = None
-                    # If PTV has only one matching organization
-                    if type(org_information_list) is dict:
-                        organization_info = org_information_list
-                    elif len(org_information_list) > 1:
-                        # Match only if PTV title matches our organization title
-                        organization_info = self._parse_organization_info(org_information_list, member['name'])
 
-                    if organization_info:
+                    if org_information_list:
+                        # If PTV has only one matching organization
+                        if type(org_information_list) is dict:
+                            organization_info = org_information_list
+                        elif len(org_information_list) > 1:
+                            # Match only if PTV title matches our organization title
+                            organization_info = self._parse_organization_info(org_information_list, member['name'])
 
-                        org_descriptions = _convert_xroad_value_to_uniform_list(
-                            organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
+                        if organization_info:
 
-                        org_descriptions_translated = {
-                            "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
-                            "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
-                            "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
-                        }
+                            org_descriptions = _convert_xroad_value_to_uniform_list(
+                                organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
-                        log.info(org_descriptions_translated)
+                            org_descriptions_translated = {
+                                "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
+                                "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
+                                "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
+                            }
+
+                            log.info(org_descriptions_translated)
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
