@@ -54,6 +54,19 @@ adapter = TimeoutHTTPAdapter(max_retries=retry_strategy)
 http = requests.Session()
 http.mount("http://", adapter)
 
+PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
+
+
+def _convert_xroad_value_to_uniform_list(value):
+    if isinstance(value, basestring):
+        return []
+
+    if type(value) is dict:
+        return [value]
+
+    return value
+
+
 class XRoadHarvesterPlugin(HarvesterBase):
     config = None
 
@@ -130,24 +143,50 @@ class XRoadHarvesterPlugin(HarvesterBase):
             member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
                                                 member['memberCode'])
 
-            # Fetch organization information
-            org_information_list = self._get_organization_information(harvest_job.source.url, member['memberCode'])
-            if org_information_list:
-                org_description = org_information_list[0].get('organizationDescriptions')[0].get('value')
-                log.info("Organization desciption is %s", org_description)
-
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
-                for p in ('xRoadInstance', 'memberClass', 'memberCode')))
+                                                            for p in ('xRoadInstance', 'memberClass', 'memberCode')))
 
-            org = self._create_or_update_organization({
+            organization_dict = {
                 'id': org_id,
                 'name': member['name'],
                 'member_type': member_type,
                 'created': member['created'],
                 'changed': member['changed'],
                 'removed': member.get('removed', None)
-                }, harvest_job)
+            }
+
+            # Fetch organization information
+
+            if member['memberClass'] in PUBLIC_ORGANIZATION_CLASSES:
+                try:
+                    org_information_list = self._get_organization_information(harvest_job.source.url, member['memberCode'])
+
+                    # If PTV has only one matching organization
+                    if type(org_information_list) is dict:
+                        organization_info = org_information_list
+                    else:
+                        # Match only if PTV title matches our organization title
+                        organization_info = self._parse_organization_info(org_information_list, member['name'])
+
+                    if organization_info:
+
+                        org_descriptions = _convert_xroad_value_to_uniform_list(
+                            organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
+
+                        org_descriptions_translated = {
+                            "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
+                            "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
+                            "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
+                        }
+
+                        log.info(org_descriptions_translated)
+
+                except ContentFetchError:
+                    self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
+
+
+            org = self._create_or_update_organization(organization_dict, harvest_job)
 
             if org is None:
                 self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
@@ -511,6 +550,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return response_json.get('organization_list', {}).get('organization')
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetOrganizations failed")
+
+    @staticmethod
+    def _parse_organization_info(data, organization_name):
+        organization_info = next((org_info for org_info in data for name in
+                                  _convert_xroad_value_to_uniform_list(org_info.get('organizationNames', {})
+                                                                       .get('organizationName'))
+                                  if name.get('value', {}) == organization_name), None)
+
+        return  organization_info
 
     @staticmethod
     def _get_companies_information(url, business_id):
