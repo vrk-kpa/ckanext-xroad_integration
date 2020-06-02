@@ -167,8 +167,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     if org_information_list:
                         # If PTV has only one matching organization
                         if type(org_information_list) is dict:
+                            log.info("Only one matching organization in ptv for organization %s" % member['name'])
                             organization_info = org_information_list
-                        elif len(org_information_list) > 1:
+                        else:
+                            log.info("Multiple organizations found in ptv for organization %s" % member['name'] )
                             # Match only if PTV title matches our organization title
                             organization_info = self._parse_organization_info(org_information_list, member['name'])
 
