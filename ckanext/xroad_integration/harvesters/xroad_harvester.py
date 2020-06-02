@@ -93,7 +93,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return config
 
         config_obj = json.loads(config)
-        for key in ('force_all',):
+        for key in ('force_all', 'force_update'):
             if key in config_obj:
                 if not isinstance(config_obj[key], bool):
                     raise ValueError('%s must be boolean' % key)
@@ -215,6 +215,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def fetch_stage(self, harvest_object):
         log.info('In xroad harvester fetch_stage')
+        self._set_config(harvest_object.job.source.config)
 
         try:
             dataset = json.loads(harvest_object.content)
@@ -248,6 +249,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def import_stage(self, harvest_object):
         log.info('In xroad harvester import stage')
+        self._set_config(harvest_object.job.source.config)
 
         try:
             dataset = json.loads(harvest_object.content)
