@@ -176,16 +176,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                         if organization_info:
                             log.info("Parsing organization information for %s" % member['name'])
-                            org_descriptions = _convert_xroad_value_to_uniform_list(
-                                organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
+                            if organization_info.get('organizationDescriptions', {}):
+                                org_descriptions = _convert_xroad_value_to_uniform_list(
+                                    organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
-                            org_descriptions_translated = {
-                                "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
-                                "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
-                                "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
-                            }
+                                org_descriptions_translated = {
+                                    "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
+                                    "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
+                                    "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
+                                }
 
-                            log.info(org_descriptions_translated)
+                                log.info(org_descriptions_translated)
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
