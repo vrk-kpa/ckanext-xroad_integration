@@ -772,7 +772,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     return None
 
                 org_data = {
-                        'title': data_dict['name'],
+                        'title_translated': data_dict['title_translated'],
                         'name': org_name,
                         'id': data_dict['id']}
                 patch_context = context.copy()
@@ -803,7 +803,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             context.pop('__auth_audit', None)
 
             org_data = {
-                    'title': data_dict['name'],
+                    'title_translated': data_dict['title_translated'],
                     'name': org_name,
                     'id': data_dict['id'],
                     'member_type': data_dict['member_type']}
