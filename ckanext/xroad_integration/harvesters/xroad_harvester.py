@@ -246,7 +246,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
-                    service['type'] = self._get_provider_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'])
+                    service['type'] = self._get_service_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'])
+                    if not service['type']:
+                        self._save_object_error("Service type fetching failed for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']), harvest_object, 'Import')
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
@@ -504,20 +506,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return r.json()
 
     @staticmethod
-    def _get_provider_type(url, subsystem, service_code):
+    def _get_service_type(url, subsystem, service_code):
         try:
             r = http.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
-            if response_json.get('provider') and response_json.get('provider') is True:
+            if response_json.get('soap') and response_json.get('soap') is True:
                 return 'soap'
 
             r = http.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
-            if response_json.get('provider') and response_json.get('provider') is True:
+            if response_json.get('rest') and response_json.get('rest') is True:
                 return 'rest'
 
         except ConnectionError:
