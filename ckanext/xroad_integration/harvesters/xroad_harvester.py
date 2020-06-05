@@ -149,6 +149,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             organization_dict = {
                 'id': org_id,
+                'title_translated': {
+                  "fi": member['name']
+                },
                 'name': member['name'],
                 'member_type': member_type,
                 'created': member['created'],
