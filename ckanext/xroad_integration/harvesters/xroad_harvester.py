@@ -232,7 +232,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             log.info('Could not parse content for object {0}'.format(harvest_object.id),
                      harvest_object, 'Import')
             self._save_object_error('Could not parse content for object {0}'.format(harvest_object.id),
-                                    harvest_object, 'Import')
+                                    harvest_object, 'Fetch')
             return False
 
         services = dataset['subsystem'].get('services', None)
@@ -247,13 +247,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
                     service['type'] = self._get_service_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'])
+                    if type(service['type']) is dict and service['type'].get('error'):
+                        self._save_object_error(service['type'].get('error'), harvest_object, 'Fetch')
                     if not service['type']:
-                        self._save_object_error("Service type fetching failed for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']), harvest_object, 'Import')
+                        self._save_object_error("Service type fetching failed for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']), harvest_object, 'Fetch')
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
             self._save_object_error('Could not parse WSDL content for object {0}'.format(harvest_object.id),
-                                    harvest_object, 'Import')
+                                    harvest_object, 'Fetch')
             return False
         # TODO: Should fetch WSDLs
         return True
@@ -511,14 +513,28 @@ class XRoadHarvesterPlugin(HarvesterBase):
             r = http.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
+            if r.status_code != requests.codes.ok:
+                return {"error": "IsSoapService Not Available"}
+
             response_json = r.json()
+
+            if response_json.get("error"):
+                return {"error": response_json.get("error").get('string') }
+
             if response_json.get('soap') and response_json.get('soap') is True:
                 return 'soap'
 
             r = http.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
+            if r.status_code != requests.codes.ok:
+                return {"error": "IsRestService Not Available"}
+
             response_json = r.json()
+
+            if response_json.get("error"):
+                return {"error": response_json.get("error").get('string') }
+
             if response_json.get('rest') and response_json.get('rest') is True:
                 return 'rest'
 
