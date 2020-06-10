@@ -248,7 +248,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
                     service['type'] = self._get_service_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'])
                     if type(service['type']) is dict and service['type'].get('error'):
-                        self._save_object_error(service['type'].get('error'), harvest_object, 'Fetch')
+
+                        # Don't generate error if the error is unknown service
+                        if "Unknown service" in service['type'].get('error'):
+                            log.info(service['type'].get('error'))
+                        else:
+                            self._save_object_error(service['type'].get('error'), harvest_object, 'Fetch')
                     if not service['type']:
                         self._save_object_error("Service type fetching failed for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']), harvest_object, 'Fetch')
                 harvest_object.content = json.dumps(dataset)
@@ -513,9 +518,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             r = http.get(url + '/Consumer/IsSoapService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
 
-            if r.status_code != requests.codes.ok:
-                return {"error": "IsSoapService Not Available"}
-
             response_json = r.json()
 
             if response_json.get("error"):
@@ -526,9 +528,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             r = http.get(url + '/Consumer/IsRestService', params = {'subsystemCode': subsystem, 'serviceCode': service_code},
                              headers = {'Accept': 'application/json'})
-
-            if r.status_code != requests.codes.ok:
-                return {"error": "IsRestService Not Available"}
 
             response_json = r.json()
 
