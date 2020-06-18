@@ -246,7 +246,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
-                    service['type'] = self._get_service_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'], service['serviceVersion'])
+                    service['type'] = self._get_service_type(harvest_object.source.url, dataset['subsystem']['subsystemCode'], service['serviceCode'], service.get('serviceVersion', ''))
                     if type(service['type']) is dict and service['type'].get('error'):
 
                         # Don't generate error if the error is unknown service
