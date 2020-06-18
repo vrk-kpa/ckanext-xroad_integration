@@ -246,7 +246,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
-                    service['type'] = self._get_service_type(harvest_object.source.url, dataset.get('xRoadMemberCode'), dataset['subsystem']['subsystemCode'], service['serviceCode'], service.get('serviceVersion', ''))
+                    service['type'] = self._get_service_type(harvest_object.source.url,
+                                                             dataset.get('xRoadInstance'),
+                                                             dataset.get('xRoadMemberClass'),
+                                                             dataset.get('xRoadMemberCode'),
+                                                             dataset['subsystem']['subsystemCode'],
+                                                             service['serviceCode'],
+                                                             service.get('serviceVersion', ''))
                     if type(service['type']) is dict and service['type'].get('error'):
 
                         # Don't generate error if the error is unknown service
@@ -513,9 +519,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return r.json()
 
     @staticmethod
-    def _get_service_type(url, member_code, subsystem, service_code, service_version):
+    def _get_service_type(url, xroad_instance, member_class, member_code, subsystem, service_code, service_version):
         try:
-            r = http.get(url + '/Consumer/IsSoapService', params = {'memberCode': member_code, 'subsystemCode': subsystem, 'serviceCode': service_code, 'serviceVersion': service_version},
+            r = http.get(url + '/Consumer/IsSoapService', params = {'xRoadInstance': xroad_instance,
+                                                                    'memberClass': member_class,
+                                                                    'memberCode': member_code,
+                                                                    'subsystemCode': subsystem,
+                                                                    'serviceCode': service_code,
+                                                                    'serviceVersion': service_version},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
@@ -526,7 +537,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if response_json.get('soap') and response_json.get('soap') is True:
                 return 'soap'
 
-            r = http.get(url + '/Consumer/IsRestService', params = {'memberCode': member_code, 'subsystemCode': subsystem, 'serviceCode': service_code, 'serviceVersion': service_version},
+            r = http.get(url + '/Consumer/IsRestService', params = {'xRoadInstance': xroad_instance,
+                                                                     'memberClass': member_class,
+                                                                     'memberCode': member_code,
+                                                                     'subsystemCode': subsystem,
+                                                                     'serviceCode': service_code,
+                                                                     'serviceVersion': service_version},
                              headers = {'Accept': 'application/json'})
 
             response_json = r.json()
