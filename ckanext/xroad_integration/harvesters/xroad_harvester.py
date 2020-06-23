@@ -452,6 +452,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     "xroad_servicecode": service_code,
                                     "xroad_serviceversion": service_version,
                                     "xroad_service_type": service_type,
+                                    "harvested_from_xroad": True,
                                     "format": resource_format,
                                     timestamp_field: changed
                                     }
@@ -467,6 +468,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "xroad_servicecode": service_code,
                                 "xroad_serviceversion": service_version,
                                 "xroad_service_type": service_type,
+                                "harvested_from_xroad": True,
                                 "format": resource_format,
                                 }
                         self._create_resource(resource_data, apikey, file_name, target_name)
