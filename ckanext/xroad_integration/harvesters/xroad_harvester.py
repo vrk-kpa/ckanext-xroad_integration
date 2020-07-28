@@ -191,6 +191,28 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                                 organization_dict['description_translated'] = org_descriptions_translated
 
+                            if organization_info.get('webPages', {}):
+                                webpages = _convert_xroad_value_to_uniform_list(
+                                    organization_info.get('webPages', {}).get('webPage', {}))
+
+                                webpage_adresses = {
+                                    "fi": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'fi'), None),
+                                    "sv": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'sv'), None),
+                                    "en": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'en'), None)
+                                }
+
+                                webpage_descriptions = {
+                                    "fi": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'fi'), None),
+                                    "sv": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'sv'), None),
+                                    "en": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'en'), None)
+                                }
+
+
+                                organization_dict['webpage_address'] = webpage_adresses
+                                organization_dict['webpage_description'] = webpage_descriptions
+
+
+
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
 
@@ -806,18 +828,27 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     log.error("Organization name %s and tried variants already in use!" % munged_title)
                     return None
 
-                org_description = org['description_translated'] != {"fi": "", "sv": "", "en": ""} \
+                org_description = (org['description_translated'] != {"fi": "", "sv": "", "en": ""}
+                                   and org['description_translated'] != {"fi": ""}) \
                                   or data_dict['description_translated']
 
                 # Enable this after organisation datamodel migration
                 # if not org.get('description_translated_modified_in_catalog', False):
                 #    org_description = data_dict['description_translated']
 
+
                 org_data = {
-                        'title_translated': data_dict['title_translated'],
-                        'name': org_name,
-                        'id': data_dict['id'],
-                        'description_translated': org_description}
+                    'title_translated': data_dict['title_translated'],
+                    'name': org_name,
+                    'id': data_dict['id'],
+                    'description_translated': org_description}
+
+                if not org.get('webpage_address_modified_in_catalog', False):
+                    org_data['webpage_address'] = data_dict['webpage_address']
+
+                if not org.get('webpage_description_modified_in_catalog', False):
+                    org_data['webpage_description'] = data_dict['webpage_description']
+
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
                 org = p.toolkit.get_action('organization_patch')(patch_context, org_data)
