@@ -211,6 +211,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 organization_dict['webpage_address'] = webpage_adresses
                                 organization_dict['webpage_description'] = webpage_descriptions
 
+                            organization_dict['organization_guid'] = organization_info.get('guid', '')
 
 
                 except ContentFetchError:
@@ -841,7 +842,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'title_translated': data_dict['title_translated'],
                     'name': org_name,
                     'id': data_dict['id'],
-                    'description_translated': org_description}
+                    'description_translated': org_description,
+                    'organization_guid': data_dict['organization_guid']}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict['webpage_address']
