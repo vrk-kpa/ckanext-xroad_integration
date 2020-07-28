@@ -189,7 +189,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
                                 }
 
-                                log.info(org_descriptions_translated)
+                                organization_dict['description_translated'] = org_descriptions_translated
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
@@ -806,10 +806,18 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     log.error("Organization name %s and tried variants already in use!" % munged_title)
                     return None
 
+                org_description = org['description_translated'] != {"fi": "", "sv": "", "en": ""} \
+                                  or data_dict['description_translated']
+
+                # Enable this after organisation datamodel migration
+                # if not org.get('description_translated_modified_in_catalog', False):
+                #    org_description = data_dict['description_translated']
+
                 org_data = {
                         'title_translated': data_dict['title_translated'],
                         'name': org_name,
-                        'id': data_dict['id']}
+                        'id': data_dict['id'],
+                        'description_translated': org_description}
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
                 org = p.toolkit.get_action('organization_patch')(patch_context, org_data)
