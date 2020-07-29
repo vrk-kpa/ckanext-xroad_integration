@@ -240,6 +240,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                         organization_dict['company_language'] = company_languages
 
+                        # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
+                        organization_dict['company_registration_date'] = company.get('registrationDate').split(".")[0]
+
+
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch company information with id %s" % member['membercode'], harvest_job)
@@ -874,7 +878,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'organization_guid': data_dict.get('organization_guid'),
                     'company_type':data_dict.get('company_type'),
                     'postal_address': data_dict.get('postal_address'),
-                    'company_language': data_dict.get('company_language', {})}
+                    'company_language': data_dict.get('company_language', {}),
+                    'company_registration_date': data_dict.get('company_registration_date')}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict.get('webpage_address')
