@@ -220,11 +220,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
             elif member['memberClass'] in COMPANY_CLASSES:
                 try:
                     company = self._get_companies_information(harvest_job.source.url, member['memberCode'])
-                    log.info(company)
-                    log.info(type(company))
                     if type(company) is dict:
-                        log.info(company)
                         organization_dict['company_type'] = company.get('companyForm')
+
+                        business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}).get('businessAddress', {}))
+
+                        business_address = business_addresses[0] if business_addresses else None
+
+                        # TODO: language should be country
+                        organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
+                                                              + ', ' + business_address.get('city') + ', ' + business_address.get('language')
+
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch company information with id %s" % member['membercode'], harvest_job)
@@ -857,7 +863,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'id': data_dict['id'],
                     'description_translated': org_description,
                     'organization_guid': data_dict.get('organization_guid'),
-                    'company_type':data_dict.get('company_type')}
+                    'company_type':data_dict.get('company_type'),
+                    'postal_address': data_dict.get('postal_address')}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict.get('webpage_address')
