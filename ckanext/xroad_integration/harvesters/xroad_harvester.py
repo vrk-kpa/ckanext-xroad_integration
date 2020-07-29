@@ -195,7 +195,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 webpages = _convert_xroad_value_to_uniform_list(
                                     organization_info.get('webPages', {}).get('webPage', {}))
 
-                                webpage_adresses = {
+                                webpage_addresses = {
                                     "fi": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'fi'), None),
                                     "sv": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'sv'), None),
                                     "en": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'en'), None)
@@ -208,7 +208,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 }
 
 
-                                organization_dict['webpage_address'] = webpage_adresses
+                                organization_dict['webpage_address'] = webpage_addresses
                                 organization_dict['webpage_description'] = webpage_descriptions
 
                             organization_dict['organization_guid'] = organization_info.get('guid', '')
@@ -230,6 +230,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         # TODO: language should be country
                         organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
                                                               + ', ' + business_address.get('city') + ', ' + business_address.get('language')
+
+                        languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
+                        company_languages = {
+                            "fi": next((language.get('name', '') for language in languages if language.get('language') == 'FI'), ""),
+                            "sv": next((language.get('name', '') for language in languages if language.get('language') == 'SE'), ""),
+                            "en": next((language.get('name', '') for language in languages if language.get('language') == 'EN'), "")
+                        }
+
+                        organization_dict['company_language'] = company_languages
 
 
                 except ContentFetchError:
@@ -864,7 +873,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'description_translated': org_description,
                     'organization_guid': data_dict.get('organization_guid'),
                     'company_type':data_dict.get('company_type'),
-                    'postal_address': data_dict.get('postal_address')}
+                    'postal_address': data_dict.get('postal_address'),
+                    'company_language': data_dict.get('company_language', {})}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict.get('webpage_address')
