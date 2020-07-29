@@ -55,7 +55,7 @@ http = requests.Session()
 http.mount("http://", adapter)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
-
+COMPANY_CLASSES = ['COM']
 
 def _convert_xroad_value_to_uniform_list(value):
     if isinstance(value, basestring):
@@ -216,6 +216,18 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch organization information with id %s" % member['membercode'], harvest_job)
+
+            elif member['memberClass'] in COMPANY_CLASSES:
+                try:
+                    company = self._get_companies_information(harvest_job.source.url, member['memberCode'])
+                    log.info(company)
+                    log.info(type(company))
+                    if type(company) is dict:
+                        log.info(company)
+                        organization_dict['company_type'] = company.get('companyForm')
+
+                except ContentFetchError:
+                    self._save_gather_error("Failed to fetch company information with id %s" % member['membercode'], harvest_job)
 
 
             org = self._create_or_update_organization(organization_dict, harvest_job)
@@ -640,7 +652,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 log.info(response_json.get("error").get("string"))
                 return ""
 
-            return r.json()
+            return response_json.get('companyList', {}).get('company')
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetCompanies failed")
 
@@ -829,9 +841,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     log.error("Organization name %s and tried variants already in use!" % munged_title)
                     return None
 
-                org_description = (org['description_translated'] != {"fi": "", "sv": "", "en": ""}
-                                   and org['description_translated'] != {"fi": ""}) \
-                                  or data_dict['description_translated']
+                org_description = org.get('description_translated', {}) \
+                    if org.get('description_translated') != {"fi": "", "sv": "", "en": ""} \
+                       and org.get('description_translated') != {"fi": ""} \
+                    else data_dict.get('description_translated', {})
 
                 # Enable this after organisation datamodel migration
                 # if not org.get('description_translated_modified_in_catalog', False):
@@ -843,16 +856,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'name': org_name,
                     'id': data_dict['id'],
                     'description_translated': org_description,
-                    'organization_guid': data_dict['organization_guid']}
+                    'organization_guid': data_dict.get('organization_guid'),
+                    'company_type':data_dict.get('company_type')}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
-                    org_data['webpage_address'] = data_dict['webpage_address']
+                    org_data['webpage_address'] = data_dict.get('webpage_address')
 
                 if not org.get('webpage_description_modified_in_catalog', False):
-                    org_data['webpage_description'] = data_dict['webpage_description']
+                    org_data['webpage_description'] = data_dict.get('webpage_description')
 
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
+
+                log.info(org_data)
+
                 org = p.toolkit.get_action('organization_patch')(patch_context, org_data)
 
         else:
