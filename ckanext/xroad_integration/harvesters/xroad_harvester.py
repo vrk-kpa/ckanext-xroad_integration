@@ -887,10 +887,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'old_business_ids': data_dict.get('old_business_ids')}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
-                    org_data['webpage_address'] = data_dict.get('webpage_address')
+                    org_data['webpage_address'] = data_dict.get('webpage_address', {})
 
                 if not org.get('webpage_description_modified_in_catalog', False):
-                    org_data['webpage_description'] = data_dict.get('webpage_description')
+                    org_data['webpage_description'] = data_dict.get('webpage_description' {})
 
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
