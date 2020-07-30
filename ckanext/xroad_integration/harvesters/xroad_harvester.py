@@ -184,9 +184,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
                                 org_descriptions_translated = {
-                                    "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), None),
-                                    "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), None),
-                                    "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), None)
+                                    "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), ""),
+                                    "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), ""),
+                                    "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), "")
                                 }
 
                                 organization_dict['description_translated'] = org_descriptions_translated
@@ -196,15 +196,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                     organization_info.get('webPages', {}).get('webPage', {}))
 
                                 webpage_addresses = {
-                                    "fi": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'fi'), None),
-                                    "sv": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'sv'), None),
-                                    "en": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'en'), None)
+                                    "fi": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'fi'), ""),
+                                    "sv": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'sv'), ""),
+                                    "en": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'en'), "")
                                 }
 
                                 webpage_descriptions = {
-                                    "fi": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'fi'), None),
-                                    "sv": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'sv'), None),
-                                    "en": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'en'), None)
+                                    "fi": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'fi'), ""),
+                                    "sv": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'sv'), ""),
+                                    "en": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'en'), "")
                                 }
 
 
