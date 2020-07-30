@@ -223,13 +223,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     if type(company) is dict:
                         organization_dict['company_type'] = company.get('companyForm')
 
-                        business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}).get('businessAddress', {}))
+                        if company.get('businessAddresses'):
+                            business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}).get('businessAddress', {}))
 
-                        business_address = business_addresses[0] if business_addresses else None
+                            business_address = business_addresses[0] if business_addresses else None
 
-                        # TODO: language should be country
-                        organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
-                                                              + ', ' + business_address.get('city') + ', ' + business_address.get('language')
+                            # TODO: language should be country
+                            organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
+                                                                  + ', ' + business_address.get('city') + ', ' + business_address.get('language')
 
                         languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
                         company_languages = {
