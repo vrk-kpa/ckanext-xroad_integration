@@ -243,7 +243,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
                         organization_dict['company_registration_date'] = company.get('registrationDate').split(".")[0]
 
+                        business_id_changes = _convert_xroad_value_to_uniform_list(
+                            company.get('businessIdChanges', {}).get('businessIdChange', {}))
 
+                        old_business_ids = [str(business_id_change.get('oldBusinessId')) for business_id_change in business_id_changes]
+                        organization_dict['old_business_ids'] = json.dumps(old_business_ids)
 
                 except ContentFetchError:
                     self._save_gather_error("Failed to fetch company information with id %s" % member['membercode'], harvest_job)
@@ -879,7 +883,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'company_type':data_dict.get('company_type'),
                     'postal_address': data_dict.get('postal_address'),
                     'company_language': data_dict.get('company_language', {}),
-                    'company_registration_date': data_dict.get('company_registration_date')}
+                    'company_registration_date': data_dict.get('company_registration_date'),
+                    'old_business_ids': data_dict.get('old_business_ids')}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict.get('webpage_address')
