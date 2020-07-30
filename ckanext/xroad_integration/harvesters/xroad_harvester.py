@@ -232,14 +232,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
                                                                   + ', ' + business_address.get('city') + ', ' + business_address.get('language')
 
-                        languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
-                        company_languages = {
-                            "fi": next((language.get('name', '') for language in languages if language.get('language') == 'FI'), ""),
-                            "sv": next((language.get('name', '') for language in languages if language.get('language') == 'SE'), ""),
-                            "en": next((language.get('name', '') for language in languages if language.get('language') == 'EN'), "")
-                        }
+                        if company.get('languages'):
+                            languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
+                            company_languages = {
+                                "fi": next((language.get('name', '') for language in languages if language.get('language') == 'FI'), ""),
+                                "sv": next((language.get('name', '') for language in languages if language.get('language') == 'SE'), ""),
+                                "en": next((language.get('name', '') for language in languages if language.get('language') == 'EN'), "")
+                            }
 
-                        organization_dict['company_language'] = company_languages
+                            organization_dict['company_language'] = company_languages
 
                         # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
                         organization_dict['company_registration_date'] = company.get('registrationDate').split(".")[0]
