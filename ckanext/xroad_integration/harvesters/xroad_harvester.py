@@ -270,23 +270,24 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
                 continue
 
-            for subsystem in member['subsystems']['subsystem']:
+            if member.get('subsystems'):
+                for subsystem in member['subsystems']['subsystem']:
 
-                # Generate GUID
-                guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
+                    # Generate GUID
+                    guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
 
-                # Create harvest object
-                obj = HarvestObject(guid=guid, job=harvest_job,
-                                    content=json.dumps({
-                                        'xRoadInstance': member.get('xRoadInstance', ''),
-                                        'xRoadMemberClass': member.get('memberClass', ''),
-                                        'xRoadMemberCode': member.get('memberCode', ''),
-                                        'owner': org,
-                                        'subsystem': subsystem
-                                    }))
+                    # Create harvest object
+                    obj = HarvestObject(guid=guid, job=harvest_job,
+                                        content=json.dumps({
+                                            'xRoadInstance': member.get('xRoadInstance', ''),
+                                            'xRoadMemberClass': member.get('memberClass', ''),
+                                            'xRoadMemberCode': member.get('memberCode', ''),
+                                            'owner': org,
+                                            'subsystem': subsystem
+                                        }))
 
-                obj.save()
-                object_ids.append(obj.id)
+                    obj.save()
+                    object_ids.append(obj.id)
 
         return object_ids
 
