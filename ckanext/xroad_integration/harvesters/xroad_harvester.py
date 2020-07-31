@@ -222,7 +222,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     company = self._get_companies_information(harvest_job.source.url, member['memberCode'])
                     if type(company) is dict:
                         if company.get('companyForms'):
-                            company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}).get('companyForm'), {})
+                            company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}).get('companyForm', {}))
                             forms = {
                                 "fi": next((form.get('name') for form in company_forms if form.get('language') == 'FI'), ""),
                                 "sv": next((form.get('name') for form in company_forms if form.get('language') == 'SE'), ""),
