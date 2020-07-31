@@ -905,9 +905,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 patch_context = context.copy()
                 patch_context['allow_partial_update'] = True
-
-                log.info(org_data)
-
                 org = p.toolkit.get_action('organization_patch')(patch_context, org_data)
 
         else:
@@ -934,10 +931,18 @@ class XRoadHarvesterPlugin(HarvesterBase):
             context.pop('__auth_audit', None)
 
             org_data = {
-                    'title_translated': data_dict['title_translated'],
-                    'name': org_name,
-                    'id': data_dict['id'],
-                    'member_type': data_dict['member_type']}
+                'title_translated': data_dict['title_translated'],
+                'name': org_name,
+                'id': data_dict['id'],
+                'description_translated': data_dict.get('description_translated', {}),
+                'organization_guid': data_dict.get('organization_guid'),
+                'company_type':data_dict.get('company_type', {}),
+                'postal_address': data_dict.get('postal_address'),
+                'company_language': data_dict.get('company_language', {}),
+                'company_registration_date': data_dict.get('company_registration_date'),
+                'old_business_ids': data_dict.get('old_business_ids'),
+                'webpage_address': data_dict.get('webpage_address', {}),
+                'webpage_description': data_dict.get('webpage_description', {})}
 
             org = p.toolkit.get_action('organization_create')(context, org_data)
 
