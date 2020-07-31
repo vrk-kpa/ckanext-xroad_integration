@@ -221,7 +221,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 try:
                     company = self._get_companies_information(harvest_job.source.url, member['memberCode'])
                     if type(company) is dict:
-                        organization_dict['company_type'] = company.get('companyForm')
+                        if company.get('companyForms'):
+                            company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}).get('companyForm'), {})
+                            forms = {
+                                "fi": next((form.get('name') for form in company_forms if form.get('language') == 'FI'), ""),
+                                "sv": next((form.get('name') for form in company_forms if form.get('language') == 'SE'), ""),
+                                "en": next((form.get('name') for form in company_forms if form.get('language') == 'EN'), "")
+                            }
+
+                            organization_dict['company_type'] = forms
 
                         if company.get('businessAddresses'):
                             business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}).get('businessAddress', {}))
@@ -883,7 +891,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'id': data_dict['id'],
                     'description_translated': org_description,
                     'organization_guid': data_dict.get('organization_guid'),
-                    'company_type':data_dict.get('company_type'),
+                    'company_type':data_dict.get('company_type', {}),
                     'postal_address': data_dict.get('postal_address'),
                     'company_language': data_dict.get('company_language', {}),
                     'company_registration_date': data_dict.get('company_registration_date'),
