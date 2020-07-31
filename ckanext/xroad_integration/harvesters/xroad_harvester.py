@@ -270,24 +270,23 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
                 continue
 
-            if self._organization_has_wsdls_or_openapis(member):
-                for subsystem in member['subsystems']['subsystem']:
+            for subsystem in member['subsystems']['subsystem']:
 
-                    # Generate GUID
-                    guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
+                # Generate GUID
+                guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
 
-                    # Create harvest object
-                    obj = HarvestObject(guid=guid, job=harvest_job,
-                                        content=json.dumps({
-                                            'xRoadInstance': member.get('xRoadInstance', ''),
-                                            'xRoadMemberClass': member.get('memberClass', ''),
-                                            'xRoadMemberCode': member.get('memberCode', ''),
-                                            'owner': org,
-                                            'subsystem': subsystem
-                                        }))
+                # Create harvest object
+                obj = HarvestObject(guid=guid, job=harvest_job,
+                                    content=json.dumps({
+                                        'xRoadInstance': member.get('xRoadInstance', ''),
+                                        'xRoadMemberClass': member.get('memberClass', ''),
+                                        'xRoadMemberCode': member.get('memberCode', ''),
+                                        'owner': org,
+                                        'subsystem': subsystem
+                                    }))
 
-                    obj.save()
-                    object_ids.append(obj.id)
+                obj.save()
+                object_ids.append(obj.id)
 
         return object_ids
 
@@ -401,28 +400,29 @@ class XRoadHarvesterPlugin(HarvesterBase):
             contains_wsdls = any('data' in s.get('wsdl', {}) for s in services['service'])
             contains_openapi_descriptions = any('data' in s.get('openapi', {}) for s in services['service'])
 
+        if dataset['owner'] is not None:
+            local_org = dataset['owner']['name']
+        package_dict['owner_org'] = local_org
+
+        # Munge name
+        if not package_dict.get('title'):
+            package_dict['title_translated'] = {
+                    "fi": dataset['subsystem']['subsystemCode'],
+                    "en": dataset['subsystem']['subsystemCode'],
+                    "sv": dataset['subsystem']['subsystemCode']}
+
+        package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
+        package_dict['shared_resource'] = "no"
+        package_dict['private'] = False
+
+        package_dict['xroad_instance'] = dataset['xRoadInstance']
+        package_dict['xroad_memberclass'] = dataset['xRoadMemberClass']
+        package_dict['xroad_membercode'] = dataset['xRoadMemberCode']
+        package_dict['xroad_subsystemcode'] = dataset['subsystem']['subsystemCode']
+
+        result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
+
         if contains_wsdls or contains_openapi_descriptions:
-            if dataset['owner'] is not None:
-                local_org = dataset['owner']['name']
-            package_dict['owner_org'] = local_org
-
-            # Munge name
-            if not package_dict.get('title'):
-                package_dict['title_translated'] = {
-                        "fi": dataset['subsystem']['subsystemCode'],
-                        "en": dataset['subsystem']['subsystemCode'],
-                        "sv": dataset['subsystem']['subsystemCode']}
-
-            package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
-            package_dict['shared_resource'] = "no"
-            package_dict['private'] = False
-
-            package_dict['xroad_instance'] = dataset['xRoadInstance']
-            package_dict['xroad_memberclass'] = dataset['xRoadMemberClass']
-            package_dict['xroad_membercode'] = dataset['xRoadMemberCode']
-            package_dict['xroad_subsystemcode'] = dataset['subsystem']['subsystemCode']
-
-            result = self._create_or_update_package(package_dict, harvest_object, package_dict_form='package_show')
             apikey = self._get_api_key()
 
             if result not in(True, "unchanged"):
@@ -550,8 +550,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             return result
 
-        log.info("API %s did not have WSDLs, not creating..", dataset['subsystem']['subsystemCode'])
-        return "unchanged"
+        #log.info("API %s did not have WSDLs, not creating..", dataset['subsystem']['subsystemCode'])
+        return result
 
     def _get_xroad_catalog(self, url, changed_after):
         try:
