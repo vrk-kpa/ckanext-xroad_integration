@@ -881,9 +881,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                        and org.get('description_translated') != {"fi": ""} \
                     else data_dict.get('description_translated', {})
 
-                # Enable this after organisation datamodel migration
-                # if not org.get('description_translated_modified_in_catalog', False):
-                #    org_description = data_dict['description_translated']
+
+                if not org.get('description_translated_modified_in_catalog', False):
+                    org_description = data_dict['description_translated']
 
 
                 org_data = {
