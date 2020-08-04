@@ -883,7 +883,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
 
                 if not org.get('description_translated_modified_in_catalog', False):
-                    org_description = data_dict['description_translated']
+                    org_description = data_dict.get('description_translated', {})
 
 
                 org_data = {
