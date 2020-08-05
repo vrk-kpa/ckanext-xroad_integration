@@ -509,7 +509,6 @@
   margin-left: 147px;
   color: #2c2c2c;
   padding-bottom: .5em;
-  font-size: 16px;
   }
 
   strong, strong a {
@@ -716,6 +715,7 @@
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px dashed #d9d9d9;
+  font-size: 16px;
   }
 
   /**
