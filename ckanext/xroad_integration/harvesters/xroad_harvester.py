@@ -179,6 +179,19 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                         if organization_info:
                             log.info("Parsing organization information for %s" % member['name'])
+
+                            if organization_info.get('organizationNames', {}):
+                                org_names = _convert_xroad_value_to_uniform_list(
+                                    organization_info.get('organizationNames', {}).get('organizationName'), {})
+
+                                org_names_translated = {
+                                    "fi": next((name.get('value', '') for name in org_names if (name.get('language') == 'fi') and name.get('type') == "Name"), ""),
+                                    "sv": next((name.get('value', '') for name in org_names if (name.get('language') == 'sv') and name.get('type') == "Name"), ""),
+                                    "en": next((name.get('value', '') for name in org_names if (name.get('language') == 'en') and name.get('type') == "Name"), ""),
+                                }
+
+                                organization_dict['title_translated'] = org_names_translated
+
                             if organization_info.get('organizationDescriptions', {}):
                                 org_descriptions = _convert_xroad_value_to_uniform_list(
                                     organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
