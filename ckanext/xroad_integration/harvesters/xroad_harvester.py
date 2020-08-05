@@ -156,7 +156,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'member_type': member_type,
                 'created': member['created'],
                 'changed': member['changed'],
-                'removed': member.get('removed', None)
+                'removed': member.get('removed', None),
+                'xroad_instance': member['xRoadInstance'],
+                'xroad_memberclass': member['memberClass'],
+                'xroad_membercode': member['memberCode']
             }
 
             # Fetch organization information
@@ -903,6 +906,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'title_translated': data_dict['title_translated'],
                     'name': org_name,
                     'id': data_dict['id'],
+                    'xroad_instance': data_dict['xroad_instance'],
+                    'xroad_memberclass': data_dict['xroad_memberclass'],
+                    'xroad_membercode': data_dict['xroad_membercode'],
                     'description_translated': org_description,
                     'organization_guid': data_dict.get('organization_guid'),
                     'company_type':data_dict.get('company_type', {}),
@@ -948,6 +954,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'title_translated': data_dict['title_translated'],
                 'name': org_name,
                 'id': data_dict['id'],
+                'xroad_instance': data_dict['xroad_instance'],
+                'xroad_memberclass': data_dict['xroad_memberclass'],
+                'xroad_membercode': data_dict['xroad_membercode'],
                 'description_translated': data_dict.get('description_translated', {}),
                 'organization_guid': data_dict.get('organization_guid'),
                 'company_type':data_dict.get('company_type', {}),
