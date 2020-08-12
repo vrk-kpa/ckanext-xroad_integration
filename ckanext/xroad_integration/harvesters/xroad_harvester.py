@@ -327,6 +327,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if type(services['service']) is dict:
                     services['service'] = [services['service']]
                 for service in services['service']:
+                    if 'removed' in service:
+                        log.info("Service %s has been removed, no need to fetch api descriptions or types, skipping.." % service['serviceCode'])
+                        continue
                     if 'wsdl' in service:
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
