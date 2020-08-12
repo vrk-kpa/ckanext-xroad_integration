@@ -334,6 +334,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
                         service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
+
+                    if service.get('serviceVersion') and type(service.get('serviceVersion')) is int:
+                        service['serviceVersion'] = str(float(service['serviceVersion']))
+
                     service['type'] = self._get_service_type(harvest_object.source.url,
                                                              dataset.get('xRoadInstance'),
                                                              dataset.get('xRoadMemberClass'),
@@ -349,7 +353,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             self._save_object_error(service['type'].get('error'), harvest_object, 'Fetch')
                     if not service['type']:
-                        self._save_object_error("Service type fetching failed for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']), harvest_object, 'Fetch')
+                        log.info("Service type in unknown for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']))
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except TypeError, ContentFetchError:
