@@ -1,11 +1,13 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import helpers
+from logic import action
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IActions)
 
     # IConfigurer
 
@@ -36,3 +38,8 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
 
     def get_helpers(self):
         return {'xroad_subsystem_path': helpers.xroad_subsystem_path}
+
+    # IActions
+
+    def get_actions(self):
+        return {'update_xroad_organizations': action.update_xroad_organizations}
