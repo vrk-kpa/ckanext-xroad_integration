@@ -1,6 +1,7 @@
 import logging
 import json
 import requests
+import datetime
 from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -57,18 +58,21 @@ def update_xroad_organizations(context, data_dict):
                 if owner_org:
                     organizations.add(owner_org)
 
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
             for organization_id in organizations:
                 organization = organization_show(context, {'id': organization_id})
-                patch = _prepare_xroad_organization_patch(organization, source_url)
+                last_updated = organization.get('metadata_updated_from_catalog')
+                patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
                 if patch is not None:
                     log.debug('Updating organization %s data', organization_id)
+                    patch['metadata_updated_from_catalog'] = timestamp
                     organization_patch(context, patch)
                 else:
                     log.debug('Nothing to do for %s', organization_id)
 
 
 
-def _prepare_xroad_organization_patch(organization, source_url):
+def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
     member_class = organization.get('xroad_memberclass')
     member_code = organization.get('xroad_membercode')
@@ -77,6 +81,12 @@ def _prepare_xroad_organization_patch(organization, source_url):
 
     if member_class in PUBLIC_ORGANIZATION_CLASSES:
         try:
+            organization_changed = not last_updated or _get_organization_changes(source_url, member_code, last_updated)
+
+            if not organization_changed:
+                log.debug('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
+                return None
+
             org_information_list = _get_organization_information(source_url, member_code)
 
             organization_info = None
@@ -146,6 +156,12 @@ def _prepare_xroad_organization_patch(organization, source_url):
 
     elif member_class in COMPANY_CLASSES:
         try:
+            company_changed = not last_updated or _get_company_changes(source_url, member_code, last_updated)
+
+            if not company_changed:
+                log.debug('No changes to company %s since last update at %s, skipping...', organization_name, last_updated)
+                return None
+
             company = _get_companies_information(source_url, member_code)
             if type(company) is dict:
                 if company.get('companyForms'):
