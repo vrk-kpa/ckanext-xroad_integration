@@ -61,11 +61,11 @@ def update_xroad_organizations(context, data_dict):
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
             for organization_id in organizations:
                 organization = organization_show(context, {'id': organization_id})
-                last_updated = organization.get('metadata_updated_from_catalog')
+                last_updated = organization.get('metadata_updated_from_xroad_timestamp')
                 patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
                 if patch is not None:
                     log.debug('Updating organization %s data', organization_id)
-                    patch['metadata_updated_from_catalog'] = timestamp
+                    patch['metadata_updated_from_xroad_timestamp'] = timestamp
                     organization_patch(context, patch)
                 else:
                     log.debug('Nothing to do for %s', organization_id)
