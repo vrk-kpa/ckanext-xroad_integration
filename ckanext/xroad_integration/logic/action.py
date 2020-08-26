@@ -37,39 +37,40 @@ log = logging.getLogger(__name__)
 
 def update_xroad_organizations(context, data_dict):
     harvest_source_list = toolkit.get_action('harvest_source_list')
-    harvest_object_list = toolkit.get_action('harvest_object_list')
-    harvest_object_show = toolkit.get_action('harvest_object_show')
-    package_show = toolkit.get_action('package_show')
+    organization_list = toolkit.get_action('organization_list')
     organization_show = toolkit.get_action('organization_show')
     organization_patch = toolkit.get_action('organization_patch')
 
     harvest_sources = harvest_source_list(context, {})
+    organization_names = organization_list(context, {})
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
     for harvest_source in harvest_sources:
+        if harvest_source.get('type') != 'xroad':
+            continue
+
         source_url = harvest_source.get('url')
-        if source_url and harvest_source.get('type') == 'xroad':
-            organizations = set()
-            harvest_object_ids = harvest_object_list(context, {'source_id': harvest_source['id']})
+        source_title = harvest_source.get('title')
 
-            for harvest_object_id in harvest_object_ids:
-                harvest_object = harvest_object_show(context, {'id': harvest_object_id})
-                package = package_show(context, {'id': harvest_object.get('package_id')})
-                owner_org = package.get('owner_org')
-                if owner_org:
-                    organizations.add(owner_org)
+        for organization_name in organization_names:
+            organization = organization_show(context, {'id': organization_name})
 
-            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-            for organization_id in organizations:
-                organization = organization_show(context, {'id': organization_id})
-                last_updated = organization.get('metadata_updated_from_xroad_timestamp')
-                patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
-                if patch is not None:
-                    log.debug('Updating organization %s data', organization_id)
-                    patch['metadata_updated_from_xroad_timestamp'] = timestamp
+            if not organization.get('xroad_membercode'):
+                continue
+
+            last_updated = organization.get('metadata_updated_from_xroad_timestamp')
+            patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
+            if patch is not None:
+                log.debug('Updating organization %s data from %s', organization_name, source_title)
+                patch['metadata_updated_from_xroad_timestamp'] = timestamp
+                try:
                     organization_patch(context, patch)
-                else:
-                    log.debug('Nothing to do for %s', organization_id)
+                except toolkit.ValidationError:
+                    log.debug(pformat(patch))
+                    log.debug('Validation error updating %s from %s', organization_name, source_title)
 
+            else:
+                log.debug('Nothing to do for %s from %s', organization_name, source_title)
 
 
 def _prepare_xroad_organization_patch(organization, source_url, last_updated):
@@ -91,7 +92,10 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
             organization_info = None
 
-            if org_information_list:
+            if not org_information_list:
+                return None
+
+            else:
                 # If PTV has only one matching organization
                 if type(org_information_list) is dict:
                     log.info("Only one matching organization in ptv for organization %s" % organization_name)
@@ -101,7 +105,9 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     # Match only if PTV title matches our organization title
                     organization_info = _parse_organization_info(org_information_list, organization_name)
 
-                if organization_info:
+                if not organization_info:
+                    return None
+                else:
                     log.info("Parsing organization information for %s" % organization_name)
 
                     if organization_info.get('organizationNames', {}):
@@ -163,6 +169,10 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                 return None
 
             company = _get_companies_information(source_url, member_code)
+
+            if not company:
+                return None
+
             if type(company) is dict:
                 if company.get('companyForms'):
                     company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}).get('companyForm', {}))
