@@ -58,7 +58,7 @@ def update_xroad_organizations(context, data_dict):
             if not organization.get('xroad_membercode'):
                 continue
 
-            last_updated = organization.get('metadata_updated_from_xroad_timestamp')
+            last_updated = organization.get('metadata_updated_from_xroad_timestamp') or '2011-01-01T00:00:00'
             patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
             if patch is not None:
                 log.debug('Updating organization %s data from %s', organization_name, source_title)
@@ -66,8 +66,7 @@ def update_xroad_organizations(context, data_dict):
                 try:
                     organization_patch(context, patch)
                 except toolkit.ValidationError:
-                    log.debug(pformat(patch))
-                    log.debug('Validation error updating %s from %s', organization_name, source_title)
+                    log.debug('Validation error updating %s from %s: %s', organization_name, source_title, pformat(patch))
 
             else:
                 log.debug('Nothing to do for %s from %s', organization_name, source_title)
@@ -78,6 +77,11 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
     member_class = organization.get('xroad_memberclass')
     member_code = organization.get('xroad_membercode')
     organization_name = organization.get('name')
+
+    if not member_code:
+        log.info('Organization %s has no X-Road member code, skipping...', organization_name)
+        return None
+
     organization_dict = {'id': organization['id']}
 
     if member_class in PUBLIC_ORGANIZATION_CLASSES:
@@ -218,7 +222,6 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
     else:
         log.debug('Skipping %s because of class %s', organization_name, member_class)
-        log.debug(pformat(organization))
         return None
 
     return organization_dict
@@ -269,7 +272,7 @@ def _get_companies_information(url, business_id):
         return None
 
 
-def _get_organization_changes(url, guid, changed_after ):
+def _get_organization_changes(url, guid, changed_after):
     try:
         r = http.get(url + '/Consumer/HasOrganizationChanged', params = {'guid': guid, 'changedAfter': changed_after},
                 headers = {'Accept': 'application/json'})
@@ -287,7 +290,7 @@ def _get_organization_changes(url, guid, changed_after ):
 
 def _get_company_changes(url, business_id, changed_after ):
     try:
-        r = http.get(url + '/Consumer/HasCompanyChanged', params = {'business_id': business_id, 'changedAfter': changed_after},
+        r = http.get(url + '/Consumer/HasCompanyChanged', params = {'businessId': business_id, 'changedAfter': changed_after},
                 headers = {'Accept': 'application/json'})
 
         response_json = r.json()

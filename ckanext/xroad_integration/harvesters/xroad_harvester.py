@@ -666,7 +666,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         context = {
             'model': model,
-            'session': model.meta.create_local_session(),
+            'session': model.Session,
             'user': self._get_user_name(),
             'ignore_auth': True,
         }
