@@ -277,7 +277,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         context = {
             'model': model,
-            'session': model.meta.create_local_session(),
+            'session': model.Session,
             'user': self._get_user_name(),
             'ignore_auth': True,
         }
@@ -548,7 +548,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # TODO weed out cancelled jobs somehow.
         # look for jobs with no gather errors
         jobs = \
-            model.meta.create_local_session().query(HarvestJob) \
+            model.Session.query(HarvestJob) \
                 .filter(HarvestJob.source_id == harvest_job.source_id) \
                 .filter(HarvestJob.gather_started != None) \
                 .filter(HarvestJob.status == 'Finished') \
@@ -572,7 +572,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     @classmethod
     def _last_error_free_job_time(cls, harvest_job):
-        query =  model.meta.create_local_session().query(HarvestJob.gather_started).from_statement(text('''
+        query =  model.Session.query(HarvestJob.gather_started).from_statement(text('''
             select gather_started
             from harvest_job hj
             join (
@@ -600,7 +600,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     @classmethod
     def _last_finished_job(self, harvest_job):
-        job = model.meta.create_local_session().query(HarvestJob)\
+        job = model.Session.query(HarvestJob)\
             .filter(HarvestJob.source == harvest_job.source)\
             .filter(HarvestJob.finished != None)\
             .filter(HarvestJob.id != harvest_job.id)\
