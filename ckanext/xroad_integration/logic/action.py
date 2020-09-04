@@ -158,10 +158,22 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                         organization_dict['webpage_address'] = webpage_addresses
                         organization_dict['webpage_description'] = webpage_descriptions
 
-                    organization_dict['organization_guid'] = organization_info.get('guid', '')
+                    emails_field = organization_info.get('emails', {})
+                    if emails_field:
+                        email_data = _convert_xroad_value_to_uniform_list(emails_field.get('email'))
+                        if email_data:
+                            languages = set(item['language'] for item in email_data)
+                            emails = {lang: [item['value']
+                                             for item in email_data
+                                             if 'value' in item and item.get('language') == lang]
+                                      for lang in languages}
+                            if emails:
+                                organization_dict['email_address'] = emails
+
+                        organization_dict['organization_guid'] = organization_info.get('guid', '')
 
 
-        except ContentFetchError:
+        except Exception:
             log.warn("Failed to fetch organization information with id %s", member_code)
 
     elif member_class in COMPANY_CLASSES:
@@ -217,7 +229,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     old_business_ids = [str(business_id_change.get('oldBusinessId')) for business_id_change in business_id_changes]
                     organization_dict['old_business_ids'] = json.dumps(old_business_ids)
 
-        except ContentFetchError:
+        except Exception:
             log.warn("Failed to fetch company information with id %s", member_code)
 
     else:
