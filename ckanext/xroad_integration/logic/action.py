@@ -158,15 +158,19 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                         organization_dict['webpage_address'] = webpage_addresses
                         organization_dict['webpage_description'] = webpage_descriptions
 
-                    email_data = organization_info.get('emails', {}).get('email')
-                    if email_data:
-                        emails = {item['language']: item['value']
-                                  for item in email_data
-                                  if all(field in item for field in ['language', 'value'])}
-                        if emails:
-                            organization_dict['email_address'] = emails
+                    emails_field = organization_info.get('emails', {})
+                    if emails_field:
+                        email_data = _convert_xroad_value_to_uniform_list(emails_field.get('email'))
+                        if email_data:
+                            languages = set(item['language'] for item in email_data)
+                            emails = {lang: [item['value']
+                                             for item in email_data
+                                             if 'value' in item and item.get('language') == lang]
+                                      for lang in languages}
+                            if emails:
+                                organization_dict['email_address'] = emails
 
-                    organization_dict['organization_guid'] = organization_info.get('guid', '')
+                        organization_dict['organization_guid'] = organization_info.get('guid', '')
 
 
         except Exception:
