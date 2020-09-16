@@ -95,6 +95,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         if self.config.get('force_all', False) is True:
             last_time = "2011-01-01"
+        elif self.config.get('since'):
+            last_time = self.config.get('since')
         else:
             last_time = self._last_error_free_job_time(harvest_job) or "2011-01-01"
 
@@ -464,6 +466,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _parse_xroad_data(self, res):
         if isinstance(res['memberList'], basestring):
             return {}
+        if type(res['memberList']['member']) is dict:
+            return [res['memberList']['member']]
         return res['memberList']['member']
 
     def _get_wsdl(self, url, external_id):
