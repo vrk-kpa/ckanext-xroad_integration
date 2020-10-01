@@ -86,11 +86,12 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
     if member_class in PUBLIC_ORGANIZATION_CLASSES:
         try:
-            organization_changed = not last_updated or _get_organization_changes(source_url, member_code, last_updated)
+            if 'organization_guid' in organization:
+                organization_changed = not last_updated or _get_organization_changes(source_url, organization.get('organization_guid'), last_updated)
 
-            if not organization_changed:
-                log.debug('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
-                return None
+                if not organization_changed:
+                    log.info('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
+                    return None
 
             org_information_list = _get_organization_information(source_url, member_code)
 
