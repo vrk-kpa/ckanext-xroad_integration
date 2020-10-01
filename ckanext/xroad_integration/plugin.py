@@ -1,6 +1,7 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import helpers
+from views import xroad_errors
 from logic import action
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
@@ -8,6 +9,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IActions)
+    plugins.implements(plugins.IBlueprint)
 
     # IConfigurer
 
@@ -43,3 +45,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
 
     def get_actions(self):
         return {'update_xroad_organizations': action.update_xroad_organizations}
+
+    # IBlueprint
+    def get_blueprint(self):
+        return xroad_errors.get_blueprints()
