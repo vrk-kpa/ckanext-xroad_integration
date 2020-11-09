@@ -1,10 +1,7 @@
 from flask import Blueprint
 
 import ckan.model as model
-import logging
 from ckan.plugins.toolkit import render, check_access, NotAuthorized, abort, _, g, get_action
-
-log = logging.getLogger(__name__)
 
 xroad_errors = Blueprint(u'xroad_error', __name__, url_prefix=u'/ckan-admin/xroad_errors')
 

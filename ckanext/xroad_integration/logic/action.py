@@ -1,5 +1,7 @@
 import logging
 import json
+from typing import List
+
 import requests
 import datetime
 
@@ -335,15 +337,19 @@ def _convert_xroad_value_to_uniform_list(value):
 def fetch_xroad_errors(context, data_dict):
 
     toolkit.check_access('fetch_xroad_errors', context)
-    harvest_source_list = toolkit.get_action('harvest_source_list')
-    harvest_sources = harvest_source_list(context, {})
+    harvest_sources = toolkit.get_action('harvest_source_list')(context, {})  # type: List[dict]
+
+    results = []
 
     for harvest_source in harvest_sources:
         if harvest_source.get('type') != 'xroad':
             continue
 
-        source_url = harvest_source.get('url')
-        source_title = harvest_source.get('title')
+        source_url = harvest_source.get('url', '')
+        if not source_url.startswith('http'):
+            log.info("Invalid source url %s" % source_url)
+            continue
+        source_title = harvest_source.get('title', '')
 
         last_fetched = XRoadError.get_last_date()
         if last_fetched is None:
@@ -351,7 +357,7 @@ def fetch_xroad_errors(context, data_dict):
         else:
             last_fetched = last_fetched.strftime('%Y-%m-%d')
 
-        log.info("Fething error since %s" % last_fetched)
+        log.info("Fething error since %s for %s" % (last_fetched, source_title))
 
         try:
             r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
@@ -361,9 +367,14 @@ def fetch_xroad_errors(context, data_dict):
             for error in error_log:
                 XRoadError.create(error['message'], error['code'], error['created'])
 
-            return {"message": "%d errors stored to database" % len(error_log)}
+            results.append({"message": "%d errors stored to database." % len(error_log)})
         except ConnectionError:
             log.info("Calling GetErrors failed!")
+
+    if results:
+        return {"success": True, "results": results}
+
+    return {"success": False, "message": "Fetching errors failed."}
 
 def xroad_error_list(context, data_dict):
 

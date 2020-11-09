@@ -27,8 +27,16 @@ def update_xroad_organizations(ctx, config):
 @click.pass_context
 def fetch_errors(ctx, config):
     load_config((config or ctx.obj['config']))
-    result = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
-    print(result['message'])
+    results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
+
+    if results.get("success") is True:
+        for result in results.get('results', []):
+            print(result['message'])
+
+    else:
+        print(results['message'])
+
+
 
 
 @xroad_commands.command(
