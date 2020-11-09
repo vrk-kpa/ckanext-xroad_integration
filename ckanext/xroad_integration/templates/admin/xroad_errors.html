@@ -1,0 +1,23 @@
+{% extends "page.html" %}
+
+{% block primary %}
+    <table class="table table-bordered" style="table-layout:fixed;">
+        <thead>
+        <tr>
+            <th style="width: 20%">{% trans %}Created{% endtrans %}</th>
+            <th style="width: 60%">{% trans %}Message{% endtrans %}</th>
+            <th style="width: 20%">{% trans %}Code{% endtrans %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for error in error_list %}
+            <tr>
+                <td>{{ h.render_datetime(error.created) }}</td>
+                <td>{{ error.message }}</td>
+                <td>{{ error.code }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

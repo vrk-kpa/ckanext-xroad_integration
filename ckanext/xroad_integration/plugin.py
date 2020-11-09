@@ -1,6 +1,9 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+from ckan.logic.auth.get import sysadmin
+
 import helpers
+from views import xroad_errors
 from logic import action
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
@@ -8,6 +11,8 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IActions)
+    plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IAuthFunctions)
 
     # IConfigurer
 
@@ -42,4 +47,21 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     # IActions
 
     def get_actions(self):
-        return {'update_xroad_organizations': action.update_xroad_organizations}
+        return {
+            'update_xroad_organizations': action.update_xroad_organizations,
+            'fetch_xroad_errors': action.fetch_xroad_errors,
+            'xroad_error_list': action.xroad_error_list
+        }
+
+    # IAuthFunctions
+
+    def get_auth_functions(self):
+        return {
+            'fetch_xroad_errors': sysadmin,
+            'xroad_error_list': sysadmin,
+            'update_xroad_organizations': sysadmin
+        }
+
+    # IBlueprint
+    def get_blueprint(self):
+        return xroad_errors.get_blueprints()
