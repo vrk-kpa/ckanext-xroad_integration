@@ -2,11 +2,11 @@ from flask import Blueprint
 
 import ckan.model as model
 import logging
-from ckan.plugins.toolkit import render, check_access, NotAuthorized, abort, _, g
+from ckan.plugins.toolkit import render, check_access, NotAuthorized, abort, _, g, get_action
 
 log = logging.getLogger(__name__)
 
-xroad_errors = Blueprint(u'xroad_error', __name__, url_prefix=u'/admin/xroad_errors')
+xroad_errors = Blueprint(u'xroad_error', __name__, url_prefix=u'/ckan-admin/xroad_errors')
 
 def index():
     try:
@@ -15,7 +15,9 @@ def index():
     except NotAuthorized:
         abort(403, _(u'Need to be system administrator to administer'))
 
-    return render('admin/xroad_errors.html')
+    error_list = get_action('xroad_error_list')({}, {})
+
+    return render('admin/xroad_errors.html', extra_vars={"error_list": error_list})
 
 xroad_errors.add_url_rule(u'/', view_func=index, strict_slashes=False)
 

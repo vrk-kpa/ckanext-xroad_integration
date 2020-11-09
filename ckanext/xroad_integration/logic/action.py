@@ -2,11 +2,15 @@ import logging
 import json
 import requests
 import datetime
+
+from ckan import model
 from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from ckan.plugins import toolkit
 from pprint import pformat
+
+from ckanext.xroad_integration.model import XRoadError
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
@@ -36,6 +40,8 @@ log = logging.getLogger(__name__)
 
 
 def update_xroad_organizations(context, data_dict):
+
+    toolkit.check_access('update_xroad_organizations', context)
     harvest_source_list = toolkit.get_action('harvest_source_list')
     organization_list = toolkit.get_action('organization_list')
     organization_show = toolkit.get_action('organization_show')
@@ -325,3 +331,43 @@ def _convert_xroad_value_to_uniform_list(value):
         return [value]
 
     return value
+
+def fetch_xroad_errors(context, data_dict):
+
+    toolkit.check_access('fetch_xroad_errors', context)
+    harvest_source_list = toolkit.get_action('harvest_source_list')
+    harvest_sources = harvest_source_list(context, {})
+
+    for harvest_source in harvest_sources:
+        if harvest_source.get('type') != 'xroad':
+            continue
+
+        source_url = harvest_source.get('url')
+        source_title = harvest_source.get('title')
+
+        last_fetched = XRoadError.get_last_date()
+        if last_fetched is None:
+            last_fetched = '2016-01-01'
+        else:
+            last_fetched = last_fetched.strftime('%Y-%m-%d')
+
+        log.info("Fething error since %s" % last_fetched)
+
+        try:
+            r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
+                         headers = {'Accept': 'application/json'})
+
+            error_log = r.json().get('errorLogList', {}).get('errorLog', [])
+            for error in error_log:
+                XRoadError.create(error['message'], error['code'], error['created'])
+
+            return {"message": "%d errors stored to database" % len(error_log)}
+        except ConnectionError:
+            log.info("Calling GetErrors failed!")
+
+def xroad_error_list(context, data_dict):
+
+    toolkit.check_access('xroad_error_list', context)
+    xroad_errors = model.Session.query(XRoadError).filter(XRoadError.created - datetime.datetime(month=3)).all()
+
+    return [error.as_dict() for error in xroad_errors]
