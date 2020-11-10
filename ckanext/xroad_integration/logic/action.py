@@ -1,5 +1,7 @@
 import logging
 import json
+
+import dateutil
 from typing import List
 
 import requests
@@ -379,6 +381,6 @@ def fetch_xroad_errors(context, data_dict):
 def xroad_error_list(context, data_dict):
 
     toolkit.check_access('xroad_error_list', context)
-    xroad_errors = model.Session.query(XRoadError).filter(XRoadError.created - datetime.datetime(month=3)).all()
+    xroad_errors = model.Session.query(XRoadError).filter(XRoadError.created - dateutil.relativedelta(months=3)).all()
 
     return [error.as_dict() for error in xroad_errors]
