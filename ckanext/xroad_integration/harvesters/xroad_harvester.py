@@ -734,9 +734,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if not org.get('webpage_description_modified_in_catalog', False):
                     org_data['webpage_description'] = data_dict.get('webpage_description', {})
 
-                patch_context = context.copy()
-                patch_context['allow_partial_update'] = True
-                org = p.toolkit.get_action('organization_patch')(patch_context, org_data)
+                org = p.toolkit.get_action('organization_patch')(context, org_data)
 
         else:
             log.info("Organization %s not found, creating...", data_dict['name'])

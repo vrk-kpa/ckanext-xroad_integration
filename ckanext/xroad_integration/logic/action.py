@@ -72,10 +72,7 @@ def update_xroad_organizations(context, data_dict):
                 log.debug('Updating organization %s data from %s', organization_name, source_title)
                 patch['metadata_updated_from_xroad_timestamp'] = timestamp
                 try:
-                    # Organization patch will remove members with full updates
-                    patch_context = context.copy()
-                    patch_context['allow_partial_update'] = True
-                    organization_patch(patch_context, patch)
+                    organization_patch(context, patch)
                 except toolkit.ValidationError:
                     log.debug('Validation error updating %s from %s: %s', organization_name, source_title, pformat(patch))
 
