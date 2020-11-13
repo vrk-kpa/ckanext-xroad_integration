@@ -16,8 +16,9 @@ def index(date=None):
 
     return render('admin/xroad_errors.html', extra_vars={"error_list": error_list})
 
-xroad_errors.add_url_rule(u'/', view_func=index, strict_slashes=False)
 xroad_errors.add_url_rule(u'/<date>', view_func=index, strict_slashes=False)
+xroad_errors.add_url_rule(u'/', view_func=index, strict_slashes=False)
+
 
 def get_blueprints():
     return [xroad_errors]
