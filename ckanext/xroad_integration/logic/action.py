@@ -2,6 +2,7 @@ import logging
 import json
 
 from dateutil import relativedelta
+from sqlalchemy import and_, not_
 from typing import List
 
 import requests
@@ -355,9 +356,9 @@ def fetch_xroad_errors(context, data_dict):
 
         last_fetched = XRoadError.get_last_date()
         if last_fetched is None:
-            last_fetched = '2016-01-01'
+            last_fetched = '2016-01-01T00:00:00'
         else:
-            last_fetched = last_fetched.strftime('%Y-%m-%d')
+            last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
 
         log.info("Fething error since %s for %s" % (last_fetched, source_title))
 
@@ -381,7 +382,27 @@ def fetch_xroad_errors(context, data_dict):
 def xroad_error_list(context, data_dict):
 
     toolkit.check_access('xroad_error_list', context)
-    cutoff_date = datetime.datetime.now() - relativedelta.relativedelta(months=3)
-    xroad_errors = model.Session.query(XRoadError).filter(XRoadError.created > cutoff_date).all()
 
-    return [error.as_dict() for error in xroad_errors]
+    date = data_dict.get('date')
+    if date:
+        start = datetime.datetime.strptime(date, "%Y-%m-%d")
+    else:
+        start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    end = start.replace(hour=23, minute=59, second=59)
+
+    rest_services_failed_errors = model.Session.query(XRoadError)\
+        .filter(XRoadError.message.like("Fetch of REST services failed%"))\
+        .filter(and_(XRoadError.created > start),(XRoadError.created < end)).all()
+
+    other_errors = model.Session.query(XRoadError)\
+        .filter(not_(XRoadError.message.like("Fetch of REST services failed%")))\
+        .filter(and_(XRoadError.created > start), (XRoadError.created < end)).all()
+
+    return {
+        "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
+        "other_errors": [error.as_dict() for error in other_errors],
+        "date": start,
+        "previous": (start - relativedelta.relativedelta(days=1)).date(),
+        "next": (start + relativedelta.relativedelta(days=1)).date()
+    }
