@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.logic.auth.get import sysadmin
 
 import helpers
-from views import xroad_errors
+from views import xroad
 from logic import action
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
@@ -64,4 +64,4 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
 
     # IBlueprint
     def get_blueprint(self):
-        return xroad_errors.get_blueprints()
+        return xroad.get_blueprints()

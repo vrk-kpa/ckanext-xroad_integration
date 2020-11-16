@@ -2,8 +2,8 @@
 
 {% block primary %}
 
-    <a href="{{ h.url_for('xroad_error.index', date=error_list.previous) }}">Previous</a>
-    <a href="{{ h.url_for('xroad_error.index', date=error_list.next) }}">Next</a>
+    <a href="{{ h.url_for('xroad.errors', date=error_list.previous) }}">Previous</a>
+    <a href="{{ h.url_for('xroad.errors', date=error_list.next) }}">Next</a>
 
     <h1>Errors for {{ h.render_datetime(error_list.date) }}</h1>
     <h2>Other errors</h2>
@@ -46,7 +46,7 @@
     </table>
 
 
-    <a href="{{ h.url_for('xroad_error.index', date=error_list.previous) }}">Previous</a>
-    <a href="{{ h.url_for('xroad_error.index', date=error_list.next) }}">Next</a>
+    <a href="{{ h.url_for('xroad.errors', date=error_list.previous) }}">Previous</a>
+    <a href="{{ h.url_for('xroad.errors', date=error_list.next) }}">Next</a>
 
 {% endblock %}
