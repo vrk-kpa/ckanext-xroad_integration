@@ -360,7 +360,7 @@ def fetch_xroad_errors(context, data_dict):
         else:
             last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
 
-        log.info("Fething errors since %s for %s" % (last_fetched, source_title))
+        log.info("Fetching errors since %s for %s" % (last_fetched, source_title))
 
         try:
             r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
@@ -414,7 +414,7 @@ def fetch_xroad_stats(context, data_dict):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
 
-    log.info("Fething xroad stats for the last %s days" % DAYS_TO_FETCH)
+    log.info("Fetching xroad stats for the last %s days" % DAYS_TO_FETCH)
 
     try:
         r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(DAYS_TO_FETCH),
