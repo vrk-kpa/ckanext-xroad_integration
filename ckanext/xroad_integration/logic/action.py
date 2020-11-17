@@ -15,7 +15,7 @@ from requests.packages.urllib3.util.retry import Retry
 from ckan.plugins import toolkit
 from pprint import pformat
 
-from ckanext.xroad_integration.model import XRoadError
+from ckanext.xroad_integration.model import XRoadError, XRoadStat
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
@@ -360,7 +360,7 @@ def fetch_xroad_errors(context, data_dict):
         else:
             last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
 
-        log.info("Fething error since %s for %s" % (last_fetched, source_title))
+        log.info("Fething errors since %s for %s" % (last_fetched, source_title))
 
         try:
             r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
@@ -406,3 +406,30 @@ def xroad_error_list(context, data_dict):
         "previous": (start - relativedelta.relativedelta(days=1)).date(),
         "next": (start + relativedelta.relativedelta(days=1)).date()
     }
+
+DAYS_TO_FETCH = 1
+def fetch_xroad_stats(context, data_dict):
+    toolkit.check_access('fetch_xroad_stats', context)
+
+    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address')
+    xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+
+    log.info("Fething xroad stats for the last %s days" % DAYS_TO_FETCH)
+
+    try:
+        r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(DAYS_TO_FETCH),
+                     headers = {'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-Road-Client': xroad_client_id},
+                     verify=False)
+
+
+        statistics_list = r.json().get('serviceStatisticsList', [])
+        for statistics in statistics_list:
+            date = datetime.datetime.now()
+            XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
+                             statistics['totalNumberOfDistinctServices'], 0)
+
+    except ConnectionError as e:
+        log.info("Calling GetErrors failed!")
+        log.info(e)

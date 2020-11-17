@@ -42,6 +42,39 @@ class XRoadError(Base):
         else:
             return None
 
+class XRoadStat(Base):
+
+    __tablename__ = 'xroad_stats'
+
+    id = Column(types.UnicodeText, primary_key=True, default=make_uuid)
+    date = Column(types.DateTime, nullable=False)
+    soap_service_count = Column(types.Integer, nullable=False)
+    rest_service_count = Column(types.Integer, nullable=False)
+    distinct_service_count = Column(types.Integer, nullable=False)
+    unknown_service_count = Column(types.Integer, nullable=False)
+
+
+    @classmethod
+    def create(cls, date, soap_service_count, rest_service_count, distinct_service_count, unknown_service_count):
+        xroad_stat = XRoadStat(date=date, soap_service_count=soap_service_count, rest_service_count=rest_service_count,
+                               distinct_service_count=distinct_service_count,
+                               unknown_service_count=unknown_service_count)
+
+        model.Session.add(xroad_stat)
+        model.repo.commit()
+
+    def as_dict(self):
+        context = {'model': model}
+        stat_dict = dictization.table_dictize(self, context)
+
+        return stat_dict
+
+    @classmethod
+    def get_by_date(cls, date):
+        stat = model.Session.query(XRoadStat).filter(cls.date == date).one_or_none()
+        return stat
+
+
 def init_table(engine):
     Base.metadata.create_all(engine)
     log.info("Table for xroad errors is set-up")
