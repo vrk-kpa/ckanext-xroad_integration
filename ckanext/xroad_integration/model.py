@@ -74,6 +74,10 @@ class XRoadStat(Base):
         stat = model.Session.query(XRoadStat).filter(cls.date == date).one_or_none()
         return stat
 
+    @classmethod
+    def save(cls, obj):
+        model.Session.add(obj)
+        model.repo.commit()
 
 def init_table(engine):
     Base.metadata.create_all(engine)
