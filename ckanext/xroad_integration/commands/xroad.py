@@ -37,6 +37,27 @@ def fetch_errors(ctx, config):
         print(results['message'])
 
 
+@xroad_commands.command(
+    u'fetch_stats',
+    help='Fetches X-Road stats from catalog lister'
+)
+@click_config_option
+@click.pass_context
+@click.option(u'--days', type=int)
+def fetch_stats(ctx, config, days):
+    load_config((config or ctx.obj['config']))
+
+    data_dict = {}
+    if days:
+        data_dict['days'] = days
+
+    results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
+
+    if results.get("success") is True:
+            print(results['message'])
+
+    else:
+        print(results['message'])
 
 
 @xroad_commands.command(

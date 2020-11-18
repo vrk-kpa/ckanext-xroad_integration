@@ -418,10 +418,14 @@ def fetch_xroad_stats(context, data_dict):
         log.info("Invalid X-Road catalog  url %s" % xroad_catalog_address)
         return
 
-    log.info("Fetching X-Road stats for the last %s days" % DAYS_TO_FETCH)
+    days = data_dict.get('days', DAYS_TO_FETCH)
+
+    log.info("Fetching X-Road stats for the last %s days" % days)
+
+
 
     try:
-        r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(DAYS_TO_FETCH),
+        r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(days),
                      headers = {'Accept': 'application/json',
                                 'Content-Type': 'application/json',
                                 'X-Road-Client': xroad_client_id},
