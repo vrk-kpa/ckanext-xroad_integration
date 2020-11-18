@@ -20,5 +20,18 @@ xroad.add_url_rule(u'/errors/<date>', view_func=errors, strict_slashes=False)
 xroad.add_url_rule(u'/errors', view_func=errors, strict_slashes=False)
 
 
+def stats():
+    try:
+        context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
+        check_access(u'sysadmin', context)
+    except NotAuthorized:
+        abort(403, _(u'Need to be system administrator to administer'))
+
+    xroad_stats = get_action('xroad_stats')({}, {})
+
+    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats})
+
+xroad.add_url_rule(u'/stats', view_func=stats)
+
 def get_blueprints():
     return [xroad]

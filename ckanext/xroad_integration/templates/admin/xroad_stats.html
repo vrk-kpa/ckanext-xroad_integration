@@ -1,0 +1,28 @@
+{% extends "page.html" %}
+
+{% block primary %}
+
+    <table class="table table-bordered" style="table-layout:fixed;">
+        <thead>
+        <tr>
+            <th style="width: 20%">{% trans %}Date{% endtrans %}</th>
+            <th style="width: 20%">{% trans %}Number of SOAP services{% endtrans %}</th>
+            <th style="width: 20%">{% trans %}Number of Rest services{% endtrans %}</th>
+            <th style="width: 20%">{% trans %}Number of Distinct services{% endtrans %}</th>
+            <th style="width: 20%">{% trans %}Number of Unknown services{% endtrans %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for stat in xroad_stats %}
+            <tr>
+                <td>{{ h.render_datetime(stat.date) }}</td>
+                <td>{{ stat.soap_service_count }}</td>
+                <td>{{ stat.rest_service_count }}</td>
+                <td>{{ stat.distinct_service_count }}</td>
+                <td>{{ stat.unknown_service_count }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
