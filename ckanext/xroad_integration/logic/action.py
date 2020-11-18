@@ -434,6 +434,17 @@ def fetch_xroad_stats(context, data_dict):
             XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
                              statistics['totalNumberOfDistinctServices'], 0)
 
+        return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
+
     except ConnectionError as e:
         log.info("Calling GetErrors failed!")
         log.info(e)
+
+def xroad_stats(context, data_dict):
+
+    toolkit.check_access('xroad_stats', context)
+
+
+    stats  = model.Session.query(XRoadStat).all()
+
+    return [stat.as_dict() for stat in stats]
