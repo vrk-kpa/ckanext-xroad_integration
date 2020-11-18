@@ -13,6 +13,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IAuthFunctions)
+    plugins.implements(plugins.IConfigurable)
 
     # IConfigurer
 
@@ -20,6 +21,17 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'xroad_integration')
+
+
+    # IConfigurable
+
+    def configure(self, config):
+        xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address')
+        xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+
+        if not (xroad_catalog_address or xroad_client_id):
+            raise Exception("X-Road catalog has not been configured.")
+
 
     # IResourceController
 

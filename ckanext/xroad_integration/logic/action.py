@@ -411,10 +411,14 @@ DAYS_TO_FETCH = 1
 def fetch_xroad_stats(context, data_dict):
     toolkit.check_access('fetch_xroad_stats', context)
 
-    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address')
+    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
 
-    log.info("Fetching xroad stats for the last %s days" % DAYS_TO_FETCH)
+    if not xroad_catalog_address.startswith('http'):
+        log.info("Invalid X-Road catalog  url %s" % xroad_catalog_address)
+        return
+
+    log.info("Fetching X-Road stats for the last %s days" % DAYS_TO_FETCH)
 
     try:
         r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(DAYS_TO_FETCH),
