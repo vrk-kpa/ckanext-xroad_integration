@@ -430,8 +430,18 @@ def fetch_xroad_stats(context, data_dict):
 
         statistics_list = r.json().get('serviceStatisticsList', [])
         for statistics in statistics_list:
-            date = datetime.datetime.now()
-            XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
+            created = statistics['created']
+            date = datetime.datetime(created['year'], created['monthValue'], created['dayOfMonth'])
+
+            stat = XRoadStat.get_by_date(date)
+            if stat:
+                stat.soap_service_count = statistics['numberOfSoapServices']
+                stat.rest_service_count = statistics['numberOfRestServices']
+                stat.distinct_service_count = statistics['totalNumberOfDistinctServices']
+                stat.unknown_service_count = 0
+                XRoadStat.save(stat)
+            else:
+                XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
                              statistics['totalNumberOfDistinctServices'], 0)
 
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
