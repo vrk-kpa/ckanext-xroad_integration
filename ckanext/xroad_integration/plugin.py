@@ -64,7 +64,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
             'fetch_xroad_errors': action.fetch_xroad_errors,
             'xroad_error_list': action.xroad_error_list,
             'fetch_xroad_stats': action.fetch_xroad_stats,
-            'xroad_stats': action.xroad_stats
+            'xroad_stats': action.xroad_stats,
+            'fetch_xroad_service_list': action.fetch_xroad_service_list,
+            'xroad_service_list': action.xroad_service_list
         }
 
     # IAuthFunctions
@@ -75,7 +77,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
             'xroad_error_list': sysadmin,
             'update_xroad_organizations': sysadmin,
             'fetch_xroad_stats': sysadmin,
-            'xroad_stats': sysadmin
+            'xroad_stats': sysadmin,
+            'fetch_xroad_service_list': sysadmin,
+            'xroad_service_list': sysadmin
         }
 
     # IBlueprint
