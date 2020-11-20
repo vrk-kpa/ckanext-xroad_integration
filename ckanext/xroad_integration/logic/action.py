@@ -413,12 +413,12 @@ def fetch_xroad_service_list(context, data_dict):
     try:
         service_list_data = xroad_catalog_query('getListOfServices', str(days)).json()
     except ConnectionError:
-        log.warn("Calling getListOfServices failed!")
-        return
+        log.warn("Connection error calling getListOfServices")
+        return {'success': False, 'message': 'Connection error calling getListOfServices'}
 
     if service_list_data is None:
-        log.warn('Error calling getListOfServices!')
-        return
+        log.warn('Invalid configuration for calling getListOfServices')
+        return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
 
     for member_list_data in service_list_data.get('memberData', []):
         log.info(pformat(member_list_data))
