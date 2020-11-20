@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+
+{% block primary %}
+
+    <table class="table table-bordered" style="table-layout:fixed;" data-module="tablesorter">
+      <caption>{{ h.render_datetime(service_list.timestamp) }}</caption>
+        <thead>
+        <tr>
+            <th>{% trans %}Member{% endtrans %}</th>
+            <th>{% trans %}Subsystem{% endtrans %}</th>
+            <th>{% trans %}Service{% endtrans %}</th>
+            <th>{% trans %}Security servers{% endtrans %}</th>
+            <th>{% trans %}Created{% endtrans %}</th>
+        </tr>
+        </thead>
+        <tbody>
+          {% for m in service_list.members %}
+            {% for ss in m.subsystems %}
+              {% for s in ss.services %}
+                <tr>
+                  <td>{{ m.instance }}.{{ m.member_class }}.{{ m.member_code }}</td>
+                  <td>{{ ss.subsystem_code }}</td>
+                  <td>{{ s.service_code }}{%- if s.service_version %}.{{ s.service_version }}{% endif %}</td>
+                  <td>
+                    <ul style="list-style: none; padding: 0;">
+                      {% for ssrv in m.security_servers %}
+                      <li>{{ ssrv.address }} ({{ ssrv.server_code }})</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
+                  <td>{{ s.created }}
+                </tr>
+            {% endfor %}
+          {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+

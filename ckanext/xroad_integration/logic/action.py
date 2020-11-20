@@ -15,12 +15,14 @@ from requests.packages.urllib3.util.retry import Retry
 from ckan.plugins import toolkit
 from pprint import pformat
 
-from ckanext.xroad_integration.model import XRoadError, XRoadStat
+from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
+                                             XRoadServiceListSubsystem, XRoadServiceListService, XRoadServiceListSecurityServer)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
+DEFAULT_DAYS_TO_FETCH = 1
 
 # Add default timeout
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -337,22 +339,15 @@ def _convert_xroad_value_to_uniform_list(value):
 
     return value
 
+
 def fetch_xroad_errors(context, data_dict):
 
     toolkit.check_access('fetch_xroad_errors', context)
-    harvest_sources = toolkit.get_action('harvest_source_list')(context, {})  # type: List[dict]
-
     results = []
 
-    for harvest_source in harvest_sources:
-        if harvest_source.get('type') != 'xroad':
-            continue
-
-        source_url = harvest_source.get('url', '')
-        if not source_url.startswith('http'):
-            log.info("Invalid source url %s" % source_url)
-            continue
+    for harvest_source in xroad_harvest_sources(context):
         source_title = harvest_source.get('title', '')
+        source_url = harvest_source.get('url', '')
 
         last_fetched = XRoadError.get_last_date()
         if last_fetched is None:
@@ -378,6 +373,137 @@ def fetch_xroad_errors(context, data_dict):
         return {"success": True, "results": results}
 
     return {"success": False, "message": "Fetching errors failed."}
+
+
+def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
+    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
+    xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+
+    if not xroad_catalog_address.startswith('http'):
+        log.warn("Invalid X-Road catalog url %s" % xroad_catalog_address)
+        return None
+
+    url = '{address}/{service}/{params}'.format(address=xroad_catalog_address, service=service, params=params)
+    headers = {'Accept': accept,
+               'Content-Type': content_type,
+               'X-Road-Client': xroad_client_id}
+
+    return http.get(url, headers=headers, verify=False)
+
+
+def fetch_xroad_service_list(context, data_dict):
+
+    toolkit.check_access('fetch_xroad_service_list', context)
+    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
+
+    log.info("Fetching X-Road services for the last %s days" % days)
+
+    try:
+        service_list_data = xroad_catalog_query('getListOfServices', str(days)).json()
+    except ConnectionError:
+        log.warn("Calling getListOfServices failed!")
+        return
+
+    if service_list_data is None:
+        log.warn('Error calling getListOfServices!')
+        return
+
+    for member_list_data in service_list_data.get('memberData', []):
+        log.info(pformat(member_list_data))
+        fetch_timestamp = parse_xroad_catalog_datetime(member_list_data.get('date'))
+        instances = set(m['xroadInstance'] for m in member_list_data['memberDataList'] if m.get('xroadInstance'))
+        default_instance = next(iter(instances)) if len(instances) == 1 else None
+        service_list = XRoadServiceList.create(fetch_timestamp)
+
+        for security_server_data in service_list_data.get('securityServerData', []):
+            instance = security_server_data.get('xroadInstance', default_instance)
+            member_class = security_server_data.get('memberClass')
+            member_code = security_server_data.get('memberCode')
+            server_code = security_server_data.get('serverCode')
+            address = security_server_data.get('address')
+
+            if not all((instance, member_class, member_code, server_code, address)):
+                log.warn('Security server %s.%s (%s) is missing required information, skipping.', member_class, member_code, server_code)
+                continue
+
+            XRoadServiceListSecurityServer.create(service_list.id, instance, member_class, member_code, server_code, address)
+
+        for member_data in member_list_data.get('memberDataList', []):
+            created = parse_xroad_catalog_datetime(member_data.get('created'))
+            instance = member_data.get('xroadInstance', default_instance)
+            member_class = member_data.get('memberClass')
+            member_code = member_data.get('memberCode')
+            name = member_data.get('name')
+
+            if not all((instance, member_class, member_code, created, name)):
+                log.warn('Member %s.%s is missing required information, skipping.', member_class, member_code)
+                continue
+
+            member = XRoadServiceListMember.create(service_list.id, created, instance, member_class, member_code, name)
+
+            for subsystem_data in member_data.get('subsystemList', []):
+                created = parse_xroad_catalog_datetime(subsystem_data.get('created'))
+                subsystem_code = subsystem_data.get('subsystemCode')
+
+                if not all((created, subsystem_code)):
+                    log.warn('Subsystem %s.%s.%s is missing required information, skipping.', member_class, member_code, subsystem_code)
+                    continue
+
+                subsystem = XRoadServiceListSubsystem.create(member.id, created, subsystem_code)
+
+                for service_data in subsystem_data.get('serviceList', []):
+                    created = parse_xroad_catalog_datetime(service_data.get('created'))
+                    service_code = service_data.get('serviceCode')
+                    service_version = service_data.get('serviceVersion')
+
+                    if not all((created, service_code)):
+                        log.warn('Service %s.%s.%s.%s.%s is missing required information, skipping.',
+                                 member_class, member_code, subsystem_code, service_code, service_version)
+                        continue
+
+                    XRoadServiceListService.create(subsystem.id, created, service_code, service_version)
+
+    return {"success": True, "message": "Statistics for %s days stored in database." % len(service_list_data.get('memberData', []))}
+
+
+def xroad_service_list(context, data_dict):
+    toolkit.check_access('xroad_service_list', context)
+    date = data_dict.get('date')
+    if date:
+        start = datetime.datetime.strptime(date, "%Y-%m-%d")
+    else:
+        start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    end = start.replace(hour=23, minute=59, second=59)
+
+    service_lists = XRoadServiceList.within_range(start, end)
+    results = [sl.as_dict_full() for sl in service_lists]
+
+    # Remove unnecessary data from response
+    for sl in results:
+        del sl['id']
+        for ss in sl['security_servers']:
+            del ss['id']
+            del ss['xroad_service_list_id']
+        for m in sl['members']:
+            del m['id']
+            del m['xroad_service_list_id']
+            for ss in m['subsystems']:
+                del ss['id']
+                del ss['xroad_service_list_member_id']
+                for sr in ss['services']:
+                    del sr['id']
+                    del sr['xroad_service_list_subsystem_id']
+
+    return results
+
+
+
+def parse_xroad_catalog_datetime(dt):
+    if not dt:
+        return dt
+    return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
+
 
 def xroad_error_list(context, data_dict):
 
@@ -407,32 +533,23 @@ def xroad_error_list(context, data_dict):
         "next": (start + relativedelta.relativedelta(days=1)).date()
     }
 
-DAYS_TO_FETCH = 1
+
 def fetch_xroad_stats(context, data_dict):
     toolkit.check_access('fetch_xroad_stats', context)
 
-    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
-    xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
-
-    if not xroad_catalog_address.startswith('http'):
-        log.info("Invalid X-Road catalog  url %s" % xroad_catalog_address)
-        return
-
-    days = data_dict.get('days', DAYS_TO_FETCH)
+    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
 
     log.info("Fetching X-Road stats for the last %s days" % days)
 
-
-
     try:
-        r = http.get(xroad_catalog_address + '/getServiceStatistics/' + str(days),
-                     headers = {'Accept': 'application/json',
-                                'Content-Type': 'application/json',
-                                'X-Road-Client': xroad_client_id},
-                     verify=False)
+        statistics_data = xroad_catalog_query('getServiceStatistics', str(days)).json()
 
+        if statistics_data is None:
+            log.warn("Calling GetErrors failed!")
+            return
 
-        statistics_list = r.json().get('serviceStatisticsList', [])
+        statistics_list = statistics_data.get('serviceStatisticsList', [])
+
         for statistics in statistics_list:
             created = statistics['created']
             date = datetime.datetime(created['year'], created['monthValue'], created['dayOfMonth'])
@@ -446,19 +563,34 @@ def fetch_xroad_stats(context, data_dict):
                 XRoadStat.save(stat)
             else:
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
-                             statistics['totalNumberOfDistinctServices'], 0)
+                                 statistics['totalNumberOfDistinctServices'], 0)
 
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
 
     except ConnectionError as e:
-        log.info("Calling GetErrors failed!")
+        log.warn("Calling GetErrors failed!")
         log.info(e)
+
 
 def xroad_stats(context, data_dict):
 
     toolkit.check_access('xroad_stats', context)
 
-
-    stats  = model.Session.query(XRoadStat).all()
+    stats = model.Session.query(XRoadStat).all()
 
     return [stat.as_dict() for stat in stats]
+
+
+def xroad_harvest_sources(context):
+    harvest_sources = toolkit.get_action('harvest_source_list')(context, {})  # type: List[dict]
+
+    for harvest_source in harvest_sources:
+        if harvest_source.get('type') != 'xroad':
+            continue
+
+        source_url = harvest_source.get('url', '')
+        if not source_url.startswith('http'):
+            log.warn("Invalid source url %s" % source_url)
+            continue
+
+        yield harvest_source
