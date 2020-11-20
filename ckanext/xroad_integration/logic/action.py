@@ -421,7 +421,6 @@ def fetch_xroad_service_list(context, data_dict):
         return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
 
     for member_list_data in service_list_data.get('memberData', []):
-        log.info(pformat(member_list_data))
         fetch_timestamp = parse_xroad_catalog_datetime(member_list_data.get('date'))
         instances = set(m['xroadInstance'] for m in member_list_data['memberDataList'] if m.get('xroadInstance'))
         default_instance = next(iter(instances)) if len(instances) == 1 else None
