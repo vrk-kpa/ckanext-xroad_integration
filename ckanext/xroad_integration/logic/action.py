@@ -1,5 +1,6 @@
 import logging
 import json
+import os.path
 
 from dateutil import relativedelta
 from sqlalchemy import and_, not_
@@ -377,7 +378,9 @@ def fetch_xroad_errors(context, data_dict):
 
 def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
+    xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+    xroad_client_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_client_certificate')
 
     if not xroad_catalog_address.startswith('http'):
         log.warn("Invalid X-Road catalog url %s" % xroad_catalog_address)
@@ -388,7 +391,16 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
                'Content-Type': content_type,
                'X-Road-Client': xroad_client_id}
 
-    return http.get(url, headers=headers, verify=False)
+
+    certificate_args = {}
+    if xroad_catalog_certificate and os.path.isfile(xroad_catalog_certificate):
+        certificate_args['verify'] = xroad_catalog_certificate
+    else:
+        certificate_args['verify'] = False
+
+    if xroad_client_certificate and os.path.isfile(xroad_client_certificate):
+        certificate_args['cert'] = xroad_client_certificate
+    return http.get(url, headers=headers, **certificate_args)
 
 
 def fetch_xroad_service_list(context, data_dict):
