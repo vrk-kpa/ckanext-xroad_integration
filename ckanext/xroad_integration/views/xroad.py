@@ -54,7 +54,6 @@ def services():
         member['security_servers'] = security_servers
 
     return render('/admin/xroad_services.html', extra_vars={'service_list': latest})
-    pass
 
 
 xroad.add_url_rule(u'/services', view_func=services)
