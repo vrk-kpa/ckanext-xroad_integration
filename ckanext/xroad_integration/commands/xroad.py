@@ -80,7 +80,7 @@ def fetch_service_list(ctx, config, days):
             print(results['message'])
 
     else:
-        print(results['message'])
+        print("Error fetching service list!")
 
 
 @xroad_commands.command(
