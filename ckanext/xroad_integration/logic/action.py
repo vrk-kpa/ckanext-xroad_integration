@@ -568,8 +568,9 @@ def fetch_xroad_stats(context, data_dict):
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
 
     except ConnectionError as e:
-        log.warn("Calling GetErrors failed!")
+        log.warn("Calling getServiceStatistics failed!")
         log.info(e)
+        return {"success": False, "message": "Fetching statistics failed."}
 
 
 def xroad_stats(context, data_dict):
