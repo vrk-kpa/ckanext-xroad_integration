@@ -445,12 +445,13 @@ def fetch_xroad_service_list(context, data_dict):
             member_class = member_data.get('memberClass')
             member_code = member_data.get('memberCode')
             name = member_data.get('name')
+            is_provider = member_data.get('provider')
 
             if not all((instance, member_class, member_code, created, name)):
                 log.warn('Member %s.%s is missing required information, skipping.', member_class, member_code)
                 continue
 
-            member = XRoadServiceListMember.create(service_list.id, created, instance, member_class, member_code, name)
+            member = XRoadServiceListMember.create(service_list.id, created, instance, member_class, member_code, name, is_provider)
 
             for subsystem_data in member_data.get('subsystemList', []):
                 created = parse_xroad_catalog_datetime(subsystem_data.get('created'))
@@ -466,13 +467,14 @@ def fetch_xroad_service_list(context, data_dict):
                     created = parse_xroad_catalog_datetime(service_data.get('created'))
                     service_code = service_data.get('serviceCode')
                     service_version = service_data.get('serviceVersion')
+                    active = service_data.get('active')
 
                     if not all((created, service_code)):
                         log.warn('Service %s.%s.%s.%s.%s is missing required information, skipping.',
                                  member_class, member_code, subsystem_code, service_code, service_version)
                         continue
 
-                    XRoadServiceListService.create(subsystem.id, created, service_code, service_version)
+                    XRoadServiceListService.create(subsystem.id, created, service_code, service_version, active)
 
     return {"success": True, "message": "Statistics for %s days stored in database." % len(service_list_data.get('memberData', []))}
 
@@ -509,11 +511,16 @@ def xroad_service_list(context, data_dict):
     return results
 
 
-
 def parse_xroad_catalog_datetime(dt):
     if not dt:
         return dt
-    return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
+    if type(dt) is dict:
+        return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
+    elif type(dt) is list:
+        return datetime.datetime(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5])
+    else:
+        return None
+
 
 
 def xroad_error_list(context, data_dict):
