@@ -354,9 +354,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 openapi = service.get('openapi')
                 if not service_description and not service_removed:
                     log.info('Service "%s" has no WSDLs or OpenAPIs, removing service if it exists', name)
-                    if any(True for r in package_dict.get('resources', []) if r['name'] == name):
+                    resource = next((r for r in package_dict.get('resources', []) if r['name'] == name), None)
+                    if resource:
                         log.info("Removing service %s", name)
-                        self._delete_resource({'id': name})
+                        self._delete_resource({'id': resource['id']})
                     continue
 
                 if not service_removed:
