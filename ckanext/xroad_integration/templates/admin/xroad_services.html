@@ -7,9 +7,11 @@
         <thead>
         <tr>
             <th>{% trans %}Member{% endtrans %}</th>
+            <th>{% trans %}Member type{% endtrans %}</th>
             <th>{% trans %}Subsystem{% endtrans %}</th>
             <th>{% trans %}Service{% endtrans %}</th>
             <th>{% trans %}Security servers{% endtrans %}</th>
+            <th>{% trans %}Active{% endtrans %}</th>
             <th>{% trans %}Created{% endtrans %}</th>
         </tr>
         </thead>
@@ -19,6 +21,7 @@
               {% for s in ss.services %}
                 <tr>
                   <td>{{ m.instance }}.{{ m.member_class }}.{{ m.member_code }}</td>
+                  <td>{% if m.is_provider %}{% trans %}Provider{% endtrans %}{% else %}{% trans %}Consumer{% endtrans %}{% endif %}</td>
                   <td>{{ ss.subsystem_code }}</td>
                   <td>{{ s.service_code }}{%- if s.service_version %}.{{ s.service_version }}{% endif %}</td>
                   <td>
@@ -28,7 +31,8 @@
                       {% endfor %}
                     </ul>
                   </td>
-                  <td>{{ s.created }}
+                  <td>{% if s.active %}{% trans %}Yes{% endtrans %}{% else %}{% trans %}No{% endtrans %}{% endif %}</td>
+                  <td>{{ s.created }}</td>
                 </tr>
             {% endfor %}
           {% endfor %}

@@ -148,16 +148,18 @@ class XRoadServiceListMember(Base, AsDictMixin):
     member_class = Column(types.Unicode, nullable=False)
     member_code = Column(types.Unicode, nullable=False)
     name = Column(types.Unicode, nullable=False)
+    is_provider = Column(types.Boolean, nullable=False)
 
     @classmethod
-    def create(cls, xroad_service_list_id, created, instance, member_class, member_code, name):
+    def create(cls, xroad_service_list_id, created, instance, member_class, member_code, name, is_provider):
         member = XRoadServiceListMember(
                 xroad_service_list_id=xroad_service_list_id,
                 created=created,
                 instance=instance,
                 member_class=member_class,
                 member_code=member_code,
-                name=name)
+                name=name,
+                is_provider=is_provider)
         model.Session.add(member)
         model.repo.commit()
         return member
@@ -210,14 +212,16 @@ class XRoadServiceListService(Base, AsDictMixin):
     created = Column(types.DateTime, nullable=False)
     service_code = Column(types.Unicode, nullable=False)
     service_version = Column(types.Unicode, nullable=True)
+    active = Column(types.Boolean, nullable=False, default=True)
 
     @classmethod
-    def create(cls, xroad_service_list_subsystem_id, created, service_code, service_version):
+    def create(cls, xroad_service_list_subsystem_id, created, service_code, service_version, active):
         service = XRoadServiceListService(
                 xroad_service_list_subsystem_id=xroad_service_list_subsystem_id,
                 created=created,
                 service_code=service_code,
-                service_version=service_version)
+                service_version=service_version,
+                active=active)
         model.Session.add(service)
         model.repo.commit()
         return service
