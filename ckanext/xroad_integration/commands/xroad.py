@@ -61,6 +61,29 @@ def fetch_stats(ctx, config, days):
 
 
 @xroad_commands.command(
+    u'fetch_service_list',
+    help='Fetches X-Road services from catalog lister'
+)
+@click_config_option
+@click.pass_context
+@click.option(u'--days', type=int)
+def fetch_service_list(ctx, config, days):
+    load_config((config or ctx.obj['config']))
+
+    data_dict = {}
+    if days:
+        data_dict['days'] = days
+
+    results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
+
+    if results.get("success") is True:
+            print(results['message'])
+
+    else:
+        print("Error fetching service list!")
+
+
+@xroad_commands.command(
     u'init_db',
     help="Initializes databases for xroad"
 )

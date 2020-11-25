@@ -1,5 +1,6 @@
 import logging
 import json
+import os.path
 
 from dateutil import relativedelta
 from sqlalchemy import and_, not_
@@ -377,7 +378,9 @@ def fetch_xroad_errors(context, data_dict):
 
 def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
+    xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+    xroad_client_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_client_certificate')
 
     if not xroad_catalog_address.startswith('http'):
         log.warn("Invalid X-Road catalog url %s" % xroad_catalog_address)
@@ -388,7 +391,16 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
                'Content-Type': content_type,
                'X-Road-Client': xroad_client_id}
 
-    return http.get(url, headers=headers, verify=False)
+
+    certificate_args = {}
+    if xroad_catalog_certificate and os.path.isfile(xroad_catalog_certificate):
+        certificate_args['verify'] = xroad_catalog_certificate
+    else:
+        certificate_args['verify'] = False
+
+    if xroad_client_certificate and os.path.isfile(xroad_client_certificate):
+        certificate_args['cert'] = xroad_client_certificate
+    return http.get(url, headers=headers, **certificate_args)
 
 
 def fetch_xroad_service_list(context, data_dict):
@@ -401,15 +413,14 @@ def fetch_xroad_service_list(context, data_dict):
     try:
         service_list_data = xroad_catalog_query('getListOfServices', str(days)).json()
     except ConnectionError:
-        log.warn("Calling getListOfServices failed!")
-        return
+        log.warn("Connection error calling getListOfServices")
+        return {'success': False, 'message': 'Connection error calling getListOfServices'}
 
     if service_list_data is None:
-        log.warn('Error calling getListOfServices!')
-        return
+        log.warn('Invalid configuration for calling getListOfServices')
+        return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
 
     for member_list_data in service_list_data.get('memberData', []):
-        log.info(pformat(member_list_data))
         fetch_timestamp = parse_xroad_catalog_datetime(member_list_data.get('date'))
         instances = set(m['xroadInstance'] for m in member_list_data['memberDataList'] if m.get('xroadInstance'))
         default_instance = next(iter(instances)) if len(instances) == 1 else None
@@ -559,17 +570,18 @@ def fetch_xroad_stats(context, data_dict):
                 stat.soap_service_count = statistics['numberOfSoapServices']
                 stat.rest_service_count = statistics['numberOfRestServices']
                 stat.distinct_service_count = statistics['totalNumberOfDistinctServices']
-                stat.unknown_service_count = 0
+                stat.unknown_service_count = statistics['numberOfOtherServices']
                 XRoadStat.save(stat)
             else:
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
-                                 statistics['totalNumberOfDistinctServices'], 0)
+                                 statistics['totalNumberOfDistinctServices'], statistics['numberOfOtherServices'])
 
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
 
     except ConnectionError as e:
-        log.warn("Calling GetErrors failed!")
+        log.warn("Calling getServiceStatistics failed!")
         log.info(e)
+        return {"success": False, "message": "Fetching statistics failed."}
 
 
 def xroad_stats(context, data_dict):
