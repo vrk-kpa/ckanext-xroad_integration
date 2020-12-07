@@ -563,14 +563,14 @@ def fetch_xroad_stats(context, data_dict):
         statistics_data = xroad_catalog_query('getServiceStatistics', str(days)).json()
 
         if statistics_data is None:
-            log.warn("Calling GetErrors failed!")
+            log.warn("Calling getServiceStatistics failed!")
             return
 
         statistics_list = statistics_data.get('serviceStatisticsList', [])
 
         for statistics in statistics_list:
             created = statistics['created']
-            date = datetime.datetime(created['year'], created['monthValue'], created['dayOfMonth'])
+            date = parse_xroad_catalog_datetime(created).replace(hour=0, minute=0, second=0, microsecond=0)
 
             stat = XRoadStat.get_by_date(date)
             if stat:
