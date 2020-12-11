@@ -357,7 +357,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     resource = next((r for r in package_dict.get('resources', []) if r['name'] == name), None)
                     if resource:
                         log.info("Removing service %s", name)
-                        self._delete_resource({'id': resource['id']})
+                        self._delete_resource({'id': resource['id']}, apikey)
                     continue
 
                 if not service_removed:
