@@ -364,7 +364,22 @@ def fetch_xroad_errors(context, data_dict):
 
             error_log = r.json().get('errorLogList', {}).get('errorLog', [])
             for error in error_log:
-                XRoadError.create(error['message'], error['code'], error['created'])
+                mapped_error = {
+                    "message": error['message'],
+                    "code": error['code'],
+                    "created": error['created'],
+                    "xroad_instance": error['xRoadInstance'],
+                    "member_class": error['memberClass'],
+                    "member_code": error['memberCode'],
+                    "subsystem_code": error['subsystemCode'],
+                    "service_code": error['serviceCode'],
+                    "service_version": error['serviceVersion'],
+                    "server_code": error['serverCode'],
+                    "security_category_code": error['securityCategoryCode'],
+                    "group_code": error['groupCode']
+                }
+                
+                XRoadError.create(**mapped_error)
 
             results.append({"message": "%d errors stored to database." % len(error_log)})
         except ConnectionError:
