@@ -372,13 +372,13 @@ def fetch_xroad_errors(context, data_dict):
                     "member_class": error['memberClass'],
                     "member_code": error['memberCode'],
                     "subsystem_code": error['subsystemCode'],
-                    "service_code": error['serviceCode'],
-                    "service_version": error['serviceVersion'],
-                    "server_code": error['serverCode'],
-                    "security_category_code": error['securityCategoryCode'],
-                    "group_code": error['groupCode']
+                    "service_code": error.get('serviceCode', ''),
+                    "service_version": error.get('serviceVersion', ''),
+                    "server_code": error.get('serverCode', ''),
+                    "security_category_code": error.get('securityCategoryCode', ''),
+                    "group_code": error.get('groupCode', '')
                 }
-                
+
                 XRoadError.create(**mapped_error)
 
             results.append({"message": "%d errors stored to database." % len(error_log)})
