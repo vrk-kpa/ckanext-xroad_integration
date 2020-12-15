@@ -3,7 +3,7 @@ from ckan.plugins.toolkit import check_access, NotAuthorized, _
 def xroad_error_list(context, data_dict):
 
     if not data_dict.get('organization'):
-        check_access('sysadmin', context)
+        return check_access('sysadmin', context)
     else:
         try:
             check_access('organization_update', context, {"id": data_dict.get('organization')})
