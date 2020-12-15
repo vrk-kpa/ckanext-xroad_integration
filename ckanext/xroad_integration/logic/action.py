@@ -540,7 +540,7 @@ def parse_xroad_catalog_datetime(dt):
 
 def xroad_error_list(context, data_dict):
 
-    toolkit.check_access('xroad_error_list', context)
+    toolkit.check_access('xroad_error_list', context, data_dict)
 
     date = data_dict.get('date')
     if date:
@@ -550,20 +550,45 @@ def xroad_error_list(context, data_dict):
 
     end = start.replace(hour=23, minute=59, second=59)
 
+
+
     rest_services_failed_errors = model.Session.query(XRoadError)\
         .filter(XRoadError.message.like("Fetch of REST services failed%"))\
-        .filter(and_(XRoadError.created > start),(XRoadError.created < end)).all()
+        .filter(and_(XRoadError.created > start),(XRoadError.created < end))
 
     other_errors = model.Session.query(XRoadError)\
         .filter(not_(XRoadError.message.like("Fetch of REST services failed%")))\
-        .filter(and_(XRoadError.created > start), (XRoadError.created < end)).all()
+        .filter(and_(XRoadError.created > start), (XRoadError.created < end))
+
+    organization_id = data_dict.get('organization')
+    if organization_id:
+        try:
+            toolkit.get_action('organization_show')({}, {"id": organization_id })
+        except toolkit.ObjectNotFound:
+            raise toolkit.ObjectNotFound(toolkit._(u"Organization not found"))
+
+        xroad_id = organization_id.split('.')
+        if len(xroad_id) == 3:  # Valid xroad id
+            rest_services_failed_errors = rest_services_failed_errors.filter(XRoadError.xroad_instance == xroad_id[0])\
+                .filter(XRoadError.member_class == xroad_id[1])\
+                .filter(XRoadError.member_code == xroad_id[2])
+
+            other_errors = other_errors.filter(XRoadError.xroad_instance == xroad_id[0]) \
+                .filter(XRoadError.member_class == xroad_id[1]) \
+                .filter(XRoadError.member_code == xroad_id[2])
+        else:
+            raise toolkit.Invalid(toolkit._(u"Organization id is not valid X-Road id"))
+
+    rest_services_failed_errors = rest_services_failed_errors.all()
+    other_errors = other_errors.all()
 
     return {
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
         "other_errors": [error.as_dict() for error in other_errors],
         "date": start,
         "previous": (start - relativedelta.relativedelta(days=1)).date(),
-        "next": (start + relativedelta.relativedelta(days=1)).date()
+        "next": (start + relativedelta.relativedelta(days=1)).date(),
+        "organization": organization_id
     }
 
 

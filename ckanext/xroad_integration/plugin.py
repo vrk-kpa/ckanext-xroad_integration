@@ -5,6 +5,7 @@ from ckan.logic.auth.get import sysadmin
 import helpers
 from views import xroad
 from logic import action
+from auth import xroad_error_list
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -74,7 +75,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     def get_auth_functions(self):
         return {
             'fetch_xroad_errors': sysadmin,
-            'xroad_error_list': sysadmin,
+            'xroad_error_list': xroad_error_list,
             'update_xroad_organizations': sysadmin,
             'fetch_xroad_stats': sysadmin,
             'xroad_stats': sysadmin,
