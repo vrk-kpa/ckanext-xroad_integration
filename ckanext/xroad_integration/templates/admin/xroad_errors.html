@@ -13,11 +13,11 @@
             <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
             <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
             <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-            <th style="width: 45%">{% trans %}Message{% endtrans %}</th>
-            <th style="width: 5%">{% trans %}Server code{% endtrans %}</th>
-            <th style="width: 5%">{% trans %}Security category code{% endtrans %}</th>
-            <th style="width: 5%">{% trans %}Group code{% endtrans %}</th>
-            <th style="width: 10%">{% trans %}Code{% endtrans %}</th>
+            <th style="width: 35%">{% trans %}Message{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Server code{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Security category code{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Group code{% endtrans %}</th>
+            <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
         </tr>
         </thead>
         <tbody>
@@ -39,16 +39,26 @@
     <table class="table table-bordered" style="table-layout:fixed;">
         <thead>
         <tr>
-            <th style="width: 20%">{% trans %}Created{% endtrans %}</th>
-            <th style="width: 60%">{% trans %}Message{% endtrans %}</th>
-            <th style="width: 20%">{% trans %}Code{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
+            <th style="width: 35%">{% trans %}Message{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Server code{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Security category code{% endtrans %}</th>
+            <th style="width: 10%">{% trans %}Group code{% endtrans %}</th>
+            <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
         </tr>
         </thead>
         <tbody>
         {% for error in error_list.rest_services_failed_errors %}
             <tr>
                 <td>{{ h.render_datetime(error.created) }}</td>
+                <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
+                <td>{{ error.service_code }}.{{ error.service_version }}</td>
                 <td>{{ error.message }}</td>
+                <td>{{ error.server_code }}</td>
+                <td>{{ error.security_category_code }}</td>
+                <td>{{ error.group_code }}</td>
                 <td>{{ error.code }}</td>
             </tr>
         {% endfor %}
