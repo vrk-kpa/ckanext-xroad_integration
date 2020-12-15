@@ -554,11 +554,11 @@ def xroad_error_list(context, data_dict):
 
     rest_services_failed_errors = model.Session.query(XRoadError)\
         .filter(XRoadError.message.like("Fetch of REST services failed%"))\
-        .filter(and_(XRoadError.created > start),(XRoadError.created < end))
+        .filter(and_(XRoadError.created >= start),(XRoadError.created <= end))
 
     other_errors = model.Session.query(XRoadError)\
         .filter(not_(XRoadError.message.like("Fetch of REST services failed%")))\
-        .filter(and_(XRoadError.created > start), (XRoadError.created < end))
+        .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
 
     organization_id = data_dict.get('organization')
     if organization_id:
