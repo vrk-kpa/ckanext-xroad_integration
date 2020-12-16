@@ -635,7 +635,7 @@ def xroad_stats(context, data_dict):
 
     toolkit.check_access('xroad_stats', context)
 
-    stats = model.Session.query(XRoadStat).all()
+    stats = model.Session.query(XRoadStat).order_by(XRoadStat.date.desc()).all()
 
     return [stat.as_dict() for stat in stats]
 
