@@ -1,12 +1,21 @@
 {% extends "admin/base.html" %}
 
+{% resource "apicatalog_ui/datetimepicker" %}
+
+{% import 'macros/form.html' as form %}
+
 {% block primary %}
 
+<a href="{{ h.url_for('xroad.services', date=selected_date, format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
+    <form method="get" action="">
+      {{ form.input('date', id='field-date', label=_('Date'), placeholder=_('2005-01-01'), value=selected_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'YYYY-MM-DD', 'autosubmit': True}) }}
+    </form>
     <table class="table table-bordered" style="table-layout:fixed;" data-module="tablesorter">
       <caption>{{ h.render_datetime(service_list.timestamp) }}</caption>
         <thead>
         <tr>
             <th>{% trans %}Member{% endtrans %}</th>
+            <th>{% trans %}Member name{% endtrans %}</th>
             <th>{% trans %}Member type{% endtrans %}</th>
             <th>{% trans %}Subsystem{% endtrans %}</th>
             <th>{% trans %}Service{% endtrans %}</th>
@@ -21,6 +30,7 @@
               {% for s in ss.services %}
                 <tr>
                   <td>{{ m.instance }}.{{ m.member_class }}.{{ m.member_code }}</td>
+                  <td>{{ m.name }}</td>
                   <td>{% if m.is_provider %}{% trans %}Provider{% endtrans %}{% else %}{% trans %}Consumer{% endtrans %}{% endif %}</td>
                   <td>{{ ss.subsystem_code }}</td>
                   <td>{{ s.service_code }}{%- if s.service_version %}.{{ s.service_version }}{% endif %}</td>
