@@ -1,16 +1,25 @@
 {% extends "admin/base.html" %}
 
+{% import 'macros/form.html' as form %}
+
 {% block primary %}
 
+{% resource "apicatalog_ui/datetimepicker" %}
+
+<a href="{{ h.url_for('xroad.services', date=selected_date, format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
+    <form method="get" action="">
+      {{ form.input('date', id='field-date', label=_('Date'), placeholder=_('2005-01-01'), value=selected_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'YYYY-MM-DD', 'autosubmit': True}) }}
+    </form>
     <table class="table table-bordered" style="table-layout:fixed;" data-module="tablesorter">
       <caption>{{ h.render_datetime(service_list.timestamp) }}</caption>
         <thead>
         <tr>
             <th>{% trans %}Member{% endtrans %}</th>
+            <th>{% trans %}Member name{% endtrans %}</th>
             <th>{% trans %}Member type{% endtrans %}</th>
+            <th>{% trans %}Security servers{% endtrans %}</th>
             <th>{% trans %}Subsystem{% endtrans %}</th>
             <th>{% trans %}Service{% endtrans %}</th>
-            <th>{% trans %}Security servers{% endtrans %}</th>
             <th>{% trans %}Active{% endtrans %}</th>
             <th>{% trans %}Created{% endtrans %}</th>
         </tr>
@@ -21,9 +30,8 @@
               {% for s in ss.services %}
                 <tr>
                   <td>{{ m.instance }}.{{ m.member_class }}.{{ m.member_code }}</td>
+                  <td>{{ m.name }}</td>
                   <td>{% if m.is_provider %}{% trans %}Provider{% endtrans %}{% else %}{% trans %}Consumer{% endtrans %}{% endif %}</td>
-                  <td>{{ ss.subsystem_code }}</td>
-                  <td>{{ s.service_code }}{%- if s.service_version %}.{{ s.service_version }}{% endif %}</td>
                   <td>
                     <ul style="list-style: none; padding: 0;">
                       {% for ssrv in m.security_servers %}
@@ -31,6 +39,8 @@
                       {% endfor %}
                     </ul>
                   </td>
+                  <td>{{ ss.subsystem_code }}</td>
+                  <td>{{ s.service_code }}{%- if s.service_version %}.{{ s.service_version }}{% endif %}</td>
                   <td>{% if s.active %}{% trans %}Yes{% endtrans %}{% else %}{% trans %}No{% endtrans %}{% endif %}</td>
                   <td>{{ s.created }}</td>
                 </tr>

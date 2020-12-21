@@ -1,7 +1,10 @@
 {% extends "admin/base.html" %}
 
+{% resource "xroad_integration/xroad_stats" %}
+
 {% block primary %}
 
+    <canvas id="serviceCountCanvas"></canvas>
     <table class="table table-bordered" style="table-layout:fixed;">
         <thead>
         <tr>
