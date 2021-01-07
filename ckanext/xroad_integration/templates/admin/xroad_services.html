@@ -16,7 +16,7 @@
         <tr>
             <th>{% trans %}Member{% endtrans %}</th>
             <th>{% trans %}Member name{% endtrans %}</th>
-            <th>{% trans %}Member type{% endtrans %}</th>
+            <th>{% trans %}Member type (current){% endtrans %}</th>
             <th>{% trans %}Security servers{% endtrans %}</th>
             <th>{% trans %}Subsystem{% endtrans %}</th>
             <th>{% trans %}Service{% endtrans %}</th>
@@ -30,8 +30,8 @@
               {% for s in ss.services %}
                 <tr>
                   <td>{{ m.instance }}.{{ m.member_class }}.{{ m.member_code }}</td>
-                  <td>{{ m.name }}</td>
-                  <td>{% if m.is_provider %}{% trans %}Provider{% endtrans %}{% else %}{% trans %}Consumer{% endtrans %}{% endif %}</td>
+                  <td>{{ h.get_translated(m, 'title') }}</td>
+                  <td>{% if m.resource_count > 0 %}{% trans %}Provider{% endtrans %}{% else %}{% trans %}Consumer{% endtrans %}{% endif %}</td>
                   <td>
                     <ul style="list-style: none; padding: 0;">
                       {% for ssrv in m.security_servers %}
