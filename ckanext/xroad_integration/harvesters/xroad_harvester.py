@@ -74,8 +74,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return {
             "name": "xroad",
-            "title": "XRoad Rest Gateway",
-            "description": "Server that provides Rest Gateway for XRoad"
+            "title": "X-Road Rest Gateway",
+            "description": "Server that provides Rest Gateway for X-Road. "
+                           "Valid config keys: force_all, force_organization_update, force_resource_update, since"
         }
 
     def validate_config(self, config):
@@ -83,10 +84,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return config
 
         config_obj = json.loads(config)
-        for key in ('force_all', 'force_update'):
+        for key in ('force_all', 'force_organization_update', 'force_resource_update'):
             if key in config_obj:
                 if not isinstance(config_obj[key], bool):
                     raise ValueError('%s must be boolean' % key)
+        if 'since' in config_obj:
+            try:
+                datetime.strptime(config_obj['since'], '%Y-%m-%d')
+            except ValueError as e:
+                raise ValueError("%s must be in format YYYY-MM-DD" % 'since')
+
 
         return config
 
@@ -426,7 +433,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             log.error('Error parsing previous timestamp: %s' % e)
                             continue
 
-                        if not previous or (changed and changed > previous) or self.config.get('force_update'):
+                        if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
                             log.info('WSDL changed after last harvest, replacing...')
                             resource_data = {
                                     "package_id":package_dict['id'],
@@ -712,7 +719,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 last_time = "2011-01-01"
             else:
                 last_time = self._last_error_free_job_time(harvest_job)
-            if (last_time and last_time < data_dict['changed']) or self.config.get('force_update'):
+            if (last_time and last_time < data_dict['changed']) or self.config.get('force_organization_update'):
                 munged_title = munge_title_to_name(data_dict['name'])
                 if org['name'] == munged_title:
                     org_name = munged_title
