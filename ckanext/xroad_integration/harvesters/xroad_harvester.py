@@ -26,6 +26,8 @@ try:
 except ImportError:
     from paste.deploy.converters import asbool
 
+from typing import Union
+
 
 NotFound = logic.NotFound
 
@@ -117,7 +119,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Service = resource = WSDL
 
         object_ids = []
-        for member in members:
+        for member in members: # type: dict
             if isinstance(member, basestring):
                 continue
 
@@ -129,9 +131,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
                 member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
 
+            # TODO: X-Road Catalog IsProvider is not in use for now, restore by uncommenting lines below
             # Fetch member type
-            member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
-                                                member['memberCode'])
+            # member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
+            #                                    member['memberCode'])
+
+            # If X-Road catalog is not used, following sets member_type to provider
+            # if subsystem has at least one active service
+            member_type = 'consumer'
+            if member['subsystems']:
+                for subsystem in member['subsystems'].get('subsystem', []): # type: dict
+                    services = subsystem.get('services', [])
+                    if type(services) is dict:
+                        services = [services]
+                    for service in services: # type: Union[str, dict]
+                        if type(service) is dict and not service.get('removed'):
+                            member_type = 'provider'
 
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
@@ -455,6 +470,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return result
 
     def _get_xroad_catalog(self, url, changed_after):
+        # type: (str, str) -> dict
         try:
             r = http.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         except ConnectionError:
@@ -468,8 +484,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return result
 
     def _parse_xroad_data(self, res):
+        # type: (dict) -> list
         if isinstance(res['memberList'], basestring):
-            return {}
+            return []
         if type(res['memberList']['member']) is dict:
             return [res['memberList']['member']]
         return res['memberList']['member']
