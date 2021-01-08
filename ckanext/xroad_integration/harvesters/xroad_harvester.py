@@ -114,10 +114,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
         try:
             catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
             members = self._parse_xroad_data(catalog)
-        except ContentFetchError, e:
+        except ContentFetchError as e:
             self._save_gather_error('%r' % e.message, harvest_job)
             return False
-        except KeyError, e:
+        except KeyError as e:
             self._save_gather_error('Failed to parse response: %r' % e, harvest_job)
             return False
 
@@ -251,7 +251,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         log.info("Service type in unknown for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']))
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
-        except TypeError, ContentFetchError:
+        except (TypeError, ContentFetchError):
             self._save_object_error('Could not parse WSDL content for object {0}'.format(harvest_object.id),
                                     harvest_object, 'Fetch')
             return False
@@ -762,6 +762,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if not org.get('webpage_description_modified_in_catalog', False):
                     org_data['webpage_description'] = data_dict.get('webpage_description', {})
 
+                log.info("Patching organization %s" % org_name)
                 org = p.toolkit.get_action('organization_patch')(context, org_data)
 
         else:
@@ -805,6 +806,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'webpage_address': data_dict.get('webpage_address', {}),
                 'webpage_description': data_dict.get('webpage_description', {})}
 
+            log.info("Creating organization %s" % org_name)
             org = p.toolkit.get_action('organization_create')(context, org_data)
 
         return org
