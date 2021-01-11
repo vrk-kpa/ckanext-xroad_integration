@@ -8,6 +8,7 @@ xroad_commands = paster_click_group(
     summary=u'X-Road related commands'
 )
 
+
 @xroad_commands.command(
     u'update_xroad_organizations',
     help='Updates harvested organizations\' metadata'
@@ -54,7 +55,7 @@ def fetch_stats(ctx, config, days):
     results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
 
     if results.get("success") is True:
-            print(results['message'])
+        print(results['message'])
 
     else:
         print(results['message'])
@@ -77,7 +78,7 @@ def fetch_service_list(ctx, config, days):
     results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
 
     if results.get("success") is True:
-            print(results['message'])
+        print(results['message'])
 
     else:
         print("Error fetching service list!")

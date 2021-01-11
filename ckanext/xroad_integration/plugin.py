@@ -7,6 +7,7 @@ from views import xroad
 from logic import action
 from auth import xroad_error_list
 
+
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
@@ -23,7 +24,6 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'xroad_integration')
 
-
     # IConfigurable
 
     def configure(self, config):
@@ -32,7 +32,6 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
 
         if not (xroad_catalog_address or xroad_client_id):
             raise Exception("X-Road catalog has not been configured.")
-
 
     # IResourceController
 

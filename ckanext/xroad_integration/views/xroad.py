@@ -44,8 +44,9 @@ def stats():
                                       if i == 0 or i == len(xroad_stats_sorted) - 1
                                       or d.get('date', '')[:7] != xroad_stats_sorted[i - 1].get('date', '')[:7]][-24:]
 
-
-    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats, 'xroad_stats_service_graph_data': xroad_stats_service_graph_data})
+    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats,
+                                                         'xroad_stats_service_graph_data':
+                                                             xroad_stats_service_graph_data})
 
 
 xroad.add_url_rule(u'/stats', view_func=stats)
@@ -82,7 +83,8 @@ def services():
     if data_format is not None and data_format.lower() == 'csv':
         response = make_response()
         response.headers['Content-Type'] = 'text/csv'
-        response.headers['Content-Disposition'] = 'inline; filename="xroad_services_{}.csv"'.format(selected_date.strftime(date_format))
+        response.headers['Content-Disposition'] = 'inline; filename="xroad_services_{}.csv"'.format(
+            selected_date.strftime(date_format))
         fieldnames = ['member', 'member_name', 'member_type', 'security_servers', 'subsystem', 'service', 'active', 'created']
         writer = csv.DictWriter(response.stream, fieldnames=fieldnames)
         writer.writeheader()
@@ -113,7 +115,8 @@ def services():
         return response
 
     else:
-        return render('/admin/xroad_services.html', extra_vars={'service_list': latest, 'selected_date': selected_date.strftime(date_format)})
+        return render('/admin/xroad_services.html',
+                      extra_vars={'service_list': latest, 'selected_date': selected_date.strftime(date_format)})
 
 
 xroad.add_url_rule(u'/services', view_func=services)

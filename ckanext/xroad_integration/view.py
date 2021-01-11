@@ -10,6 +10,7 @@ import mimetypes
 
 log = logging.getLogger(__name__)
 
+
 def open_resource(resource):
     if resource.get('url_type') == 'upload':
         upload = uploader.ResourceUpload(resource)
@@ -40,7 +41,7 @@ def render_wsdl_resource(wsdl_to_html):
                     faultstring = soap_fault.find('faultstring', namespaces=xml_namespaces).text
                     error_form = ERROR_HTML % 'SOAP error harvesting WSDL: (faultcode: "%s", faultstring: "%s")'
                     error_message = error_form % (faultcode, faultstring)
-                except:
+                except Exception:
                     error_message = ERROR_HTML % 'SOAP error harvesting WSDL'
                 return error_message
 
@@ -59,7 +60,7 @@ def render_wsdl_resource(wsdl_to_html):
             return ERROR_HTML % 'Preview error: %s' % e
         except OSError:
             return ERROR_HTML % 'Server error: uploaded file not found'
-        except:
+        except Exception:
             return ERROR_HTML % 'Invalid WSDL'
 
     return render

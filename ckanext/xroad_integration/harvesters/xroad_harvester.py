@@ -1,5 +1,3 @@
-from ckan.plugins.core import SingletonPlugin, implements
-from ckanext.harvest.interfaces import IHarvester
 from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
 from sqlalchemy import text
@@ -36,6 +34,7 @@ log = logging.getLogger(__name__)
 LOCAL_API_URL = 'http://127.0.0.1:8080/api'
 
 DEFAULT_TIMEOUT = 3  # seconds
+
 
 # Add default timeout
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -91,9 +90,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if 'since' in config_obj:
             try:
                 datetime.strptime(config_obj['since'], '%Y-%m-%d')
-            except ValueError as e:
+            except ValueError:
                 raise ValueError("%s must be in format YYYY-MM-DD" % 'since')
-
 
         return config
 
@@ -126,7 +124,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Service = resource = WSDL
 
         object_ids = []
-        for member in members: # type: dict
+        for member in members:  # type: dict
             if isinstance(member, basestring):
                 continue
 
@@ -147,11 +145,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             # if subsystem has at least one active service
             member_type = 'consumer'
             if member['subsystems']:
-                for subsystem in member['subsystems'].get('subsystem', []): # type: dict
+                for subsystem in member['subsystems'].get('subsystem', []):  # type: dict
                     services = subsystem.get('services', [])
                     if type(services) is dict:
                         services = [services]
-                    for service in services: # type: Union[str, dict]
+                    for service in services:  # type: Union[str, dict]
                         if type(service) is dict and not service.get('removed'):
                             member_type = 'provider'
 
@@ -174,18 +172,19 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'xroad_membercode': member['memberCode']
             }
 
-
             org = self._create_or_update_organization(organization_dict, harvest_job)
 
             if org is None:
-                self._save_gather_error('Failed to create organization with id: %s and name: %s' % (org_id, member['name']), harvest_job)
+                self._save_gather_error('Failed to create organization with id: %s and name: %s'
+                                        % (org_id, member['name']), harvest_job)
                 continue
 
             if member.get('subsystems'):
                 for subsystem in member['subsystems']['subsystem']:
 
                     # Generate GUID
-                    guid = substitute_ascii_equivalents(u'%s.%s' % (org_id, unicode(subsystem.get('subsystemCode', ''))))
+                    guid = substitute_ascii_equivalents(u'%s.%s'
+                                                        % (org_id, unicode(subsystem.get('subsystemCode', ''))))
 
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
@@ -223,12 +222,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     services['service'] = [services['service']]
                 for service in services['service']:
                     if 'removed' in service:
-                        log.info("Service %s has been removed, no need to fetch api descriptions or types, skipping.." % service['serviceCode'])
+                        log.info("Service %s has been removed, no need to fetch api descriptions or types,"
+                                 " skipping.." % service['serviceCode'])
                         continue
                     if 'wsdl' in service:
-                        service['wsdl']['data']  = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl', '')
+                        service['wsdl']['data'] = self._get_wsdl(harvest_object.source.url,
+                                                                 service['wsdl']['externalId']).get('wsdl', '')
                     if 'openapi' in service:
-                        service['openapi']['data'] = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi', '')
+                        service['openapi']['data'] = self._get_openapi(harvest_object.source.url,
+                                                                       service['openapi']['externalId']).get('openapi', '')
 
                     if service.get('serviceVersion') and type(service.get('serviceVersion')) is int:
                         service['serviceVersion'] = str(float(service['serviceVersion']))
@@ -248,7 +250,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             self._save_object_error(service['type'].get('error'), harvest_object, 'Fetch')
                     if not service['type']:
-                        log.info("Service type in unknown for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']))
+                        log.info("Service type in unknown for subsystem %s service %s"
+                                 % (dataset['subsystem']['subsystemCode'], service['serviceCode']))
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except (TypeError, ContentFetchError):
@@ -265,8 +268,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         try:
             dataset = json.loads(harvest_object.content)
         except ValueError:
-            log.info('Could not parse content for object {0}'.format(harvest_object.id),
-                harvest_object, 'Import')
+            log.info('Could not parse content for object {0}'.format(harvest_object.id), harvest_object, 'Import')
             self._save_object_error('Could not parse content for object {0}'.format(harvest_object.id),
                                     harvest_object, 'Import')
             return False
@@ -280,13 +282,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
         removed = dataset['subsystem'].get('removed', None)
 
         try:
-            package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid })
+            package_dict = p.toolkit.get_action('package_show')(context, {'id': harvest_object.guid})
         except NotFound:
             if removed is not None:
                 log.info("Subsystem has been removed, not creating..")
                 return "unchanged"
 
-            package_dict = {'id': harvest_object.guid }
+            package_dict = {'id': harvest_object.guid}
 
         # Get rid of auth audit on the context otherwise we'll get an
         # exception
@@ -297,7 +299,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         local_org = source_dataset.get('owner_org')
 
         # Create org
-        log.info("Organization: " + dataset['owner']['name'] )
+        log.info("Organization: " + dataset['owner']['name'])
 
         context = {
             'model': model,
@@ -344,7 +346,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if contains_wsdls or contains_openapi_descriptions:
             apikey = self._get_api_key()
 
-            if result not in(True, "unchanged"):
+            if result not in (True, "unchanged"):
                 return result
 
             for service in services['service']:
@@ -373,7 +375,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 service_description = service.get('wsdl') or service.get('openapi')
                 wsdl = service.get('wsdl')
-                openapi = service.get('openapi')
+
                 if not service_description and not service_removed:
                     log.info('Service "%s" has no WSDLs or OpenAPIs, removing service if it exists', name)
                     resource = next((r for r in package_dict.get('resources', []) if r['name'] == name), None)
@@ -436,33 +438,33 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
                             log.info('WSDL changed after last harvest, replacing...')
                             resource_data = {
-                                    "package_id":package_dict['id'],
-                                    "url": "",
-                                    "name": name,
-                                    "id": resource['id'],
-                                    "valid_content": "yes" if valid_wsdl else "no",
-                                    "xroad_servicecode": service_code,
-                                    "xroad_serviceversion": service_version,
-                                    "xroad_service_type": service_type,
-                                    "harvested_from_xroad": True,
-                                    "format": resource_format,
-                                    timestamp_field: changed
-                                    }
-                            self._patch_resource(resource_data, apikey, file_name, target_name)
-                            result = True
-
-                    if not named_resources and not service_removed:
-                        resource_data = {
-                                "package_id":package_dict['id'],
+                                "package_id": package_dict['id'],
                                 "url": "",
                                 "name": name,
+                                "id": resource['id'],
                                 "valid_content": "yes" if valid_wsdl else "no",
                                 "xroad_servicecode": service_code,
                                 "xroad_serviceversion": service_version,
                                 "xroad_service_type": service_type,
                                 "harvested_from_xroad": True,
                                 "format": resource_format,
-                                }
+                                timestamp_field: changed
+                            }
+                            self._patch_resource(resource_data, apikey, file_name, target_name)
+                            result = True
+
+                    if not named_resources and not service_removed:
+                        resource_data = {
+                            "package_id": package_dict['id'],
+                            "url": "",
+                            "name": name,
+                            "valid_content": "yes" if valid_wsdl else "no",
+                            "xroad_servicecode": service_code,
+                            "xroad_serviceversion": service_version,
+                            "xroad_service_type": service_type,
+                            "harvested_from_xroad": True,
+                            "format": resource_format,
+                        }
                         self._create_resource(resource_data, apikey, file_name, target_name)
                         result = True
 
@@ -473,13 +475,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             return result
 
-        #log.info("API %s did not have WSDLs, not creating..", dataset['subsystem']['subsystemCode'])
         return result
 
     def _get_xroad_catalog(self, url, changed_after):
         # type: (str, str) -> dict
         try:
-            r = http.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/ListMembers', params={'changedAfter': changed_after},
+                         headers={'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service ListMembers failed!")
         if r.status_code != requests.codes.ok:
@@ -500,7 +502,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_wsdl(self, url, external_id):
         try:
-            r = http.get(url + '/Consumer/GetWsdl', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/GetWsdl', params={'externalId': external_id},
+                         headers={'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetWsdl failed!")
         if r.status_code != requests.codes.ok:
@@ -509,7 +512,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _get_openapi(self, url, external_id):
         try:
-            r = http.get(url + '/Consumer/GetOpenAPI', params = {'externalId' : external_id}, headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/GetOpenAPI', params={'externalId': external_id},
+                         headers={'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError("Calling XRoad service GetOpenAPI failed!")
         if r.status_code != requests.codes.ok:
@@ -519,34 +523,34 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_service_type(url, xroad_instance, member_class, member_code, subsystem, service_code, service_version):
         try:
-            r = http.get(url + '/Consumer/IsSoapService', params = {'xRoadInstance': xroad_instance,
-                                                                    'memberClass': member_class,
-                                                                    'memberCode': member_code,
-                                                                    'subsystemCode': subsystem,
-                                                                    'serviceCode': service_code,
-                                                                    'serviceVersion': service_version},
-                             headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/IsSoapService', params={'xRoadInstance': xroad_instance,
+                                                                  'memberClass': member_class,
+                                                                  'memberCode': member_code,
+                                                                  'subsystemCode': subsystem,
+                                                                  'serviceCode': service_code,
+                                                                  'serviceVersion': service_version},
+                         headers={'Accept': 'application/json'})
 
             response_json = r.json()
 
             if response_json.get("error"):
-                return {"error": response_json.get("error").get('string') }
+                return {"error": response_json.get("error").get('string')}
 
             if response_json.get('soap') and response_json.get('soap') is True:
                 return 'soap'
 
-            r = http.get(url + '/Consumer/IsRestService', params = {'xRoadInstance': xroad_instance,
-                                                                     'memberClass': member_class,
-                                                                     'memberCode': member_code,
-                                                                     'subsystemCode': subsystem,
-                                                                     'serviceCode': service_code,
-                                                                     'serviceVersion': service_version},
-                             headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/IsRestService', params={'xRoadInstance': xroad_instance,
+                                                                  'memberClass': member_class,
+                                                                  'memberCode': member_code,
+                                                                  'subsystemCode': subsystem,
+                                                                  'serviceCode': service_code,
+                                                                  'serviceVersion': service_version},
+                         headers={'Accept': 'application/json'})
 
             response_json = r.json()
 
             if response_json.get("error"):
-                return {"error": response_json.get("error").get('string') }
+                return {"error": response_json.get("error").get('string')}
 
             if response_json.get('rest') and response_json.get('rest') is True:
                 return 'rest'
@@ -559,9 +563,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_member_type(url, xroad_instance, member_class, member_code):
         try:
-            r = http.get(url + '/Consumer/IsProvider', params = {'xRoadInstance': xroad_instance, 'memberClass': member_class,
-                                                                 'memberCode': member_code},
-                         headers = {'Accept': 'application/json'})
+            r = http.get(url + '/Consumer/IsProvider', params={'xRoadInstance': xroad_instance,
+                                                               'memberClass': member_class,
+                                                               'memberCode': member_code},
+                         headers={'Accept': 'application/json'})
 
             is_provider = asbool(r.json().get('provider'))
 
@@ -579,15 +584,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _last_error_free_job(cls, harvest_job):
         # TODO weed out cancelled jobs somehow.
         # look for jobs with no gather errors
-        jobs = \
-            model.Session.query(HarvestJob) \
-                .filter(HarvestJob.source_id == harvest_job.source_id) \
-                .filter(HarvestJob.gather_started != None) \
-                .filter(HarvestJob.status == 'Finished') \
-                .filter(HarvestJob.id != harvest_job.id) \
+        jobs = model.Session.query(HarvestJob)\
+                .filter(HarvestJob.source_id == harvest_job.source_id)\
                 .filter(
-                ~exists().where(
-                    HarvestGatherError.harvest_job_id == HarvestJob.id)) \
+                    HarvestJob.gather_started != None  # noqa
+                )\
+                .filter(HarvestJob.status == 'Finished')\
+                .filter(HarvestJob.id != harvest_job.id)\
+                .filter(
+                    ~exists().where(
+                        HarvestGatherError.harvest_job_id == HarvestJob.id))\
                 .order_by(HarvestJob.gather_started.desc())
         # now check them until we find one with no fetch/import errors
         # (looping rather than doing sql, in case there are lots of objects
@@ -604,7 +610,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     @classmethod
     def _last_error_free_job_time(cls, harvest_job):
-        query =  model.Session.query(HarvestJob.gather_started).from_statement(text('''
+        query = model.Session.query(HarvestJob.gather_started).from_statement(text('''
             select gather_started
             from harvest_job hj
             join (
@@ -634,7 +640,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _last_finished_job(self, harvest_job):
         job = model.Session.query(HarvestJob)\
             .filter(HarvestJob.source == harvest_job.source)\
-            .filter(HarvestJob.finished != None)\
+            .filter(
+                HarvestJob.finished != None  # noqa
+            )\
             .filter(HarvestJob.id != harvest_job.id)\
             .order_by(HarvestJob.finished.desc()).first()
 
@@ -643,13 +651,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _get_api_key(self):
 
         context = {'model': model,
-           'ignore_auth': True,
-        }
+                   'ignore_auth': True,
+                   }
 
         site_user = p.toolkit.get_action('get_site_user')(context, {})
 
         return site_user['apikey']
-
 
     def _ensure_own_unique_name(self, org_id, org_name, context):
         organization_show_action = p.toolkit.get_action('organization_show')
@@ -683,7 +690,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             pass
 
         # Try to find a fallback with a limited pool of variants
-        name_candidates = ('%s_%i' % (org_name, i) for i in range(2,20))
+        name_candidates = ('%s_%i' % (org_name, i) for i in range(2, 20))
         for name in name_candidates:
             try:
                 organization_show(name)
@@ -692,7 +699,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         # All variants were taken as well, probably some kind of error
         return None
-
 
     def _create_or_update_organization(self, data_dict, harvest_job):
 
@@ -731,14 +737,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     return None
 
                 org_description = org.get('description_translated', {}) \
-                    if org.get('description_translated') != {"fi": "", "sv": "", "en": ""} \
-                       and org.get('description_translated') != {"fi": ""} \
+                    if (org.get('description_translated') != {"fi": "", "sv": "", "en": ""}
+                        and org.get('description_translated') != {"fi": ""}) \
                     else data_dict.get('description_translated', {})
-
 
                 if not org.get('description_translated_modified_in_catalog', False):
                     org_description = data_dict.get('description_translated', {})
-
 
                 org_data = {
                     'title_translated': data_dict['title_translated'],
@@ -750,7 +754,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'xroad_member_type': data_dict['member_type'],
                     'description_translated': org_description,
                     'organization_guid': data_dict.get('organization_guid'),
-                    'company_type':data_dict.get('company_type', {}),
+                    'company_type': data_dict.get('company_type', {}),
                     'postal_address': data_dict.get('postal_address'),
                     'company_language': data_dict.get('company_language', {}),
                     'company_registration_date': data_dict.get('company_registration_date'),
@@ -798,7 +802,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'xroad_member_type': data_dict['member_type'],
                 'description_translated': data_dict.get('description_translated', {}),
                 'organization_guid': data_dict.get('organization_guid'),
-                'company_type':data_dict.get('company_type', {}),
+                'company_type': data_dict.get('company_type', {}),
                 'postal_address': data_dict.get('postal_address'),
                 'company_language': data_dict.get('company_language', {}),
                 'company_registration_date': data_dict.get('company_registration_date'),
@@ -828,30 +832,30 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _organization_has_wsdls_or_openapis(self, member):
         if self._organization_has_apis(member):
-           for subsystem in member['subsystems']['subsystem']:
-              if self._api_has_wsdls_or_openapis(subsystem) is True:
-                  return True
+            for subsystem in member['subsystems']['subsystem']:
+                if self._api_has_wsdls_or_openapis(subsystem) is True:
+                    return True
         return False
 
     def _patch_resource(self, data, apikey, filename, target_name):
         requests.post('%s/action/resource_patch' % LOCAL_API_URL,
-                data=data,
-                headers={"X-CKAN-API-Key": apikey },
-                files={'upload': (target_name,file(filename))},
-                verify=False)
+                      data=data,
+                      headers={"X-CKAN-API-Key": apikey},
+                      files={'upload': (target_name, file(filename))},
+                      verify=False)
 
     def _create_resource(self, data, apikey, filename, target_name):
         requests.post('%s/action/resource_create' % LOCAL_API_URL,
-                data=data,
-                headers={"X-CKAN-API-Key": apikey },
-                files={'upload': (target_name,file(filename))},
-                verify=False)
+                      data=data,
+                      headers={"X-CKAN-API-Key": apikey},
+                      files={'upload': (target_name, file(filename))},
+                      verify=False)
 
     def _delete_resource(self, data, apikey):
         requests.post('%s/action/resource_delete' % LOCAL_API_URL,
-                json=data,
-                headers={"X-CKAN-API-Key": apikey },
-                verify=False)
+                      json=data,
+                      headers={"X-CKAN-API-Key": apikey},
+                      verify=False)
 
     def _is_valid_wsdl(self, text_content):
         try:
@@ -864,10 +868,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             soap_faults = wsdl_content.xpath('//soap-env:Fault', namespaces=xml_namespaces)
             if len(soap_faults) > 0:
                 return False
-        except etree.XMLSyntaxError as e:
+        except etree.XMLSyntaxError:
             return False
 
         return True
+
 
 class ContentFetchError(Exception):
     pass

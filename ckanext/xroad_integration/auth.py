@@ -1,5 +1,6 @@
 from ckan.plugins.toolkit import check_access, NotAuthorized, _
 
+
 def xroad_error_list(context, data_dict):
 
     if not data_dict.get('organization'):

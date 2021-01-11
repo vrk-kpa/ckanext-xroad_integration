@@ -17,13 +17,15 @@ from ckan.plugins import toolkit
 from pprint import pformat
 
 from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
-                                             XRoadServiceListSubsystem, XRoadServiceListService, XRoadServiceListSecurityServer)
+                                             XRoadServiceListSubsystem, XRoadServiceListService,
+                                             XRoadServiceListSecurityServer)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
+
 
 # Add default timeout
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -101,10 +103,13 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
     if member_class in PUBLIC_ORGANIZATION_CLASSES:
         try:
             if 'organization_guid' in organization:
-                organization_changed = not last_updated or _get_organization_changes(source_url, organization.get('organization_guid'), last_updated)
+                organization_changed = not last_updated or \
+                                       _get_organization_changes(source_url, organization.get('organization_guid'),
+                                                                 last_updated)
 
                 if not organization_changed:
-                    log.info('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
+                    log.info('No changes to organization %s since last update at %s, skipping...',
+                             organization_name, last_updated)
                     return None
 
             org_information_list = _get_organization_information(source_url, member_code)
@@ -134,9 +139,15 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                 organization_info.get('organizationNames', {}).get('organizationName', {}))
 
                         org_names_translated = {
-                                "fi": next((name.get('value', '') for name in org_names if (name.get('language') == 'fi') and name.get('type') == "Name"), ""),
-                                "sv": next((name.get('value', '') for name in org_names if (name.get('language') == 'sv') and name.get('type') == "Name"), ""),
-                                "en": next((name.get('value', '') for name in org_names if (name.get('language') == 'en') and name.get('type') == "Name"), ""),
+                                "fi": next((name.get('value', '')
+                                            for name in org_names if (name.get('language') == 'fi')
+                                            and name.get('type') == "Name"), ""),
+                                "sv": next((name.get('value', '')
+                                            for name in org_names if (name.get('language') == 'sv')
+                                            and name.get('type') == "Name"), ""),
+                                "en": next((name.get('value', '')
+                                            for name in org_names if (name.get('language') == 'en')
+                                            and name.get('type') == "Name"), ""),
                                 }
 
                         organization_dict['title_translated'] = org_names_translated
@@ -146,9 +157,15 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                 organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
                         org_descriptions_translated = {
-                                "fi": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'fi'), ""),
-                                "sv": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'sv'), ""),
-                                "en": next((description.get('value', '') for description in org_descriptions if description.get('language') == 'en'), "")
+                                "fi": next((description.get('value', '')
+                                            for description in org_descriptions
+                                            if description.get('language') == 'fi'), ""),
+                                "sv": next((description.get('value', '')
+                                            for description in org_descriptions
+                                            if description.get('language') == 'sv'), ""),
+                                "en": next((description.get('value', '')
+                                            for description in org_descriptions
+                                            if description.get('language') == 'en'), "")
                                 }
 
                         organization_dict['description_translated'] = org_descriptions_translated
@@ -158,17 +175,28 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                 organization_info.get('webPages', {}).get('webPage', {}))
 
                         webpage_addresses = {
-                                "fi": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'fi'), ""),
-                                "sv": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'sv'), ""),
-                                "en": next((webpage.get('url', '') for webpage in webpages if webpage.get('language') == 'en'), "")
+                                "fi": next((webpage.get('url', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'fi'), ""),
+                                "sv": next((webpage.get('url', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'sv'), ""),
+                                "en": next((webpage.get('url', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'en'), "")
                                 }
 
                         webpage_descriptions = {
-                                "fi": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'fi'), ""),
-                                "sv": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'sv'), ""),
-                                "en": next((webpage.get('value', '') for webpage in webpages if webpage.get('language') == 'en'), "")
+                                "fi": next((webpage.get('value', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'fi'), ""),
+                                "sv": next((webpage.get('value', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'sv'), ""),
+                                "en": next((webpage.get('value', '')
+                                            for webpage in webpages
+                                            if webpage.get('language') == 'en'), "")
                                 }
-
 
                         organization_dict['webpage_address'] = webpage_addresses
                         organization_dict['webpage_description'] = webpage_descriptions
@@ -186,7 +214,6 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                 organization_dict['email_address'] = emails
 
                         organization_dict['organization_guid'] = organization_info.get('guid', '')
-
 
         except Exception:
             log.warn("Failed to fetch organization information with id %s", member_code)
@@ -206,30 +233,46 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
             if type(company) is dict:
                 if company.get('companyForms'):
-                    company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}).get('companyForm', {}))
+                    company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {})
+                                                                         .get('companyForm', {}))
                     forms = {
-                            "fi": next((form.get('name') for form in company_forms if form.get('language') == 'FI'), ""),
-                            "sv": next((form.get('name') for form in company_forms if form.get('language') == 'SE'), ""),
-                            "en": next((form.get('name') for form in company_forms if form.get('language') == 'EN'), "")
+                            "fi": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'FI'), ""),
+                            "sv": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'SE'), ""),
+                            "en": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'EN'), "")
                             }
 
                     organization_dict['company_type'] = forms
 
                 if company.get('businessAddresses'):
-                    business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}).get('businessAddress', {}))
+                    business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {})
+                                                                              .get('businessAddress', {}))
 
                     business_address = business_addresses[0] if business_addresses else None
 
                     # TODO: language should be country
-                    organization_dict['postal_address'] = business_address.get('street') + ', ' + str(business_address.get('postCode'))\
-                            + ', ' + business_address.get('city') + ', ' + business_address.get('language')
+                    organization_dict['postal_address'] = \
+                        business_address.get('street') + ', ' \
+                        + str(business_address.get('postCode')) + ', ' \
+                        + business_address.get('city') + ', ' + business_address.get('language')
 
                 if company.get('languages'):
                     languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
                     company_languages = {
-                            "fi": next((language.get('name', '') for language in languages if language.get('language') == 'FI'), ""),
-                            "sv": next((language.get('name', '') for language in languages if language.get('language') == 'SE'), ""),
-                            "en": next((language.get('name', '') for language in languages if language.get('language') == 'EN'), "")
+                            "fi": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'FI'), ""),
+                            "sv": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'SE'), ""),
+                            "en": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'EN'), "")
                             }
 
                     organization_dict['company_language'] = company_languages
@@ -241,7 +284,8 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     business_id_changes = _convert_xroad_value_to_uniform_list(
                             company.get('businessIdChanges', {}).get('businessIdChange', {}))
 
-                    old_business_ids = [str(business_id_change.get('oldBusinessId')) for business_id_change in business_id_changes]
+                    old_business_ids = [str(business_id_change.get('oldBusinessId'))
+                                        for business_id_change in business_id_changes]
                     organization_dict['old_business_ids'] = json.dumps(old_business_ids)
 
         except Exception:
@@ -254,11 +298,10 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
     return organization_dict
 
 
-
 def _get_organization_information(url, business_code):
     try:
-        r = http.get(url + '/Consumer/GetOrganizations', params = {'businessCode': business_code},
-                headers = {'Accept': 'application/json'})
+        r = http.get(url + '/Consumer/GetOrganizations', params={'businessCode': business_code},
+                     headers={'Accept': 'application/json'})
 
         response_json = r.json()
         if response_json.get("error"):
@@ -276,17 +319,17 @@ def _get_organization_information(url, business_code):
 
 def _parse_organization_info(data, organization_name):
     organization_info = next((org_info for org_info in data for name in
-        _convert_xroad_value_to_uniform_list(org_info.get('organizationNames', {})
-            .get('organizationName'))
-        if name.get('value', {}) == organization_name), None)
+                              _convert_xroad_value_to_uniform_list(org_info.get('organizationNames', {})
+                                                                   .get('organizationName'))
+                              if name.get('value', {}) == organization_name), None)
 
-    return  organization_info
+    return organization_info
 
 
 def _get_companies_information(url, business_id):
     try:
-        r = http.get(url + '/Consumer/GetCompanies', params = {'businessId': business_id},
-                headers = {'Accept': 'application/json'})
+        r = http.get(url + '/Consumer/GetCompanies', params={'businessId': business_id},
+                     headers={'Accept': 'application/json'})
 
         response_json = r.json()
         if response_json.get("error"):
@@ -301,8 +344,8 @@ def _get_companies_information(url, business_id):
 
 def _get_organization_changes(url, guid, changed_after):
     try:
-        r = http.get(url + '/Consumer/HasOrganizationChanged', params = {'guid': guid, 'changedAfter': changed_after},
-                headers = {'Accept': 'application/json'})
+        r = http.get(url + '/Consumer/HasOrganizationChanged', params={'guid': guid, 'changedAfter': changed_after},
+                     headers={'Accept': 'application/json'})
 
         response_json = r.json()
         if response_json.get("error"):
@@ -315,10 +358,11 @@ def _get_organization_changes(url, guid, changed_after):
         return None
 
 
-def _get_company_changes(url, business_id, changed_after ):
+def _get_company_changes(url, business_id, changed_after):
     try:
-        r = http.get(url + '/Consumer/HasCompanyChanged', params = {'businessId': business_id, 'changedAfter': changed_after},
-                headers = {'Accept': 'application/json'})
+        r = http.get(url + '/Consumer/HasCompanyChanged', params={'businessId': business_id,
+                                                                  'changedAfter': changed_after},
+                     headers={'Accept': 'application/json'})
 
         response_json = r.json()
         if response_json.get("error"):
@@ -360,7 +404,7 @@ def fetch_xroad_errors(context, data_dict):
 
         try:
             r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
-                         headers = {'Accept': 'application/json'})
+                         headers={'Accept': 'application/json'})
 
             error_log = r.json().get('errorLogList', {}).get('errorLog', [])
             for error in error_log:
@@ -406,7 +450,6 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
                'Content-Type': content_type,
                'X-Road-Client': xroad_client_id}
 
-
     certificate_args = {}
     if xroad_catalog_certificate and os.path.isfile(xroad_catalog_certificate):
         certificate_args['verify'] = xroad_catalog_certificate
@@ -449,10 +492,12 @@ def fetch_xroad_service_list(context, data_dict):
             address = security_server_data.get('address')
 
             if not all((instance, member_class, member_code, server_code, address)):
-                log.warn('Security server %s.%s (%s) is missing required information, skipping.', member_class, member_code, server_code)
+                log.warn('Security server %s.%s (%s) is missing required information, skipping.',
+                         member_class, member_code, server_code)
                 continue
 
-            XRoadServiceListSecurityServer.create(service_list.id, instance, member_class, member_code, server_code, address)
+            XRoadServiceListSecurityServer.create(service_list.id, instance, member_class, member_code,
+                                                  server_code, address)
 
         for member_data in member_list_data.get('memberDataList', []):
             created = parse_xroad_catalog_datetime(member_data.get('created'))
@@ -466,14 +511,16 @@ def fetch_xroad_service_list(context, data_dict):
                 log.warn('Member %s.%s is missing required information, skipping.', member_class, member_code)
                 continue
 
-            member = XRoadServiceListMember.create(service_list.id, created, instance, member_class, member_code, name, is_provider)
+            member = XRoadServiceListMember.create(service_list.id, created, instance, member_class,
+                                                   member_code, name, is_provider)
 
             for subsystem_data in member_data.get('subsystemList', []):
                 created = parse_xroad_catalog_datetime(subsystem_data.get('created'))
                 subsystem_code = subsystem_data.get('subsystemCode')
 
                 if not all((created, subsystem_code)):
-                    log.warn('Subsystem %s.%s.%s is missing required information, skipping.', member_class, member_code, subsystem_code)
+                    log.warn('Subsystem %s.%s.%s is missing required information, skipping.', member_class,
+                             member_code, subsystem_code)
                     continue
 
                 subsystem = XRoadServiceListSubsystem.create(member.id, created, subsystem_code)
@@ -491,7 +538,8 @@ def fetch_xroad_service_list(context, data_dict):
 
                     XRoadServiceListService.create(subsystem.id, created, service_code, service_version, active)
 
-    return {"success": True, "message": "Statistics for %s days stored in database." % len(service_list_data.get('memberData', []))}
+    return {"success": True, "message": "Statistics for %s days stored in database." %
+                                        len(service_list_data.get('memberData', []))}
 
 
 def xroad_service_list(context, data_dict):
@@ -564,7 +612,6 @@ def parse_xroad_catalog_datetime(dt):
         return None
 
 
-
 def xroad_error_list(context, data_dict):
 
     toolkit.check_access('xroad_error_list', context, data_dict)
@@ -577,11 +624,9 @@ def xroad_error_list(context, data_dict):
 
     end = start.replace(hour=23, minute=59, second=59)
 
-
-
     rest_services_failed_errors = model.Session.query(XRoadError)\
         .filter(XRoadError.message.like("Fetch of REST services failed%"))\
-        .filter(and_(XRoadError.created >= start),(XRoadError.created <= end))
+        .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
 
     other_errors = model.Session.query(XRoadError)\
         .filter(not_(XRoadError.message.like("Fetch of REST services failed%")))\
@@ -590,7 +635,7 @@ def xroad_error_list(context, data_dict):
     organization_id = data_dict.get('organization')
     if organization_id:
         try:
-            toolkit.get_action('organization_show')({}, {"id": organization_id })
+            toolkit.get_action('organization_show')({}, {"id": organization_id})
         except toolkit.ObjectNotFound:
             raise toolkit.ObjectNotFound(toolkit._(u"Organization not found"))
 
