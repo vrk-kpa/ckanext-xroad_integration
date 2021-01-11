@@ -83,7 +83,7 @@ def services():
         response = make_response()
         response.headers['Content-Type'] = 'text/csv'
         response.headers['Content-Disposition'] = 'inline; filename="xroad_services_{}.csv"'.format(selected_date.strftime(date_format))
-        fieldnames = ['member', 'member_type', 'member_name', 'security_servers', 'subsystem', 'service', 'active', 'created']
+        fieldnames = ['member', 'member_name', 'member_type', 'security_servers', 'subsystem', 'service', 'active', 'created']
         writer = csv.DictWriter(response.stream, fieldnames=fieldnames)
         writer.writeheader()
         for member in (latest or {}).get('members', []):
