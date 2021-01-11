@@ -10,6 +10,9 @@
     <form method="get" action="">
       {{ form.input('date', id='field-date', label=_('Date'), placeholder=_('2005-01-01'), value=selected_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'YYYY-MM-DD', 'autosubmit': True}) }}
     </form>
+    <p>
+    {{ _('If organization has at least one service on any of its subsystems, the member type is provider. This includes SOAP, Rest and unknown types for services. Otherwise member type is consumer') }}
+    </p>
     <table class="table table-bordered" style="table-layout:fixed;" data-module="tablesorter">
       <caption>{{ h.render_datetime(service_list.timestamp) }}</caption>
         <thead>
