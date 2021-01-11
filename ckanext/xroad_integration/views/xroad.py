@@ -7,6 +7,8 @@ from flask import request, make_response
 import logging
 import csv
 
+from ckanext.apicatalog_ui.plugin import get_translated
+
 xroad = Blueprint(u'xroad', __name__, url_prefix=u'/ckan-admin/xroad')
 log = logging.getLogger(__name__)
 
@@ -36,7 +38,14 @@ def stats():
 
     xroad_stats = get_action('xroad_stats')({}, {})
 
-    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats})
+    # Sort by date, pick first data point, last data point and the first data point of each month, then crop to last 24
+    xroad_stats_sorted = sorted(xroad_stats, key=lambda d: d.get('date'))
+    xroad_stats_service_graph_data = [d for i, d in enumerate(xroad_stats_sorted)
+                                      if i == 0 or i == len(xroad_stats_sorted) - 1
+                                      or d.get('date', '')[:7] != xroad_stats_sorted[i - 1].get('date', '')[:7]][-24:]
+
+
+    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats, 'xroad_stats_service_graph_data': xroad_stats_service_graph_data})
 
 
 xroad.add_url_rule(u'/stats', view_func=stats)
@@ -90,8 +99,8 @@ def services():
                                                         for ss in member.get('security_servers', []))
 
                     row = {'member': member_string.encode('utf-8'),
-                           'member_name': member.get('name', '').encode('utf-8'),
-                           'member_type': 'provider' if member.get('is_provider') else 'consumer',
+                           'member_name': get_translated(member, 'title').encode('utf-8'),
+                           'member_type': 'provider' if member.get('resource_count', 0) > 0 else 'consumer',
                            'security_servers': security_servers_string.encode('utf-8'),
                            'subsystem': subsystem.get('subsystem_code', '').encode('utf-8'),
                            'service': service_string.encode('utf-8'),
@@ -112,6 +121,7 @@ xroad.add_url_rule(u'/services', view_func=services)
 
 xroad_organization = Blueprint(u'xroad_organization', __name__, url_prefix=u'/organization/xroad')
 
+
 def organization_errors(organization, date=None):
     try:
         context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
@@ -126,12 +136,12 @@ def organization_errors(organization, date=None):
     except Invalid as e:
         abort(404, e.error)
 
-
     return render('organization/xroad_errors.html', extra_vars={"error_list": error_list})
 
 
 xroad_organization.add_url_rule(u'/<organization>/errors/<date>', view_func=organization_errors, strict_slashes=False)
 xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
+
 
 def get_blueprints():
     return [xroad, xroad_organization]

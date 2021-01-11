@@ -507,6 +507,30 @@ def xroad_service_list(context, data_dict):
     service_lists = XRoadServiceList.within_range(start, end)
     results = [sl.as_dict_full() for sl in service_lists]
 
+    # Enrich data with current information
+    organization_ids = set(xroad_member_id(m) for sl in results for m in sl['members'])
+
+    organization_titles = {k: json.loads(v) for k, v in (
+            model.Session.query(model.Group.id, model.GroupExtra.value)
+            .filter(model.Group.id.in_(organization_ids))
+            .filter(model.Group.id == model.GroupExtra.group_id)
+            .filter(model.GroupExtra.key == 'title_translated')
+            .filter(model.GroupExtra.state == 'active')
+            ).all()}
+
+    from sqlalchemy import func
+    resource_counts = dict((
+            model.Session.query(model.Group.id, func.count(model.Resource.id))
+            .join(model.Package, model.Package.owner_org == model.Group.id)
+            .join(model.Resource, model.Resource.package_id == model.Package.id)
+            .filter(model.Group.id.in_(organization_ids))
+            .filter(model.Package.state == 'active')
+            .group_by(model.Group.id)
+            ).all())
+    # from pprint import pformat
+    # log.info(pformat(organization_titles))
+    # log.info(pformat(resource_counts))
+
     # Remove unnecessary data from response
     for sl in results:
         del sl['id']
@@ -514,6 +538,9 @@ def xroad_service_list(context, data_dict):
             del ss['id']
             del ss['xroad_service_list_id']
         for m in sl['members']:
+            member_id = xroad_member_id(m)
+            m['resource_count'] = resource_counts.get(member_id, 0)
+            m['title'] = organization_titles.get(member_id, {'fi': m['name']})
             del m['id']
             del m['xroad_service_list_id']
             for ss in m['subsystems']:
@@ -653,3 +680,10 @@ def xroad_harvest_sources(context):
             continue
 
         yield harvest_source
+
+
+def xroad_member_id(member_dict):
+    xroad_instance = member_dict.get('instance')
+    member_class = member_dict.get('member_class')
+    member_code = member_dict.get('member_code')
+    return '.'.join((xroad_instance, member_class, member_code))

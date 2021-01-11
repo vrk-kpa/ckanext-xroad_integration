@@ -26,6 +26,8 @@ try:
 except ImportError:
     from paste.deploy.converters import asbool
 
+from typing import Union
+
 
 NotFound = logic.NotFound
 
@@ -72,8 +74,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return {
             "name": "xroad",
-            "title": "XRoad Rest Gateway",
-            "description": "Server that provides Rest Gateway for XRoad"
+            "title": "X-Road Rest Gateway",
+            "description": "Server that provides Rest Gateway for X-Road. "
+                           "Valid config keys: force_all, force_organization_update, force_resource_update, since"
         }
 
     def validate_config(self, config):
@@ -81,10 +84,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return config
 
         config_obj = json.loads(config)
-        for key in ('force_all', 'force_update'):
+        for key in ('force_all', 'force_organization_update', 'force_resource_update'):
             if key in config_obj:
                 if not isinstance(config_obj[key], bool):
                     raise ValueError('%s must be boolean' % key)
+        if 'since' in config_obj:
+            try:
+                datetime.strptime(config_obj['since'], '%Y-%m-%d')
+            except ValueError as e:
+                raise ValueError("%s must be in format YYYY-MM-DD" % 'since')
+
 
         return config
 
@@ -105,10 +114,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
         try:
             catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
             members = self._parse_xroad_data(catalog)
-        except ContentFetchError, e:
+        except ContentFetchError as e:
             self._save_gather_error('%r' % e.message, harvest_job)
             return False
-        except KeyError, e:
+        except KeyError as e:
             self._save_gather_error('Failed to parse response: %r' % e, harvest_job)
             return False
 
@@ -117,7 +126,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Service = resource = WSDL
 
         object_ids = []
-        for member in members:
+        for member in members: # type: dict
             if isinstance(member, basestring):
                 continue
 
@@ -129,9 +138,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
                 member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
 
+            # TODO: X-Road Catalog IsProvider is not in use for now, restore by uncommenting lines below
             # Fetch member type
-            member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
-                                                member['memberCode'])
+            # member_type = self._get_member_type(harvest_job.source.url, member['xRoadInstance'], member['memberClass'],
+            #                                    member['memberCode'])
+
+            # If X-Road catalog is not used, following sets member_type to provider
+            # if subsystem has at least one active service
+            member_type = 'consumer'
+            if member['subsystems']:
+                for subsystem in member['subsystems'].get('subsystem', []): # type: dict
+                    services = subsystem.get('services', [])
+                    if type(services) is dict:
+                        services = [services]
+                    for service in services: # type: Union[str, dict]
+                        if type(service) is dict and not service.get('removed'):
+                            member_type = 'provider'
 
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
@@ -229,7 +251,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         log.info("Service type in unknown for subsystem %s service %s" % (dataset['subsystem']['subsystemCode'],service['serviceCode']))
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
-        except TypeError, ContentFetchError:
+        except (TypeError, ContentFetchError):
             self._save_object_error('Could not parse WSDL content for object {0}'.format(harvest_object.id),
                                     harvest_object, 'Fetch')
             return False
@@ -411,7 +433,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             log.error('Error parsing previous timestamp: %s' % e)
                             continue
 
-                        if not previous or (changed and changed > previous) or self.config.get('force_update'):
+                        if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
                             log.info('WSDL changed after last harvest, replacing...')
                             resource_data = {
                                     "package_id":package_dict['id'],
@@ -455,6 +477,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return result
 
     def _get_xroad_catalog(self, url, changed_after):
+        # type: (str, str) -> dict
         try:
             r = http.get(url + '/Consumer/ListMembers', params = {'changedAfter' : changed_after}, headers = {'Accept': 'application/json'})
         except ConnectionError:
@@ -468,8 +491,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
         return result
 
     def _parse_xroad_data(self, res):
+        # type: (dict) -> list
         if isinstance(res['memberList'], basestring):
-            return {}
+            return []
         if type(res['memberList']['member']) is dict:
             return [res['memberList']['member']]
         return res['memberList']['member']
@@ -695,7 +719,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 last_time = "2011-01-01"
             else:
                 last_time = self._last_error_free_job_time(harvest_job)
-            if (last_time and last_time < data_dict['changed']) or self.config.get('force_update'):
+            if (last_time and last_time < data_dict['changed']) or self.config.get('force_organization_update'):
                 munged_title = munge_title_to_name(data_dict['name'])
                 if org['name'] == munged_title:
                     org_name = munged_title
@@ -738,6 +762,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if not org.get('webpage_description_modified_in_catalog', False):
                     org_data['webpage_description'] = data_dict.get('webpage_description', {})
 
+                log.info("Patching organization %s" % org_name)
                 org = p.toolkit.get_action('organization_patch')(context, org_data)
 
         else:
@@ -781,6 +806,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'webpage_address': data_dict.get('webpage_address', {}),
                 'webpage_description': data_dict.get('webpage_description', {})}
 
+            log.info("Creating organization %s" % org_name)
             org = p.toolkit.get_action('organization_create')(context, org_data)
 
         return org
