@@ -1,5 +1,6 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+from ckan.lib.plugins import DefaultTranslation
 from ckan.logic.auth.get import sysadmin
 
 import helpers
@@ -8,7 +9,7 @@ from logic import action
 from auth import xroad_error_list
 
 
-class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
+class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
     plugins.implements(plugins.ITemplateHelpers)
@@ -16,6 +17,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IConfigurable)
+    plugins.implements(plugins.ITranslation)
 
     # IConfigurer
 

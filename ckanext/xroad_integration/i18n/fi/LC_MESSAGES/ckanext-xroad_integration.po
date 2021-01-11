@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-xroad_integration 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-01-11 11:56+0000\n"
+"POT-Creation-Date: 2021-01-11 13:42+0000\n"
 "PO-Revision-Date: 2021-01-11 11:57+0000\n"
 "Last-Translator: Zharktas <jari-pekka.voutilainen@gofore.com>, 2021\n"
 "Language-Team: Finnish (https://www.transifex.com/avoindata/teams/7979/fi/)\n"
@@ -23,20 +23,20 @@ msgstr ""
 "Language: fi\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ckanext/xroad_integration/auth.py:12
+#: ckanext/xroad_integration/auth.py:13
 msgid "User not authorized to view X-Road error list for organization"
 msgstr ""
 
-#: ckanext/xroad_integration/view.py:88 ckanext/xroad_integration/view.py:90
+#: ckanext/xroad_integration/view.py:89 ckanext/xroad_integration/view.py:91
 msgid "WSDL"
 msgstr ""
 
-#: ckanext/xroad_integration/logic/action.py:595
-#: ckanext/xroad_integration/views/xroad.py:135
+#: ckanext/xroad_integration/logic/action.py:640
+#: ckanext/xroad_integration/views/xroad.py:138
 msgid "Organization not found"
 msgstr "Organisaatioita ei löytynyt"
 
-#: ckanext/xroad_integration/logic/action.py:607
+#: ckanext/xroad_integration/logic/action.py:652
 msgid "Organization id is not valid X-Road id"
 msgstr ""
 
@@ -109,6 +109,9 @@ msgid ""
 "member type is provider. This includes SOAP, Rest and unknown types for "
 "services. Otherwise member type is consumer"
 msgstr ""
+"Jos organisaatiolla on vähintään yksi palvelu alijärjestelmissään, "
+"organisaation tyyppi on tuottaja. Tämä sisältää SOAP, Rest ja tuntemattoman "
+"tyyppiset palvelut. Muussa tapauksessa tyyppi on kuluttaja."
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:20
 msgid "Member"
@@ -164,10 +167,10 @@ msgstr ""
 
 #: ckanext/xroad_integration/views/xroad.py:21
 #: ckanext/xroad_integration/views/xroad.py:37
-#: ckanext/xroad_integration/views/xroad.py:59
+#: ckanext/xroad_integration/views/xroad.py:60
 msgid "Need to be system administrator to administer"
 msgstr "Hallinnointia varten pitää olla järjestelmän ylläpitäjä"
 
-#: ckanext/xroad_integration/views/xroad.py:130
+#: ckanext/xroad_integration/views/xroad.py:133
 msgid "Need to be organization administrator to administer"
 msgstr ""

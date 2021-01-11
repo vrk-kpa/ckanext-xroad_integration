@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-xroad_integration 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-01-11 11:56+0000\n"
+"POT-Creation-Date: 2021-01-11 13:42+0000\n"
 "PO-Revision-Date: 2021-01-11 11:57+0000\n"
 "Language-Team: Swedish (https://www.transifex.com/avoindata/teams/7979/sv/)\n"
 "MIME-Version: 1.0\n"
@@ -19,20 +19,20 @@ msgstr ""
 "Language: sv\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ckanext/xroad_integration/auth.py:12
+#: ckanext/xroad_integration/auth.py:13
 msgid "User not authorized to view X-Road error list for organization"
 msgstr ""
 
-#: ckanext/xroad_integration/view.py:88 ckanext/xroad_integration/view.py:90
+#: ckanext/xroad_integration/view.py:89 ckanext/xroad_integration/view.py:91
 msgid "WSDL"
 msgstr ""
 
-#: ckanext/xroad_integration/logic/action.py:595
-#: ckanext/xroad_integration/views/xroad.py:135
+#: ckanext/xroad_integration/logic/action.py:640
+#: ckanext/xroad_integration/views/xroad.py:138
 msgid "Organization not found"
 msgstr ""
 
-#: ckanext/xroad_integration/logic/action.py:607
+#: ckanext/xroad_integration/logic/action.py:652
 msgid "Organization id is not valid X-Road id"
 msgstr ""
 
@@ -158,10 +158,10 @@ msgstr ""
 
 #: ckanext/xroad_integration/views/xroad.py:21
 #: ckanext/xroad_integration/views/xroad.py:37
-#: ckanext/xroad_integration/views/xroad.py:59
+#: ckanext/xroad_integration/views/xroad.py:60
 msgid "Need to be system administrator to administer"
 msgstr ""
 
-#: ckanext/xroad_integration/views/xroad.py:130
+#: ckanext/xroad_integration/views/xroad.py:133
 msgid "Need to be organization administrator to administer"
 msgstr ""
