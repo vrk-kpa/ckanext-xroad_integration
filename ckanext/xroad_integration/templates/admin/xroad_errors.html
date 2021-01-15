@@ -8,6 +8,12 @@
     {% endblock %}
 
     <h1>Errors for {{ h.render_datetime(error_list.date) }}</h1>
+    <div class="summary">
+        <dl>
+            <dt>Other errors:</dt><dd>{{ error_list.other_errors | length }}</dd>
+            <dt>Rest service errors:</dt><dd>{{ error_list.rest_services_failed_errors | length }}</dd>
+        </dl>
+    </div>
     <h2>Other errors</h2>
     <table class="table table-bordered" style="table-layout:fixed;">
         <thead>
