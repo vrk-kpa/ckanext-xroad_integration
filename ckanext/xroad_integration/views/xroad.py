@@ -40,13 +40,35 @@ def stats():
 
     # Sort by date, pick first data point, last data point and the first data point of each month, then crop to last 24
     xroad_stats_sorted = sorted(xroad_stats, key=lambda d: d.get('date'))
-    xroad_stats_service_graph_data = [d for i, d in enumerate(xroad_stats_sorted)
-                                      if i == 0 or i == len(xroad_stats_sorted) - 1
-                                      or d.get('date', '')[:7] != xroad_stats_sorted[i - 1].get('date', '')[:7]][-24:]
 
-    return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats,
-                                                         'xroad_stats_service_graph_data':
-                                                             xroad_stats_service_graph_data})
+    data_format = request.args.get('format')
+
+    if data_format is not None and data_format.lower() == 'csv':
+        response = make_response()
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = 'inline; filename="xroad_stats.csv"'
+        fieldnames = ['date', 'soap_service_count', 'rest_service_count', 'distinct_service_count', 'unknown_service_count']
+        writer = csv.DictWriter(response.stream, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for stat in xroad_stats:
+            row = {'date': stat.get('date'),
+                   'soap_service_count': stat.get('soap_service_count'),
+                   'rest_service_count': stat.get('rest_service_count'),
+                   'distinct_service_count': stat.get('distinct_service_count'),
+                   'unknown_service_count': stat.get('unknown_service_count')
+                   }
+            writer.writerow(row)
+
+        return response
+    else:
+        xroad_stats_service_graph_data = [d for i, d in enumerate(xroad_stats_sorted)
+                                          if i == 0 or i == len(xroad_stats_sorted) - 1
+                                          or d.get('date', '')[:7] != xroad_stats_sorted[i - 1].get('date', '')[:7]][-24:]
+
+        return render('/admin/xroad_stats.html', extra_vars={'xroad_stats': xroad_stats,
+                                                             'xroad_stats_service_graph_data':
+                                                                 xroad_stats_service_graph_data})
 
 
 xroad.add_url_rule(u'/stats', view_func=stats)

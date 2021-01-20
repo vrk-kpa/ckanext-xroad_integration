@@ -17,6 +17,7 @@
     {% resource "xroad_integration/xroad_stats" %}
 
     <div data-module="xroad_stats">
+      <a href="{{ h.url_for('xroad.stats', format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
       <canvas id="serviceCountCanvas"></canvas>
       <table class="table table-bordered" style="table-layout:fixed;">
           <thead>
