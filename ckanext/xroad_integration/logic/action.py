@@ -8,6 +8,7 @@ from typing import List
 
 import requests
 import datetime
+import six
 
 from ckan import model
 from requests.exceptions import ConnectionError
@@ -376,7 +377,7 @@ def _get_company_changes(url, business_id, changed_after):
 
 
 def _convert_xroad_value_to_uniform_list(value):
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
         return []
 
     if type(value) is dict:

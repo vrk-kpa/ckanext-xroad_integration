@@ -15,6 +15,7 @@ import os
 import tempfile
 from sqlalchemy import exists
 import lxml.etree as etree
+import six
 from ckan import model
 
 from ckan import logic
@@ -125,7 +126,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         object_ids = []
         for member in members:  # type: dict
-            if isinstance(member, basestring):
+            if isinstance(member, six.string_types):
                 continue
 
             # If member has been deleted in exchange layer
@@ -154,7 +155,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             member_type = 'provider'
 
             # Create organization id
-            org_id = substitute_ascii_equivalents(u'.'.join(unicode(member.get(p, ''))
+            org_id = substitute_ascii_equivalents(u'.'.join(six.text_type(member.get(p, ''))
                                                             for p in ('xRoadInstance', 'memberClass', 'memberCode')))
 
             organization_dict = {
@@ -184,7 +185,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                     # Generate GUID
                     guid = substitute_ascii_equivalents(u'%s.%s'
-                                                        % (org_id, unicode(subsystem.get('subsystemCode', ''))))
+                                                        % (org_id, six.text_type(subsystem.get('subsystemCode', ''))))
 
                     # Create harvest object
                     obj = HarvestObject(guid=guid, job=harvest_job,
@@ -317,7 +318,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         contains_wsdls = False
         contains_openapi_descriptions = False
         services = dataset['subsystem'].get('services', {})
-        if not isinstance(services, basestring):
+        if not isinstance(services, six.string_types):
             contains_wsdls = any('data' in s.get('wsdl', {}) for s in services['service'])
             contains_openapi_descriptions = any('data' in s.get('openapi', {}) for s in services['service'])
 
@@ -494,7 +495,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _parse_xroad_data(self, res):
         # type: (dict) -> list
-        if isinstance(res['memberList'], basestring):
+        if isinstance(res['memberList'], six.string_types):
             return []
         if type(res['memberList']['member']) is dict:
             return [res['memberList']['member']]
@@ -822,7 +823,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _api_has_wsdls_or_openapis(self, subsystem):
         services = subsystem.get('services', {})
-        if not isinstance(services, basestring):
+        if not isinstance(services, six.string_types):
             if type(services['service']) is dict:
                 services['service'] = [services['service']]
             for service in services['service']:
@@ -841,14 +842,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
         requests.post('%s/action/resource_patch' % LOCAL_API_URL,
                       data=data,
                       headers={"X-CKAN-API-Key": apikey},
-                      files={'upload': (target_name, file(filename))},
+                      files={'upload': (target_name, open(filename))},
                       verify=False)
 
     def _create_resource(self, data, apikey, filename, target_name):
         requests.post('%s/action/resource_create' % LOCAL_API_URL,
                       data=data,
                       headers={"X-CKAN-API-Key": apikey},
-                      files={'upload': (target_name, file(filename))},
+                      files={'upload': (target_name, open(filename))},
                       verify=False)
 
     def _delete_resource(self, data, apikey):
@@ -859,7 +860,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
     def _is_valid_wsdl(self, text_content):
         try:
-            text_bytes = text_content.encode('utf-8') if type(text_content) is unicode else text_content
+            text_bytes = text_content.encode('utf-8') if type(text_content) is six.text_type else text_content
             wsdl_content = etree.fromstring(text_bytes)
             xml_namespaces = {
                     'soap-env': 'http://schemas.xmlsoap.org/soap/envelope/',
