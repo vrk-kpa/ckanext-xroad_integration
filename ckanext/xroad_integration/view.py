@@ -7,6 +7,7 @@ import urllib2
 import os
 import os.path
 import mimetypes
+import six
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def render_wsdl_resource(wsdl_to_html):
             for element in wsdl_content.xpath('//xsd:import|//xsd:include', namespaces=xml_namespaces):
                 element.getparent().remove(element)
             html_content = wsdl_to_html(wsdl_content)
-            return etree.tostring(html_content, pretty_print=True, method='html', encoding=unicode)
+            return etree.tostring(html_content, pretty_print=True, method='html', encoding=six.text_type)
         except urllib2.URLError:
             return ERROR_HTML % 'Invalid URL'
         except urllib2.HTTPError as e:

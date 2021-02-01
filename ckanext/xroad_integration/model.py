@@ -1,5 +1,6 @@
 import uuid
 import logging
+import six
 
 from ckan import model
 from ckan.lib import dictization
@@ -11,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def make_uuid():
-    return unicode(uuid.uuid4())
+    return six.text_type(uuid.uuid4())
 
 
 class AsDictMixin:
