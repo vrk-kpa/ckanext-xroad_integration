@@ -85,7 +85,7 @@ setup(
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
         [paste.paster_command]
-        xroad = ckanext.xroad_integration.commands.xroad:xroad_commands
+        xroad = ckanext.xroad_integration.commands.xroad:xroad
     ''',
 
     # If you are changing from the default layout of your extension, you may

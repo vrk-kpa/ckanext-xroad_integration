@@ -1,15 +1,16 @@
 import click
 
-from ckan.lib.cli import load_config, paster_click_group, click_config_option
+from ckan.lib.cli import load_config, click_config_option
 from ckan.plugins.toolkit import get_action
 
 
-xroad_commands = paster_click_group(
-    summary=u'X-Road related commands'
-)
+@click.group()
+def xroad():
+    """X-Road related commands"""
+    pass
 
 
-@xroad_commands.command(
+@xroad.command(
     u'update_xroad_organizations',
     help='Updates harvested organizations\' metadata'
 )
@@ -20,7 +21,7 @@ def update_xroad_organizations(ctx, config):
     get_action('update_xroad_organizations')({'ignore_auth': True}, {})
 
 
-@xroad_commands.command(
+@xroad.command(
     u'fetch_errors',
     help='Fetches error log from catalog lister'
 )
@@ -38,7 +39,7 @@ def fetch_errors(ctx, config):
         print(results['message'])
 
 
-@xroad_commands.command(
+@xroad.command(
     u'fetch_stats',
     help='Fetches X-Road stats from catalog lister'
 )
@@ -61,7 +62,7 @@ def fetch_stats(ctx, config, days):
         print(results['message'])
 
 
-@xroad_commands.command(
+@xroad.command(
     u'fetch_service_list',
     help='Fetches X-Road services from catalog lister'
 )
@@ -84,7 +85,7 @@ def fetch_service_list(ctx, config, days):
         print("Error fetching service list!")
 
 
-@xroad_commands.command(
+@xroad.command(
     u'init_db',
     help="Initializes databases for xroad"
 )
@@ -98,4 +99,4 @@ def init_db(ctx, config):
     init_table(model.meta.engine)
 
 def get_commands():
-    return [xroad_commands]
+    return [xroad]
