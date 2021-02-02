@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 
-import ckantoolkit as tk
 import click
 
 import ckanext.xroad_integration.utils as utils
