@@ -20,7 +20,7 @@ def xroad():
 
 
 @xroad.command()
-def initdb():
+def init_db():
     """Creates the necessary tables in the database.
     """
     utils.init_db()
