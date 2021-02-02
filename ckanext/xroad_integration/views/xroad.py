@@ -7,7 +7,10 @@ from flask import request, make_response
 import logging
 import csv
 
-from ckanext.apicatalog_ui.plugin import get_translated
+try:
+    from ckanext.apicatalog_ui.plugin import get_translated
+except ImportError:
+    from ckan.lib.helpers import get_translated
 
 xroad = Blueprint(u'xroad', __name__, url_prefix=u'/ckan-admin/xroad')
 log = logging.getLogger(__name__)
