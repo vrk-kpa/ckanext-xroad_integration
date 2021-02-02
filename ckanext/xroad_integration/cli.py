@@ -23,5 +23,5 @@ def xroad():
 def initdb():
     """Creates the necessary tables in the database.
     """
-    utils.initdb()
+    utils.init_db()
     click.secho(u"DB tables created", fg=u"green")
