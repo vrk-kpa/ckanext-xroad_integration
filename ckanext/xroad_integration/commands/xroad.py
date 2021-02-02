@@ -99,5 +99,4 @@ def init_db(ctx, config):
     init_table(model.meta.engine)
 
 def get_commands():
-    print("get_commands call")
     return [xroad]
