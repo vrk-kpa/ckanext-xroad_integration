@@ -96,3 +96,6 @@ def init_db(ctx, config):
     import ckan.model as model
     from ckanext.xroad_integration.model import init_table
     init_table(model.meta.engine)
+
+def get_commands():
+    return [xroad_commands]
