@@ -18,7 +18,7 @@ xroad_commands = paster_click_group(
 @click.pass_context
 def update_xroad_organizations(ctx, config):
     load_config(config or ctx.obj['config'])
-    get_action('update_xroad_organizations')({'ignore_auth': True}, {})
+    utils.update_xroad_organizations
 
 
 @xroad_commands.command(
@@ -29,14 +29,7 @@ def update_xroad_organizations(ctx, config):
 @click.pass_context
 def fetch_errors(ctx, config):
     load_config((config or ctx.obj['config']))
-    results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
-
-    if results.get("success") is True:
-        for result in results.get('results', []):
-            print(result['message'])
-
-    else:
-        print(results['message'])
+    utils.fetch_errors()
 
 
 @xroad_commands.command(
@@ -49,17 +42,7 @@ def fetch_errors(ctx, config):
 def fetch_stats(ctx, config, days):
     load_config((config or ctx.obj['config']))
 
-    data_dict = {}
-    if days:
-        data_dict['days'] = days
-
-    results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
-
-    if results.get("success") is True:
-        print(results['message'])
-
-    else:
-        print(results['message'])
+    utils.fetch_stats(days)
 
 
 @xroad_commands.command(
@@ -71,18 +54,7 @@ def fetch_stats(ctx, config, days):
 @click.option(u'--days', type=int)
 def fetch_service_list(ctx, config, days):
     load_config((config or ctx.obj['config']))
-
-    data_dict = {}
-    if days:
-        data_dict['days'] = days
-
-    results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
-
-    if results.get("success") is True:
-        print(results['message'])
-
-    else:
-        print("Error fetching service list!")
+    utils.fetch_service_list(days)
 
 
 @xroad_commands.command(
