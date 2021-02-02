@@ -3,12 +3,12 @@ import ckan.plugins.toolkit as toolkit
 from ckan.lib.plugins import DefaultTranslation
 from ckan.logic.auth.get import sysadmin
 
-import helpers as helpers
+import ckanext.xroad_integration.helpers as helpers
 from views import xroad
 from logic import action
 from auth import xroad_error_list
 
-import cli as cli
+import ckanext.xroad_integration.cli as cli
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IConfigurer)
