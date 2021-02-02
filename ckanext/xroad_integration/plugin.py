@@ -8,7 +8,7 @@ from views import xroad
 from logic import action
 from auth import xroad_error_list
 
-from .cli import xroad as cli
+import cli as cli
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IConfigurer)
