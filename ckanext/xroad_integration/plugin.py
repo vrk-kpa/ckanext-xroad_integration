@@ -3,11 +3,12 @@ import ckan.plugins.toolkit as toolkit
 from ckan.lib.plugins import DefaultTranslation
 from ckan.logic.auth.get import sysadmin
 
-import helpers
-from views import xroad
-from logic import action
-from auth import xroad_error_list
+import ckanext.xroad_integration.helpers as helpers
+from ckanext.xroad_integration.views import xroad
+from ckanext.xroad_integration.logic import action
+from ckanext.xroad_integration.auth import xroad_error_list
 
+import ckanext.xroad_integration.cli as cli
 
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IConfigurer)
@@ -18,6 +19,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.ITranslation)
+
+    if toolkit.check_ckan_version(min_version="2.9"):
+        plugins.implements(plugins.IClick)
 
     # IConfigurer
 
@@ -87,3 +91,8 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     # IBlueprint
     def get_blueprint(self):
         return xroad.get_blueprints()
+
+    # IClick
+
+    def get_commands(self):
+        return cli.get_commands()
