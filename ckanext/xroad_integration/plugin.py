@@ -4,9 +4,9 @@ from ckan.lib.plugins import DefaultTranslation
 from ckan.logic.auth.get import sysadmin
 
 import ckanext.xroad_integration.helpers as helpers
-from views import xroad
-from logic import action
-from auth import xroad_error_list
+from ckanext.xroad_integration.views import xroad
+from ckanext.xroad_integration.logic import action
+from ckanext.xroad_integration.auth import xroad_error_list
 
 import ckanext.xroad_integration.cli as cli
 
