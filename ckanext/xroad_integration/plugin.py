@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.lib.plugins import DefaultTranslation
 from ckan.logic.auth.get import sysadmin
 
-import helpers
+import helpers as helpers
 from views import xroad
 from logic import action
 from auth import xroad_error_list
