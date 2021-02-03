@@ -1,32 +1,5 @@
-.. You should enable this project on travis-ci.org and coveralls.io to make
-   these badges work. The necessary Travis and Coverage config files have been
-   generated for you.
-
-.. image:: https://travis-ci.org//ckanext-xroad_integration.svg?branch=master
-    :target: https://travis-ci.org//ckanext-xroad_integration
-
-.. image:: https://coveralls.io/repos//ckanext-xroad_integration/badge.svg
-  :target: https://coveralls.io/r//ckanext-xroad_integration
-
-.. image:: https://pypip.in/download/ckanext-xroad_integration/badge.svg
-    :target: https://pypi.python.org/pypi//ckanext-xroad_integration/
-    :alt: Downloads
-
-.. image:: https://pypip.in/version/ckanext-xroad_integration/badge.svg
-    :target: https://pypi.python.org/pypi/ckanext-xroad_integration/
-    :alt: Latest Version
-
-.. image:: https://pypip.in/py_versions/ckanext-xroad_integration/badge.svg
-    :target: https://pypi.python.org/pypi/ckanext-xroad_integration/
-    :alt: Supported Python versions
-
-.. image:: https://pypip.in/status/ckanext-xroad_integration/badge.svg
-    :target: https://pypi.python.org/pypi/ckanext-xroad_integration/
-    :alt: Development Status
-
-.. image:: https://pypip.in/license/ckanext-xroad_integration/badge.svg
-    :target: https://pypi.python.org/pypi/ckanext-xroad_integration/
-    :alt: License
+.. image:: https://coveralls.io/repos/github/vrk-kpa/ckanext-xroad_integration/badge.svg
+  :target: https://coveralls.io/github/vrk-kpa/ckanext-xroad_integration
 
 =============
 ckanext-xroad_integration
