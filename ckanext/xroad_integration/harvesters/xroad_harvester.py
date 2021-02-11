@@ -524,7 +524,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_service_type(url, xroad_instance, member_class, member_code, subsystem, service_code, service_version):
         try:
-            r = http.get(url + '/Consumer/IsSoapService', params={'xRoadInstance': xroad_instance,
+            r = http.get(url + '/Consumer/GetServiceType', params={'xRoadInstance': xroad_instance,
                                                                   'memberClass': member_class,
                                                                   'memberCode': member_code,
                                                                   'subsystemCode': subsystem,
@@ -537,27 +537,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if response_json.get("error"):
                 return {"error": response_json.get("error").get('string')}
 
-            if response_json.get('soap') and response_json.get('soap') is True:
-                return 'soap'
-
-            r = http.get(url + '/Consumer/IsRestService', params={'xRoadInstance': xroad_instance,
-                                                                  'memberClass': member_class,
-                                                                  'memberCode': member_code,
-                                                                  'subsystemCode': subsystem,
-                                                                  'serviceCode': service_code,
-                                                                  'serviceVersion': service_version},
-                         headers={'Accept': 'application/json'})
-
-            response_json = r.json()
-
-            if response_json.get("error"):
-                return {"error": response_json.get("error").get('string')}
-
-            if response_json.get('rest') and response_json.get('rest') is True:
-                return 'rest'
+            if response_json.get('type'):
+                return response_json.get('type')
 
         except ConnectionError:
-            raise ContentFetchError("Calling XRoad service IsSoapService or IsRestService failed")
+            raise ContentFetchError("Calling XRoad service GetServiceType failed")
 
         return ''
 
