@@ -690,11 +690,11 @@ def fetch_xroad_stats(context, data_dict):
                 stat.soap_service_count = statistics['numberOfSoapServices']
                 stat.rest_service_count = statistics['numberOfRestServices']
                 stat.distinct_service_count = statistics['totalNumberOfDistinctServices']
-                stat.openapi_service_count = statistics['numberOfOpenapiServices']
+                stat.openapi_service_count = statistics['numberOfOpenApiServices']
                 XRoadStat.save(stat)
             else:
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
-                                 statistics['totalNumberOfDistinctServices'], statistics['numberOfOpenapiServices'])
+                                 statistics['totalNumberOfDistinctServices'], statistics['numberOfOpenApiServices'])
 
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
 
