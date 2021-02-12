@@ -9,7 +9,7 @@
           distinctServiceCount: {{ stat.distinct_service_count }},
           soapServiceCount: {{ stat.soap_service_count }},
           restServiceCount: {{ stat.rest_service_count }},
-          unknownServiceCount: {{ stat.unknown_service_count }}
+          openapiServiceCount: {{ stat.openapi_count }}
         },
       {% endfor %}
       ]
@@ -25,8 +25,8 @@
               <th style="width: 20%">{% trans %}Date{% endtrans %}</th>
               <th style="width: 20%">{% trans %}Number of SOAP services{% endtrans %}</th>
               <th style="width: 20%">{% trans %}Number of Rest services{% endtrans %}</th>
+              <th style="width: 20%">{% trans %}Number of OpenAPI services{% endtrans %}</th>
               <th style="width: 20%">{% trans %}Number of Distinct services{% endtrans %}</th>
-              <th style="width: 20%">{% trans %}Number of Unknown services{% endtrans %}</th>
           </tr>
           </thead>
           <tbody>
@@ -35,8 +35,8 @@
                   <td>{{ h.render_datetime(stat.date) }}</td>
                   <td>{{ stat.soap_service_count }}</td>
                   <td>{{ stat.rest_service_count }}</td>
+                  <td>{{ stat.openapi_service_count }}</td>
                   <td>{{ stat.distinct_service_count }}</td>
-                  <td>{{ stat.unknown_service_count }}</td>
               </tr>
           {% endfor %}
           </tbody>

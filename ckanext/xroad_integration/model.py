@@ -69,13 +69,13 @@ class XRoadStat(Base, AsDictMixin):
     soap_service_count = Column(types.Integer, nullable=False)
     rest_service_count = Column(types.Integer, nullable=False)
     distinct_service_count = Column(types.Integer, nullable=False)
-    unknown_service_count = Column(types.Integer, nullable=False)
+    openapi_service_count = Column(types.Integer, nullable=False)
 
     @classmethod
-    def create(cls, date, soap_service_count, rest_service_count, distinct_service_count, unknown_service_count):
+    def create(cls, date, soap_service_count, rest_service_count, distinct_service_count, openapi_service_count):
         xroad_stat = XRoadStat(date=date, soap_service_count=soap_service_count, rest_service_count=rest_service_count,
                                distinct_service_count=distinct_service_count,
-                               unknown_service_count=unknown_service_count)
+                               openapi_service_count=openapi_service_count)
 
         model.Session.add(xroad_stat)
         model.repo.commit()
