@@ -242,7 +242,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                                              dataset.get('xRoadMemberCode'),
                                                              dataset['subsystem']['subsystemCode'],
                                                              service['serviceCode'],
-                                                             service.get('serviceVersion', ''))
+                                                             service.get('serviceVersion'))
                     if type(service['type']) is dict and service['type'].get('error'):
 
                         # Don't generate error if the error is unknown service
@@ -524,12 +524,17 @@ class XRoadHarvesterPlugin(HarvesterBase):
     @staticmethod
     def _get_service_type(url, xroad_instance, member_class, member_code, subsystem, service_code, service_version):
         try:
-            r = http.get(url + '/Consumer/GetServiceType', params={'xRoadInstance': xroad_instance,
-                                                                  'memberClass': member_class,
-                                                                  'memberCode': member_code,
-                                                                  'subsystemCode': subsystem,
-                                                                  'serviceCode': service_code,
-                                                                  'serviceVersion': service_version},
+            params = {'xRoadInstance': xroad_instance,
+                      'memberClass': member_class,
+                      'memberCode': member_code,
+                      'subsystemCode': subsystem,
+                      'serviceCode': service_code
+                      }
+
+            if service_version:
+                params['serviceVersion'] = service_version
+
+            r = http.get(url + '/Consumer/GetServiceType', params=params,
                          headers={'Accept': 'application/json'})
 
             response_json = r.json()
