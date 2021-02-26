@@ -1,6 +1,7 @@
 from flask import Flask, send_file, jsonify, request
 import json
 import os
+import six
 
 def instance(data_path, app_name='xroad_rest_adapter_mock'):
     data = json.load(open(data_path, 'r'))
@@ -170,7 +171,7 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
     def parse_service_version(v):
         if v is None:
             return v
-        elif type(v) in (str, unicode):
+        elif type(v) in (str, six.text_type):
             return v
         elif type(v) in (int, float):
             return str(int(v))
