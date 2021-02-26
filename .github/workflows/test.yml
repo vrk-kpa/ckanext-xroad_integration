@@ -49,7 +49,7 @@ jobs:
         run: |
           git clone https://github.com/ckan/ckanext-harvest
           cd ckanext-harvest
-          python setup.py develop
+          pip install -e .
           pip install -r pip-requirements.txt
           cd ..
           pip install -r pip-requirements.txt
