@@ -4,6 +4,7 @@ from sqlalchemy import text
 import ckan.plugins as p
 from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 from datetime import datetime
+from cgi import FieldStorage
 
 import logging
 import json
@@ -31,8 +32,6 @@ from typing import Union
 NotFound = logic.NotFound
 
 log = logging.getLogger(__name__)
-
-LOCAL_API_URL = 'http://127.0.0.1:8080/api'
 
 DEFAULT_TIMEOUT = 3  # seconds
 
@@ -382,7 +381,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     resource = next((r for r in package_dict.get('resources', []) if r['name'] == name), None)
                     if resource:
                         log.info("Removing service %s", name)
-                        self._delete_resource({'id': resource['id']}, apikey)
+                        p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
                     continue
 
                 if not service_removed:
@@ -422,10 +421,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     # TODO: resource_create and resource_update should not create resources without wsdls
                     named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
+                    # Prepare file upload
+                    upload_field_storage = FieldStorage()
+                    upload_field_storage.file = open(file_name, 'r')
+                    upload_field_storage.filename = file_name
+
                     for resource in named_resources:
                         if service_removed:
                             log.info("Service deleted: %s", name)
-                            self._delete_resource({"id": resource['id']}, apikey)
+                            p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
                             continue
                         try:
                             previous_string = resource.get('wsdl_timestamp', None)
@@ -449,9 +453,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "xroad_service_type": service_type,
                                 "harvested_from_xroad": True,
                                 "format": resource_format,
+                                "upload": upload_field_storage,
                                 timestamp_field: changed
                             }
-                            self._patch_resource(resource_data, apikey, file_name, target_name)
+                            p.toolkit.get_action('resource_patch')(context, resource_data)
                             result = True
 
                     if not named_resources and not service_removed:
@@ -465,8 +470,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             "xroad_service_type": service_type,
                             "harvested_from_xroad": True,
                             "format": resource_format,
+                            "upload": upload_field_storage,
                         }
-                        self._create_resource(resource_data, apikey, file_name, target_name)
+                        p.toolkit.get_action('resource_create')(context, resource_data)
                         result = True
 
                     if not service_removed:
@@ -826,26 +832,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if self._api_has_wsdls_or_openapis(subsystem) is True:
                     return True
         return False
-
-    def _patch_resource(self, data, apikey, filename, target_name):
-        requests.post('%s/action/resource_patch' % LOCAL_API_URL,
-                      data=data,
-                      headers={"X-CKAN-API-Key": apikey},
-                      files={'upload': (target_name, open(filename))},
-                      verify=False)
-
-    def _create_resource(self, data, apikey, filename, target_name):
-        requests.post('%s/action/resource_create' % LOCAL_API_URL,
-                      data=data,
-                      headers={"X-CKAN-API-Key": apikey},
-                      files={'upload': (target_name, open(filename))},
-                      verify=False)
-
-    def _delete_resource(self, data, apikey):
-        requests.post('%s/action/resource_delete' % LOCAL_API_URL,
-                      json=data,
-                      headers={"X-CKAN-API-Key": apikey},
-                      verify=False)
 
     def _is_valid_wsdl(self, text_content):
         try:
