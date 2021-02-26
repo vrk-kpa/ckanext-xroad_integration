@@ -34,7 +34,6 @@ def xroad_rest_adapter_mock():
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
 def test_full(xroad_rest_adapter_mock):
 
     results = run_harvest(url=XROAD_REST_ADAPTER_URL, harvester=XRoadHarvesterPlugin())
