@@ -53,12 +53,13 @@ def create_subsystem(subsystem_code, created, fetched, changed, removed=None, se
     return subsystem
 
 
-def create_service(service_code, created, fetched, changed, service_version=None, wsdl=None, openapi=None):
+def create_service(service_code, created, fetched, changed, removed=None, service_version=None, wsdl=None, openapi=None):
     service = {'serviceCode': service_code,
                'created': created,
                'fetched': fetched,
                'changed': changed}
 
+    insert_if_not_none(service, 'removed', removed)
     insert_if_not_none(service, 'serviceVersion', service_version)
     insert_if_not_none(service, 'wsdl', wsdl)
     insert_if_not_none(service, 'openapi', openapi)
@@ -99,17 +100,21 @@ def generate_unknown_service():
     return create_service('unknown', SOME_DATE, SOME_DATE, SOME_DATE)
 
 
+def generate_removed_service():
+    return create_service('removedService', SOME_DATE, SOME_DATE, SOME_DATE, removed=SOME_LATER_DATE)
+
+
 def generate_unknown_service_with_version():
     return create_service('unknownWithVersion', SOME_DATE, SOME_DATE, SOME_DATE, service_version='1')
 
 
 def generate_service_with_wsdl():
-    return create_service('wsdlService', SOME_DATE, SOME_DATE, SOME_DATE,
+    return create_service('wsdlService', SOME_DATE, SOME_DATE, SOME_DATE, service_version=2,
                           wsdl=create_wsdl('some-wsdl-external-id', SOME_DATE, SOME_DATE, SOME_DATE))
 
 
 def generate_service_with_openapi():
-    return create_service('openapiService', SOME_DATE, SOME_DATE, SOME_DATE,
+    return create_service('openapiService', SOME_DATE, SOME_DATE, SOME_DATE, service_version='1',
                           openapi=create_openapi('some-openapi-external-id', SOME_DATE, SOME_DATE, SOME_DATE))
 
 
@@ -132,6 +137,7 @@ def generate_subsystem_with_one_unknown_service():
 def generate_subsystem_with_various_services():
     services = [
             generate_unknown_service(),
+            generate_removed_service(),
             generate_unknown_service_with_version(),
             generate_service_with_wsdl(),
             generate_service_with_openapi(),

@@ -36,7 +36,10 @@ def xroad_rest_adapter_mock():
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 def test_full(xroad_rest_adapter_mock):
 
-    results = run_harvest(url=XROAD_REST_ADAPTER_URL, harvester=XRoadHarvesterPlugin())
+    results = run_harvest(
+            url=XROAD_REST_ADAPTER_URL,
+            harvester=XRoadHarvesterPlugin(),
+            config='{"force_all": true}')
 
     # Check that all subsystems were harvested
     assert('TEST.ORG.000003-3.RemovedSubsystem' in results)
@@ -57,3 +60,10 @@ def test_full(xroad_rest_adapter_mock):
 
     # Subsystem with two unknown type services, one soap service and one rest service
     assert(len(results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources']) == 2)
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+def test_full_twice(xroad_rest_adapter_mock):
+    run_harvest(url=XROAD_REST_ADAPTER_URL, harvester=XRoadHarvesterPlugin(), config='{"force_all": true}')
+    run_harvest(url=XROAD_REST_ADAPTER_URL, harvester=XRoadHarvesterPlugin(), config='{"force_all": true}')
