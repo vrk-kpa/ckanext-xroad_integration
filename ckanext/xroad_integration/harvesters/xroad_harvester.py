@@ -454,7 +454,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                 "harvested_from_xroad": True,
                                 "format": resource_format,
                                 "upload": upload_field_storage,
-                                timestamp_field: changed
+                                timestamp_field: changed.strftime('%Y-%m-%dT%H:%M:%S')
                             }
                             p.toolkit.get_action('resource_patch')(context, resource_data)
                             result = True
@@ -810,28 +810,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org = p.toolkit.get_action('organization_create')(context, org_data)
 
         return org
-
-    def _organization_has_apis(self, member):
-        if member['subsystems'] and len(member['subsystems']['subsystem']) > 0:
-            return True
-        return False
-
-    def _api_has_wsdls_or_openapis(self, subsystem):
-        services = subsystem.get('services', {})
-        if not isinstance(services, six.string_types):
-            if type(services['service']) is dict:
-                services['service'] = [services['service']]
-            for service in services['service']:
-                if 'wsdl' in service or 'openapi' in service:
-                    return True
-        return False
-
-    def _organization_has_wsdls_or_openapis(self, member):
-        if self._organization_has_apis(member):
-            for subsystem in member['subsystems']['subsystem']:
-                if self._api_has_wsdls_or_openapis(subsystem) is True:
-                    return True
-        return False
 
     def _is_valid_wsdl(self, text_content):
         try:
