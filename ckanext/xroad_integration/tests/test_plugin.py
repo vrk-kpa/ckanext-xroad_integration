@@ -1,7 +1,6 @@
 """Tests for plugin.py."""
 
-import xroad_mock.xroad_rest_adapter_mock
-
+from  ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock 
 import pytest
 import json
 import os
@@ -27,7 +26,7 @@ def xroad_rest_adapter_mocks():
 
     for adapter in XROAD_REST_ADAPTERS.values():
         data_path = os.path.join(os.path.dirname(__file__), adapter['content'])
-        xroad_rest_adapter_mock_app = xroad_mock.xroad_rest_adapter_mock.instance(data_path)
+        xroad_rest_adapter_mock_app = adapter_mock.instance(data_path)
 
         mock_proc = Process(target=xroad_rest_adapter_mock_app.run, kwargs={
             'host': adapter['host'],
