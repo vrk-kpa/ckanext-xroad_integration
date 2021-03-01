@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
 
-from  ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
+import xroad_mock.xroad_rest_adapter_mock
 
 import pytest
 import json
