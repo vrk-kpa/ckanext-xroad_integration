@@ -160,6 +160,15 @@ def generate_member_with_one_empty_subsystem():
     return create_member('TEST', 'MUN', '000002-2', 'One subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
 
 
+def generate_member_with_one_wsdl_subsystem():
+    subsystems = [
+            create_subsystem('WsdlSubsystem', SOME_DATE, SOME_DATE, SOME_DATE, services=[
+                generate_service_with_wsdl()
+            ])
+        ]
+    return create_member('TEST', 'MUN', '00000442', 'One wsdl subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
+
+
 def generate_member_with_various_subsystems():
     subsystems = [
             generate_empty_subsystem(),
@@ -170,18 +179,29 @@ def generate_member_with_various_subsystems():
     return create_member('TEST', 'ORG', '000003-3', 'Large organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
 
 
-def generate_memberlist():
-    some_date = '2020-02-02T20:20:02.020+02:00'
-
+def generate_base_memberlist():
     members = [
             generate_empty_member(),
             generate_removed_member(),
             generate_member_with_one_empty_subsystem(),
+            generate_member_with_one_wsdl_subsystem(),
             generate_member_with_various_subsystems(),
             ]
     memberlist = create_memberlist(members=members)
     return memberlist
 
+
+def generate_delete_one_of_each_memberlist():
+    return create_memberlist(members=[
+            dict(generate_member_with_one_wsdl_subsystem(), fetched=SOME_LATER_DATE, changed=SOME_LATER_DATE, removed=SOME_LATER_DATE),
+            create_member('TEST', 'ORG', '000003-3', 'Updated Large Organization',
+                          SOME_DATE, SOME_LATER_DATE, SOME_LATER_DATE, subsystems=[
+                dict(generate_empty_subsystem(), removed=SOME_LATER_DATE),
+                create_subsystem('LargeSubsystem', SOME_DATE, SOME_LATER_DATE, SOME_LATER_DATE, services=[
+                    dict(generate_service_with_wsdl(), fetched=SOME_LATER_DATE, changed=SOME_LATER_DATE, removed=SOME_LATER_DATE),
+                ])
+            ])
+        ])
 
 #
 # Main
@@ -189,7 +209,23 @@ def generate_memberlist():
 
 if __name__ == '__main__':
     import sys
-    memberlist = generate_memberlist()
-    json.dump(memberlist, sys.stdout)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('generator', nargs='?', default='base')
+    args = parser.parse_args()
+
+    generators = {
+            'base': generate_base_memberlist,
+            'delete_one_of_each': generate_delete_one_of_each_memberlist,
+            }
+    generator = generators.get(args.generator)
+
+    if generator:
+        memberlist = generator()
+        json.dump(memberlist, sys.stdout)
+    else:
+        sys.stderr.write('ERROR: No such generator: {}'.format(args.generator))
+        sys.exit(-1)
 
 
