@@ -422,14 +422,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
                     # Prepare file upload
-
-                    if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                        from werkzeug.datastructures import FileStorage
-                        upload_field_storage = FileStorage(open(file_name, 'r'), filename=file_name)
-                    else:
-                        upload_field_storage = FieldStorage()
-                        upload_field_storage.file = open(file_name, 'r')
-                        upload_field_storage.filename = file_name
+                    upload_field_storage = FieldStorage()
+                    upload_field_storage.file = open(file_name, 'r')
+                    upload_field_storage.filename = file_name
 
                     for resource in named_resources:
                         if service_removed:
