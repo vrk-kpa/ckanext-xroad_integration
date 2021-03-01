@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install lxml dependencies
         run: |
-          apk add libxslt-dev
+          apk add libxml2 libxml2-dev libxslt-dev
       - name: Install requirements
         run: |
           git clone https://github.com/ckan/ckanext-harvest
