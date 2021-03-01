@@ -423,7 +423,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                     # Prepare file upload
                     upload_field_storage = FieldStorage()
-                    upload_field_storage.file = open(file_name, 'r')
+                    upload_field_storage.file = open(file_name, 'rb')
                     upload_field_storage.filename = file_name
 
                     for resource in named_resources:
