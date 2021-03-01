@@ -92,7 +92,7 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
         if service is None:
             print('No such service: {}.{}.{}.{}.{}.{}'.format(xroad_instance, member_class, member_code,
                                                               subsystem_code, service_code, service_version))
-            return jsonify({'rest': False})
+            return jsonify({'type': None})
 
         if 'wsdl' in service:
             service_type = 'soap'
@@ -173,8 +173,10 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
             return v
         elif type(v) in (str, six.text_type):
             return v
-        elif type(v) in (int, float):
-            return str(int(v))
+        elif type(v) is int:
+            return six.text_type('%d.0'.format(v))
+        elif type(v) is float:
+            return six.text_type(v)
         else:
             raise Exception('Unexpected service version type: {}'.format(repr(type(v))))
 
