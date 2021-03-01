@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
 
-import ckanext.xroad_integration.tests.xroad_mock as xroad_mock
+from  ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 
 import pytest
 import json
@@ -20,7 +20,7 @@ XROAD_REST_ADAPTER_URL = 'http://{host}:{port}/rest-adapter-service'.format(
 @pytest.fixture(scope='module')
 def xroad_rest_adapter_mock():
     data_path = os.path.join(os.path.dirname(__file__), 'test_listmembers.json')
-    xroad_rest_adapter_mock_app = xroad_mock.xroad_rest_adapter_mock.instance(data_path)
+    xroad_rest_adapter_mock_app = adapter_mock.instance(data_path)
 
     mock_proc = Process(target=xroad_rest_adapter_mock_app.run, kwargs={
         'host': XROAD_REST_ADAPTER_HOST,
