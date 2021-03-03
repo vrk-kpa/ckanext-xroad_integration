@@ -358,54 +358,59 @@ class XRoadHarvesterPlugin(HarvesterBase):
             except ValueError as e:
                 log.error('Error parsing Service remove timestamp: %s' % e)
 
-        if contains_wsdls or contains_openapi_descriptions:
-            apikey = self._get_api_key()
+        if result not in (True, "unchanged"):
+            return result
 
-            if result not in (True, "unchanged"):
-                return result
+        unknown_service_link_url = p.toolkit.config.get('ckanext.xroad_integration.unknown_service_link_url')
 
-            for service in services:
-                # Removed services already processed
-                if 'removed' in service:
-                    continue
+        for service in services:
+            # Removed services already processed
+            if 'removed' in service:
+                continue
 
-                # Parse service name and version
-                service_code = service.get('serviceCode', None)
-                if service_code is None:
-                    continue
+            # Parse service name, version and description
 
-                service_version = parse_service_version(service.get('serviceVersion', None))
-                service_type = service.get('type')
-                name = generate_service_name(service)
+            service_code = service.get('serviceCode', None)
+            if service_code is None:
+                continue
 
-                # Parse WSDL if it exists
+            service_version = parse_service_version(service.get('serviceVersion', None))
+            service_type = service.get('type')
+            name = generate_service_name(service)
 
-                service_description = service.get('wsdl') or service.get('openapi')
-                wsdl = service.get('wsdl')
+            service_description = service.get('wsdl') or service.get('openapi') or {}
 
-                if not service_description:
-                    log.info('Service "%s" has no WSDLs or OpenAPIs, removing service if it exists', name)
-                    resource = next((r for r in package_dict.get('resources', []) if r['name'] == name), None)
-                    if resource:
-                        log.info("Removing service %s", name)
-                        p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
-                    continue
+            # Parse last change timestamp
 
+            if service_description:
+                changed_string = service_description.get('changed', service_description.get('created'))
+            else:
+                changed_string = service.get('changed', service.get('created'))
+            try:
+                changed = (
+                        datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
+                        if changed_string else None)
+            except ValueError as e:
+                log.error('Error parsing service timestamp: %s' % e)
+                continue
 
-                # TODO: resource_create and resource_update should not create resources without wsdls
-                named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+            # Construct updated resource data
 
+            resource_data = {
+                "package_id": package_dict['id'],
+                "name": name,
+                "xroad_servicecode": service_code,
+                "xroad_serviceversion": service_version,
+                "xroad_service_type": service_type,
+                "harvested_from_xroad": True,
+            }
+
+            if service_description:
                 service_description_data = service_description.get('data')
-                if not service_description_data:
-                    log.info('Service "%s" has no WSDL or OpenAPI data, skipping', name)
-                    continue
-
                 service_description_data_utf8 = service_description_data.encode('utf-8')
 
-                f = tempfile.NamedTemporaryFile(delete=False)
-                f.write(service_description_data_utf8)
-                f.close()
-                file_name = f.name
+                wsdl = service.get('wsdl')
+                openapi = service.get('openapi')
 
                 # Todo: Validity of openapi ?
                 if wsdl:
@@ -419,23 +424,43 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     target_name = 'service.json'
                     resource_format = 'openapi-json'
 
-                try:
-                    changed_string = service_description.get('changed', service_description.get('created'))
-                    changed = (
-                            datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                            if changed_string else None)
-                except ValueError as e:
-                    log.error('Error parsing service timestamp: %s' % e)
-                    continue
+                f = tempfile.NamedTemporaryFile(delete=False)
+                f.write(service_description_data_utf8)
+                f.close()
+                file_name = f.name
 
                 # Prepare file upload
                 upload_field_storage = FieldStorage()
                 upload_field_storage.file = open(file_name, 'rb')
                 upload_field_storage.filename = file_name
 
+                resource_data['url'] = ''
+                resource_data['upload'] = upload_field_storage
+                resource_data['format'] = resource_format
+                resource_data['valid_content'] = "yes" if valid_wsdl else "no"
+            elif unknown_service_link_url is None:
+                log.warn('Unknown type service %s.%s harvested, but ckanext.xroad_integration.unknown_service_link_url is not set!',
+                         package_dict['id'], name)
+                continue
+            else:
+                file_name = None
+                upload_field_storage = None
+                resource_data['url'] = unknown_service_link_url
+                timestamp_field = 'unknown_timestamp'
+
+            resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S')
+
+            named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+
+            # Create or update resources
+
+            if not named_resources:
+                p.toolkit.get_action('resource_create')(context, resource_data)
+                result = True
+            else:
                 for resource in named_resources:
                     try:
-                        previous_string = resource.get('wsdl_timestamp', None)
+                        previous_string = resource.get(timestamp_field, None)
                         previous = (
                                 datetime.strptime(previous_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
                                 if previous_string else None)
@@ -445,46 +470,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                     if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
                         log.info('WSDL changed after last harvest, replacing...')
-                        resource_data = {
-                            "package_id": package_dict['id'],
-                            "url": "",
-                            "name": name,
-                            "id": resource['id'],
-                            "valid_content": "yes" if valid_wsdl else "no",
-                            "xroad_servicecode": service_code,
-                            "xroad_serviceversion": service_version,
-                            "xroad_service_type": service_type,
-                            "harvested_from_xroad": True,
-                            "format": resource_format,
-                            "upload": upload_field_storage,
-                            timestamp_field: changed.strftime('%Y-%m-%dT%H:%M:%S')
-                        }
+                        resource_data['id'] = resource['id']
+                        #from pprint import pformat
+                        #log.info('RESOURCE_DICT: %s', pformat(resource))
+                        #log.info('RESOURCE_DATA: %s', pformat(resource_data))
                         p.toolkit.get_action('resource_patch')(context, resource_data)
                         result = True
 
-                if not named_resources:
-                    resource_data = {
-                        "package_id": package_dict['id'],
-                        "url": "",
-                        "name": name,
-                        "valid_content": "yes" if valid_wsdl else "no",
-                        "xroad_servicecode": service_code,
-                        "xroad_serviceversion": service_version,
-                        "xroad_service_type": service_type,
-                        "harvested_from_xroad": True,
-                        "format": resource_format,
-                        "upload": upload_field_storage,
-                    }
-                    p.toolkit.get_action('resource_create')(context, resource_data)
-                    result = True
-
+            if file_name:
                 os.unlink(file_name)
 
-            log.info('Created API %s', package_dict['name'])
-
-            return result
+        log.info('Created API %s', package_dict['name'])
 
         return result
+
 
     def _get_xroad_catalog(self, url, changed_after):
         # type: (str, str) -> dict
