@@ -184,7 +184,11 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
 
 
 if __name__ == '__main__':
-    app = instance('listMembers.json')
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file')
+    args = parser.parse_args()
+    app = instance(args.input_file)
     app.run(port=9091)
 
 
