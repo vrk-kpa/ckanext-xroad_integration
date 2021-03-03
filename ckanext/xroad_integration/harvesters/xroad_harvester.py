@@ -846,7 +846,7 @@ def parse_service_version(v):
     elif type(v) in (str, six.text_type):
         return v
     elif type(v) is int:
-        return six.text_type('%d.0'.format(v))
+        return six.text_type('{}.0'.format(v))
     elif type(v) is float:
         return six.text_type(v)
     else:

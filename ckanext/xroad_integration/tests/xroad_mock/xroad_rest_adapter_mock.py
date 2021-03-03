@@ -174,7 +174,7 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
         elif type(v) in (str, six.text_type):
             return v
         elif type(v) is int:
-            return six.text_type('%d.0'.format(v))
+            return six.text_type('{}.0'.format(v))
         elif type(v) is float:
             return six.text_type(v)
         else:
@@ -187,9 +187,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file')
+    parser.add_argument('port', nargs='?', type=int, default=9091)
     args = parser.parse_args()
     app = instance(args.input_file)
-    app.run(port=9091)
+    app.run(port=args.port)
 
 
 
