@@ -469,11 +469,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         continue
 
                     if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
-                        log.info('WSDL changed after last harvest, replacing...')
+                        log.info('Service changed after last harvest, replacing...')
                         resource_data['id'] = resource['id']
-                        #from pprint import pformat
-                        #log.info('RESOURCE_DICT: %s', pformat(resource))
-                        #log.info('RESOURCE_DATA: %s', pformat(resource_data))
                         p.toolkit.get_action('resource_patch')(context, resource_data)
                         result = True
 
