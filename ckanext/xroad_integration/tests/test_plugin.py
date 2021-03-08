@@ -65,10 +65,10 @@ def test_base(xroad_rest_adapter_mocks):
     assert(len(results['TEST.ORG.000003-3.EmptySubsystem']['dataset']['resources']) == 0)
 
     # Subsystem with one unknown type service
-    assert(len(results['TEST.ORG.000003-3.OneEmptyServiceSubsystem']['dataset']['resources']) == 0)
+    assert(len(results['TEST.ORG.000003-3.OneEmptyServiceSubsystem']['dataset']['resources']) == 1)
 
     # Subsystem with two unknown type services, one soap service and one rest service
-    assert(len(results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources']) == 2)
+    assert(len(results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources']) == 4)
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
@@ -97,4 +97,4 @@ def test_delete(xroad_rest_adapter_mocks):
     # FIXME: Unclear whether organizations should actually be removed
     # assert(should_be_removed_org.get('state') == 'deleted')
     assert(results['TEST.ORG.000003-3.EmptySubsystem']['report_status'] == 'deleted')
-    assert(set(r['name'] for r in large.get('resources', [])) == set(['openapiService.1']))
+    assert(set(r['name'] for r in large.get('resources', [])) == set(['openapiService.1', 'unknown', 'unknownWithVersion.1']))
