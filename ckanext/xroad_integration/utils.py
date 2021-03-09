@@ -14,7 +14,11 @@ def drop_db():
 
 
 def update_xroad_organizations():
-    result = get_action('update_xroad_organizations')({'ignore_auth': True}, {})
+    try:
+        result = get_action('update_xroad_organizations')({'ignore_auth': True}, {})
+    except Exception as e:
+        result = {'success': False, 'message': 'Exception: {}'.format(e)}
+
     success = result.get('success') is True
     get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'update_xroad_organizations',
                                                                     'success': success,
@@ -22,7 +26,10 @@ def update_xroad_organizations():
 
 
 def fetch_errors():
-    results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
+    try:
+        results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
+    except Exception as e:
+        results = {'success': False, 'message': 'Exception: {}'.format(e)}
 
     success = results.get('success') is True
     get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_errors',
@@ -43,7 +50,11 @@ def fetch_stats(days):
     if days:
         data_dict['days'] = days
 
-    results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
+    try:
+        results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
+    except Exception as e:
+        results = {'success': False, 'message': 'Exception: {}'.format(e)}
+
     success = results.get('success') is True
     get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_stats',
                                                                     'success': success,
@@ -62,7 +73,11 @@ def fetch_service_list(days):
     if days:
         data_dict['days'] = days
 
-    results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
+    try:
+        results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
+    except Exception as e:
+        results = {'success': False, 'message': 'Exception: {}'.format(e)}
+
     success = results.get('success') is True
     get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_service_list',
                                                                     'success': success,
