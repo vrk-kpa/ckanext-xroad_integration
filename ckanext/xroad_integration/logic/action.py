@@ -66,7 +66,7 @@ def update_xroad_organizations(context, data_dict):
     organization_names = organization_list(context, {})
     timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
-    harvest_source_error_limit = 2
+    harvest_source_error_limit = 10
 
     errors_by_source = {}
 
