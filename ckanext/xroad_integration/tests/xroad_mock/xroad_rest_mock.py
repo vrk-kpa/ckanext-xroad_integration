@@ -7,19 +7,34 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 
-@app.route('/getListOfServices/<int:days>')
-def getListOfServices(days=1):
-    now = datetime.now()
-    mock_data = json.load(open('getListOfServices.json', 'r', encoding='utf-8'))
-    member_data = []
-    for i in range(days):
-        dt = now - timedelta(days=i)
-        date = [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond]
-        member_data.append({'date': date, 'memberDataList': mock_data['memberData'][0]['memberDataList']})
+def create_app(input_file):
+    app = Flask(__name__)
+    mock_data = json.load(open(input_file, 'r', encoding='utf-8'))
 
-    data = {'memberData': member_data, 'securityServerData': mock_data['securityServerData']}
-    return json.dumps(data)
+    @app.route('/getListOfServices/<int:days>')
+    def getListOfServices(days=1):
+        now = datetime.now()
+        member_data = []
+        for i in range(days):
+            dt = now - timedelta(days=i)
+            date = [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond]
+            member_data.append({'date': date, 'memberDataList': mock_data['memberData'][0]['memberDataList']})
+
+        data = {'memberData': member_data, 'securityServerData': mock_data['securityServerData']}
+        return json.dumps(data)
+
+    @app.route('/getServiceStatistics/<int:days>')
+    def getServiceStatistics(days=1):
+        return json.dumps({'serviceStatisticsList': []})
+
+    return app
 
 
 if __name__ == '__main__':
-    app.run(port=8088)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file')
+    parser.add_argument('port', nargs='?', type=int, default=8088)
+    args = parser.parse_args()
+    app = create_app(args.input_file)
+    app.run(port=args.port)

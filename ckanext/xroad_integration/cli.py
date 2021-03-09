@@ -22,6 +22,18 @@ def init_db():
     utils.init_db()
     click.secho(u"DB tables created", fg=u"green")
 
+@xroad.command()
+@click.option(u'--yes-i-am-sure')
+def drop_db(yes_i_am_sure):
+    """Removes tables created by init_db in the database.
+    """
+    if yes_i_am_sure:
+        utils.drop_db()
+        click.secho(u"DB tables dropped", fg=u"green")
+    else:
+        click.secho(u"This will delete all xroad data in the database! If you are sure, run this command with the --yes-i-am-sure option.", fg=u"yellow")
+
+
 @xroad.command(
     u'update_xroad_organizations',
     help='Updates harvested organizations\' metadata'

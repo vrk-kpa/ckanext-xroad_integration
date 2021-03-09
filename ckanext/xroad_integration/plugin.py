@@ -72,7 +72,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'fetch_xroad_stats': action.fetch_xroad_stats,
             'xroad_stats': action.xroad_stats,
             'fetch_xroad_service_list': action.fetch_xroad_service_list,
-            'xroad_service_list': action.xroad_service_list
+            'xroad_service_list': action.xroad_service_list,
+            'xroad_batch_result_create': action.xroad_batch_result_create,
+            'xroad_latest_batch_results': action.xroad_latest_batch_results,
         }
 
     # IAuthFunctions
@@ -85,7 +87,8 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'fetch_xroad_stats': sysadmin,
             'xroad_stats': sysadmin,
             'fetch_xroad_service_list': sysadmin,
-            'xroad_service_list': sysadmin
+            'xroad_service_list': sysadmin,
+            'xroad_batch_result': sysadmin,
         }
 
     # IBlueprint

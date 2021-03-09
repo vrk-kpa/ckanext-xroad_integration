@@ -19,7 +19,7 @@ from pprint import pformat
 
 from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
                                              XRoadServiceListSubsystem, XRoadServiceListService,
-                                             XRoadServiceListSecurityServer)
+                                             XRoadServiceListSecurityServer, XRoadBatchResult)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
@@ -50,6 +50,10 @@ http.mount("http://", adapter)
 log = logging.getLogger(__name__)
 
 
+class ContentFetchError(Exception):
+    pass
+
+
 def update_xroad_organizations(context, data_dict):
 
     toolkit.check_access('update_xroad_organizations', context)
@@ -62,12 +66,24 @@ def update_xroad_organizations(context, data_dict):
     organization_names = organization_list(context, {})
     timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
+    harvest_source_error_limit = 2
+
+    errors_by_source = {}
+
     for harvest_source in harvest_sources:
         if harvest_source.get('type') != 'xroad':
             continue
 
+        source_config = json.loads(harvest_source.get('config', '{}'))
         source_url = harvest_source.get('url')
         source_title = harvest_source.get('title')
+
+        if source_config.get('disable_xroad_organization_updates') is True:
+            log.info("XRoad organization updates disabled for %s, skipping...", source_title)
+            continue
+
+        errors = []
+        updated = 0
 
         for organization_name in organization_names:
             organization = organization_show(context, {'id': organization_name})
@@ -76,18 +92,33 @@ def update_xroad_organizations(context, data_dict):
                 continue
 
             last_updated = organization.get('metadata_updated_from_xroad_timestamp') or '2011-01-01T00:00:00'
-            patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
-            if patch is not None:
-                log.debug('Updating organization %s data from %s', organization_name, source_title)
-                patch['metadata_updated_from_xroad_timestamp'] = timestamp
-                try:
-                    organization_patch(context, patch)
-                except toolkit.ValidationError:
-                    log.debug('Validation error updating %s from %s: %s', organization_name, source_title, pformat(patch))
+            try:
+                patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
 
-            else:
-                log.debug('Nothing to do for %s from %s', organization_name, source_title)
+                if patch is not None:
+                    log.debug('Updating organization %s data from %s', organization_name, source_title)
+                    patch['metadata_updated_from_xroad_timestamp'] = timestamp
+                    try:
+                        organization_patch(context, patch)
+                        updated += 1
+                    except toolkit.ValidationError:
+                        log.debug('Validation error updating %s from %s: %s', organization_name, source_title, pformat(patch))
 
+                else:
+                    log.debug('Nothing to do for %s from %s', organization_name, source_title)
+            except ContentFetchError as cfe:
+                errors.append(', '.join(repr(a) for a in cfe.args))
+
+                if len(errors) > harvest_source_error_limit:
+                    break
+
+        if errors:
+            errors_by_source[source_title] = list(set(errors))
+
+    if errors_by_source:
+        return {'success': False, 'message': json.dumps(errors_by_source)}
+    else:
+        return {'success': True, 'message': 'Updated {} organizations'.format(updated)}
 
 def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
@@ -131,6 +162,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     organization_info = _parse_organization_info(org_information_list, organization_name)
 
                 if not organization_info:
+                    log.warn('Could not parse organization information for %s', organization_name)
                     return None
                 else:
                     log.info("Parsing organization information for %s" % organization_name)
@@ -218,6 +250,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
         except Exception:
             log.warn("Failed to fetch organization information with id %s", member_code)
+            raise
 
     elif member_class in COMPANY_CLASSES:
         try:
@@ -229,7 +262,8 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
             company = _get_companies_information(source_url, member_code)
 
-            if not company:
+            if company is None:
+                log.warn('Received empty company information')
                 return None
 
             if type(company) is dict:
@@ -279,7 +313,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     organization_dict['company_language'] = company_languages
 
                 # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
-                organization_dict['company_registration_date'] = company.get('registrationDate').split(".")[0]
+                organization_dict['company_registration_date'] = company.get('registrationDate', '').split(".")[0]
 
                 if company.get('businessIdChanges'):
                     business_id_changes = _convert_xroad_value_to_uniform_list(
@@ -291,6 +325,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
         except Exception:
             log.warn("Failed to fetch company information with id %s", member_code)
+            raise
 
     else:
         log.debug('Skipping %s because of class %s', organization_name, member_class)
@@ -307,7 +342,7 @@ def _get_organization_information(url, business_code):
         response_json = r.json()
         if response_json.get("error"):
             log.info(response_json.get("error").get("string"))
-            return []
+            raise ContentFetchError(response_json.get("error").get("string"))
 
         if response_json.get('organizationList', {}).get('organization') is dict:
             return [response_json['organizationList']['organization']]
@@ -315,7 +350,7 @@ def _get_organization_information(url, business_code):
         return response_json.get('organizationList', {}).get('organization')
     except ConnectionError:
         log.error("Calling XRoad service GetOrganizations failed")
-        return None
+        raise ContentFetchError("Calling XRoad service GetOrganizations failed")
 
 
 def _parse_organization_info(data, organization_name):
@@ -334,13 +369,13 @@ def _get_companies_information(url, business_id):
 
         response_json = r.json()
         if response_json.get("error"):
-            log.info(response_json.get("error").get("string"))
-            return ""
+            log.warn(response_json.get("error").get("string"))
+            raise ContentFetchError(response_json.get("error").get("string"))
 
         return response_json.get('companyList', {}).get('company')
     except ConnectionError:
         log.error("Calling XRoad service GetCompanies failed")
-        return None
+        raise ContentFetchError("Calling XRoad service GetCompanies failed")
 
 
 def _get_organization_changes(url, guid, changed_after):
@@ -350,13 +385,13 @@ def _get_organization_changes(url, guid, changed_after):
 
         response_json = r.json()
         if response_json.get("error"):
-            log.info(response_json.get("error").get("string"))
-            return ""
+            log.warn(response_json.get("error").get("string"))
+            raise ContentFetchError(response_json.get("error").get("string"))
 
         return r.json()
     except ConnectionError:
         log.error("Calling XRoad service HasOrganizationChanged failed")
-        return None
+        raise ContentFetchError("Calling XRoad service HasOrganizationChanged failed")
 
 
 def _get_company_changes(url, business_id, changed_after):
@@ -367,13 +402,13 @@ def _get_company_changes(url, business_id, changed_after):
 
         response_json = r.json()
         if response_json.get("error"):
-            log.info(response_json.get("error").get("string"))
-            return ""
+            log.warn(response_json.get("error").get("string"))
+            raise ContentFetchError(response_json.get("error").get("string"))
 
         return r.json()
     except ConnectionError:
         log.error("Calling XRoad service HasCompanyChanged failed")
-        return None
+        raise ContentFetchError("Calling XRoad service HasCompanyChanged failed")
 
 
 def _convert_xroad_value_to_uniform_list(value):
@@ -390,8 +425,10 @@ def fetch_xroad_errors(context, data_dict):
 
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
+    errors = []
+    harvest_sources = xroad_harvest_sources(context)
 
-    for harvest_source in xroad_harvest_sources(context):
+    for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
         source_url = harvest_source.get('url', '')
 
@@ -428,12 +465,14 @@ def fetch_xroad_errors(context, data_dict):
 
             results.append({"message": "%d errors stored to database." % len(error_log)})
         except ConnectionError:
-            log.info("Calling GetErrors failed!")
+            log.warn("Calling GetErrors failed for %s!", source_title)
+            errors.append("Calling GetErrors failed for %s!" % source_title)
 
-    if results:
-        return {"success": True, "results": results}
+    if errors:
+        return {"success": False, "message": ", ".join(errors)}
+    else:
+        return {"success": True, "results": results, "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
-    return {"success": False, "message": "Fetching errors failed."}
 
 
 def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
@@ -444,7 +483,7 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
 
     if not xroad_catalog_address.startswith('http'):
         log.warn("Invalid X-Road catalog url %s" % xroad_catalog_address)
-        return None
+        raise ContentFetchError("Invalid X-Road catalog url %s" % xroad_catalog_address)
 
     url = '{address}/{service}/{params}'.format(address=xroad_catalog_address, service=service, params=params)
     headers = {'Accept': accept,
@@ -459,6 +498,7 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
 
     if xroad_client_certificate and os.path.isfile(xroad_client_certificate):
         certificate_args['cert'] = xroad_client_certificate
+
     return http.get(url, headers=headers, **certificate_args)
 
 
@@ -478,6 +518,9 @@ def fetch_xroad_service_list(context, data_dict):
     if service_list_data is None:
         log.warn('Invalid configuration for calling getListOfServices')
         return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
+    elif 'memberData' not in service_list_data:
+        print(service_list_data)
+        return {'success': False, 'message': 'Calling getListOfServices returned message: "{}"'.format(service_list_data.get('message', ''))}
 
     for member_list_data in service_list_data.get('memberData', []):
         fetch_timestamp = parse_xroad_catalog_datetime(member_list_data.get('date'))
@@ -677,7 +720,9 @@ def fetch_xroad_stats(context, data_dict):
 
         if statistics_data is None:
             log.warn("Calling getServiceStatistics failed!")
-            return
+            return {'success': False, 'message': 'Calling getServiceStatistics failed!'}
+        elif 'serviceStatisticsList' not in statistics_data:
+            return {'success': False, 'message': 'Calling getServiceStatistics returned message: "{}"'.format(statistics_data.get('message', ''))}
 
         statistics_list = statistics_data.get('serviceStatisticsList', [])
 
@@ -711,6 +756,18 @@ def xroad_stats(context, data_dict):
     stats = model.Session.query(XRoadStat).order_by(XRoadStat.date.desc()).all()
 
     return [stat.as_dict() for stat in stats]
+
+
+def xroad_batch_result_create(context, data_dict):
+    toolkit.check_access('xroad_batch_result', context)
+    XRoadBatchResult.create(data_dict['service'], data_dict['success'], params=data_dict.get('params'), message=data_dict.get('message'))
+    return {'success': True}
+
+
+def xroad_latest_batch_results(context, data_dict):
+    toolkit.check_access('xroad_batch_result', context)
+    results = XRoadBatchResult.get_latest_entry_for_each_service()
+    return {'success': True, 'results': [r.as_dict() for r in results]}
 
 
 def xroad_harvest_sources(context):

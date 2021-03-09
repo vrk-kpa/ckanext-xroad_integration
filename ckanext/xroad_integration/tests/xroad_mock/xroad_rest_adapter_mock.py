@@ -130,6 +130,12 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
         return jsonify({'companyList': {'company': {}}})
 
 
+    @app.route('/rest-adapter-service/Consumer/GetErrors')
+    def get_errors():
+        since = request.args.get('since')
+        return jsonify({'errorLogList': {'errorLog': []}})
+
+
     def find_member(data, xroad_instance, member_class, member_code):
         return next((m for m in xroad_list_to_list(data, 'memberList', 'member')
                     if m.get('xRoadInstance') == xroad_instance

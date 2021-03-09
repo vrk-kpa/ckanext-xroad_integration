@@ -18,7 +18,7 @@ xroad_commands = paster_click_group(
 @click.pass_context
 def update_xroad_organizations(ctx, config):
     load_config(config or ctx.obj['config'])
-    utils.update_xroad_organizations
+    utils.update_xroad_organizations()
 
 
 @xroad_commands.command(
@@ -58,6 +58,28 @@ def fetch_service_list(ctx, config, days):
 
 
 @xroad_commands.command(
+    u'latest_batch_run_results',
+    help='Prints the results of the latest batch runs'
+)
+@click_config_option
+@click.pass_context
+def latest_batch_run_results(ctx, config):
+    load_config((config or ctx.obj['config']))
+    results = utils.latest_batch_run_results()
+
+    columns = ['service', 'result', 'timestamp', 'message']
+    rows = [[r.get('service'),
+             'success' if r.get('success') else 'failure',
+             r.get('timestamp'),
+             r.get('message') or '']
+            for r in results]
+
+    row_format = '{:<30} {:<10} {:<28} {}'
+    print(row_format.format(*columns))
+    print('\n'.join(row_format.format(*row) for row in rows))
+
+
+@xroad_commands.command(
     u'init_db',
     help="Initializes databases for xroad"
 )
@@ -67,3 +89,18 @@ def init_db(ctx, config):
     load_config((config or ctx.obj['config']))
 
     utils.init_db()
+
+
+@xroad_commands.command(
+        u'drop_db',
+        help='Removes tables created by init_db in the database.')
+@click.option(u'--yes-i-am-sure/--no-i-am-not-sure', default=False)
+@click_config_option
+@click.pass_context
+def drop_db(ctx, config, yes_i_am_sure):
+    load_config((config or ctx.obj['config']))
+    if yes_i_am_sure:
+        utils.drop_db()
+        click.secho(u"DB tables dropped", fg=u"green")
+    else:
+        click.secho(u"This will delete all xroad data in the database! If you are sure, run this command with the --yes-i-am-sure option.", fg=u"yellow")
