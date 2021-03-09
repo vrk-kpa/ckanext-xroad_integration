@@ -70,6 +70,8 @@ def update_xroad_organizations(context, data_dict):
 
     errors_by_source = {}
 
+    updated = 0
+
     for harvest_source in harvest_sources:
         if harvest_source.get('type') != 'xroad':
             continue
@@ -83,7 +85,6 @@ def update_xroad_organizations(context, data_dict):
             continue
 
         errors = []
-        updated = 0
 
         for organization_name in organization_names:
             organization = organization_show(context, {'id': organization_name})
