@@ -6,6 +6,7 @@ from ckan import model
 from ckan.lib import dictization
 from sqlalchemy import Column, ForeignKey, types, and_
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 log = logging.getLogger(__name__)
@@ -241,6 +242,43 @@ class XRoadServiceListService(Base, AsDictMixin):
         return service
 
 
+class XRoadBatchResult(Base, AsDictMixin):
+
+    __tablename__ = 'xroad_batch_results'
+
+    id = Column(types.UnicodeText, primary_key=True, default=make_uuid)
+    service = Column(types.UnicodeText, nullable=False)
+    success = Column(types.Boolean, nullable=False)
+    timestamp = Column(types.DateTime, server_default=func.now())
+    params = Column(types.UnicodeText, nullable=True)
+    message = Column(types.UnicodeText, nullable=True)
+
+    @classmethod
+    def create(cls, service, success, params=None, message=None):
+        xroad_batch_result = cls(service=service, params=params, success=success, message=message)
+        model.Session.add(xroad_batch_result)
+        model.repo.commit()
+
+    @classmethod
+    def get_latest_entry_for_each_service(cls):
+        latest = (
+                model.Session.query(cls.service, func.max(cls.timestamp).label('timestamp'))
+                .group_by(cls.service)
+                .subquery())
+
+        results = (
+                model.Session.query(cls)
+                .join(latest, and_(latest.c.service == cls.service, latest.c.timestamp == cls.timestamp))
+                .all())
+
+        return results
+
+
 def init_table(engine):
     Base.metadata.create_all(engine)
     log.info("Table for xroad data is set-up")
+
+
+def drop_table(engine):
+    Base.metadata.drop_all(engine)
+    log.info("Dropped all xroad tables")

@@ -41,6 +41,16 @@ def xroad_rest_adapter_mocks():
         mock_proc.join()
 
 
+@pytest.fixture(scope='module')
+def xroad_database_setup():
+    from ckanext.xroad_integration.utils import init_db, drop_db
+
+    init_db()
+
+    yield
+
+    drop_db()
+
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 @pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
 def test_base(xroad_rest_adapter_mocks):
@@ -98,3 +108,16 @@ def test_delete(xroad_rest_adapter_mocks):
     # assert(should_be_removed_org.get('state') == 'deleted')
     assert(results['TEST.ORG.000003-3.EmptySubsystem']['report_status'] == 'deleted')
     assert(set(r['name'] for r in large.get('resources', [])) == set(['openapiService.1', 'unknown', 'unknownWithVersion.1']))
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+def test_update_xroad_organizations(xroad_rest_adapter_mocks):
+    call_action('update_xroad_organizations')
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
+    call_action('fetch_xroad_errors')
+    call_action('xroad_error_list')
