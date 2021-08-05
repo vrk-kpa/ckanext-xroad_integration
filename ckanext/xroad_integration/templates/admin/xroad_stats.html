@@ -14,7 +14,8 @@
       {% endfor %}
       ]
     </script>
-    {% resource "xroad_integration/xroad_stats" %}
+    {% asset "xroad_integration/xroad_stats_js" %}
+    {% asset "xroad_integration/xroad_stats_css" %}
 
     <div data-module="xroad_stats">
       <a href="{{ h.url_for('xroad.stats', format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
