@@ -4,7 +4,7 @@ from sqlalchemy import text
 import ckan.plugins as p
 from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 from datetime import datetime
-from cgi import FieldStorage
+from werkzeug.datastructures import FileStorage as FlaskFileStorage
 
 import logging
 import json
@@ -430,12 +430,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 file_name = f.name
 
                 # Prepare file upload
-                upload_field_storage = FieldStorage()
-                upload_field_storage.file = open(file_name, 'rb')
-                upload_field_storage.filename = file_name
-
-                resource_data['url'] = ''
-                resource_data['upload'] = upload_field_storage
+                resource_data['upload'] = FlaskFileStorage(open(file_name, 'rb'), target_name)
                 resource_data['format'] = resource_format
                 resource_data['valid_content'] = "yes" if valid_wsdl else "no"
             elif unknown_service_link_url is None:
@@ -444,7 +439,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 continue
             else:
                 file_name = None
-                upload_field_storage = None
                 resource_data['url'] = unknown_service_link_url
                 timestamp_field = 'unknown_timestamp'
 
