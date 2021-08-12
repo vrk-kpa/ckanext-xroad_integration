@@ -3,11 +3,11 @@ import ckan.plugins.toolkit as toolkit
 import ckan.lib.uploader as uploader
 import logging
 import lxml.etree as etree
-import urllib2
 import os
 import os.path
 import mimetypes
 import six
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def open_resource(resource):
         filepath = upload.get_path(resource['id'])
         return open(filepath)
     else:
-        return urllib2.urlopen(resource['url'])
+        return requests.get(resource['url'])
 
 
 def render_wsdl_resource(wsdl_to_html):
@@ -51,9 +51,9 @@ def render_wsdl_resource(wsdl_to_html):
                 element.getparent().remove(element)
             html_content = wsdl_to_html(wsdl_content)
             return etree.tostring(html_content, pretty_print=True, method='html', encoding=six.text_type)
-        except urllib2.URLError:
+        except requests.ConnectionError:
             return ERROR_HTML % 'Invalid URL'
-        except urllib2.HTTPError as e:
+        except requests.HTTPError as e:
             return ERROR_HTML % 'HTTP error: %s' % e
         except etree.XMLSyntaxError as e:
             return ERROR_HTML % 'XML syntax error: %s' % e
