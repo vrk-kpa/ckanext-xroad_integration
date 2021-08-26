@@ -22,7 +22,9 @@
     }
   </style>
   <div>
-    {% if resource.size < 500 * 1024 %}
+    {% if not resource.size %}
+      <div class="alert alert-warning">{% trans %}Invalid file size{% endtrans %}</div>
+    {% elif resource.size < 500 * 1024 %}
       {{ h.render_wsdl_resource(resource)|safe }}
     {% else %}
     <div class="alert alert-warning">{% trans %}File size too large for preview, download the file to view its contents.{% endtrans %}</div>
