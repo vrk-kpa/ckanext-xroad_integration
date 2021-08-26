@@ -6,6 +6,7 @@
 # 
 # Translators:
 # Zharktas <jari-pekka.voutilainen@gofore.com>, 2021
+# Meeri Hakala <meeri.hakala@dvv.fi>, 2021
 # 
 #, fuzzy
 msgid ""
@@ -14,7 +15,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-01-11 13:42+0000\n"
 "PO-Revision-Date: 2021-01-11 11:57+0000\n"
-"Last-Translator: Zharktas <jari-pekka.voutilainen@gofore.com>, 2021\n"
+"Last-Translator: Meeri Hakala <meeri.hakala@dvv.fi>, 2021\n"
 "Language-Team: Finnish (https://www.transifex.com/avoindata/teams/7979/fi/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -92,7 +93,7 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:9
 msgid "Download CSV"
-msgstr ""
+msgstr "Lataa CSV"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:11
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:24
@@ -111,15 +112,15 @@ msgid ""
 msgstr ""
 "Jos organisaatiolla on vähintään yksi palvelu alijärjestelmissään, "
 "organisaation tyyppi on tuottaja. Tämä sisältää SOAP, Rest ja tuntemattoman "
-"tyyppiset palvelut. Muussa tapauksessa tyyppi on kuluttaja."
+"tyyppiset palvelut. Muussa tapauksessa tyyppi on hyödyntäjä."
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:20
 msgid "Member"
-msgstr ""
+msgstr "Jäsen"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:21
 msgid "Member name"
-msgstr ""
+msgstr "Jäsenen nimi"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:22
 msgid "Member type (current)"
@@ -127,7 +128,7 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:23
 msgid "Security servers"
-msgstr ""
+msgstr "Liityntäpalvelimet"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:26
 msgid "Active"
@@ -139,7 +140,7 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:37
 msgid "Consumer"
-msgstr ""
+msgstr "Hyödyntäjä"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:47
 msgid "Yes"
@@ -151,11 +152,11 @@ msgstr "Ei"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:25
 msgid "Number of SOAP services"
-msgstr ""
+msgstr "SOAP-palveluiden lukumäärä"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:26
 msgid "Number of Rest services"
-msgstr ""
+msgstr "REST-palveluiden lukumäärä"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:27
 msgid "Number of Distinct services"
@@ -163,7 +164,7 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:28
 msgid "Number of Unknown services"
-msgstr ""
+msgstr "Tuntemattomien palvelujen lukumäärä"
 
 #: ckanext/xroad_integration/views/xroad.py:21
 #: ckanext/xroad_integration/views/xroad.py:37

@@ -4,6 +4,9 @@
 # ckanext-xroad_integration project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 # 
+# Translators:
+# Teemu Erkkola <teemu.erkkola@iki.fi>, 2021
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -11,6 +14,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-01-11 13:42+0000\n"
 "PO-Revision-Date: 2021-01-11 11:57+0000\n"
+"Last-Translator: Teemu Erkkola <teemu.erkkola@iki.fi>, 2021\n"
 "Language-Team: Swedish (https://www.transifex.com/avoindata/teams/7979/sv/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,6 +26,7 @@ msgstr ""
 #: ckanext/xroad_integration/auth.py:13
 msgid "User not authorized to view X-Road error list for organization"
 msgstr ""
+"Användaren har inte rätt att granska listan över organisationens X-Road-fel"
 
 #: ckanext/xroad_integration/view.py:89 ckanext/xroad_integration/view.py:91
 msgid "WSDL"
@@ -30,7 +35,7 @@ msgstr ""
 #: ckanext/xroad_integration/logic/action.py:640
 #: ckanext/xroad_integration/views/xroad.py:138
 msgid "Organization not found"
-msgstr ""
+msgstr "Inga organisationer hittades"
 
 #: ckanext/xroad_integration/logic/action.py:652
 msgid "Organization id is not valid X-Road id"
@@ -40,29 +45,31 @@ msgstr ""
 msgid ""
 "File size too large for preview, download the file to view its contents."
 msgstr ""
+"Filen är för stor för förhandsgranskning. Ladda ner filen för att se dess "
+"innehåll."
 
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:15
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:44
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:27
 msgid "Created"
-msgstr ""
+msgstr "Skapad"
 
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:16
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:45
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:24
 msgid "Subsystem"
-msgstr ""
+msgstr "Subsystem "
 
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:17
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:46
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:25
 msgid "Service"
-msgstr ""
+msgstr "Tjänst"
 
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:18
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:47
 msgid "Message"
-msgstr ""
+msgstr "Meddelande"
 
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:19
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:48
@@ -82,16 +89,16 @@ msgstr ""
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:22
 #: ckanext/xroad_integration/templates/admin/xroad_errors.html:51
 msgid "Code"
-msgstr ""
+msgstr "Kod"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:9
 msgid "Download CSV"
-msgstr ""
+msgstr "Exportera CSV"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:11
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:24
 msgid "Date"
-msgstr ""
+msgstr "Datum"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:11
 msgid "2005-01-01"
@@ -103,10 +110,13 @@ msgid ""
 "member type is provider. This includes SOAP, Rest and unknown types for "
 "services. Otherwise member type is consumer"
 msgstr ""
+"Om organisationen har minst en tjänst i sina subsystem är organisationstypen"
+" producent. Detta inkluderar SOAP, Rest och okända typer av tjänster. I "
+"annat fall är typen nyttjare."
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:20
 msgid "Member"
-msgstr ""
+msgstr "Organisation"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:21
 msgid "Member name"
@@ -114,15 +124,15 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:22
 msgid "Member type (current)"
-msgstr ""
+msgstr "Organisationens typ"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:23
 msgid "Security servers"
-msgstr ""
+msgstr "Anslutningsservrar"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:26
 msgid "Active"
-msgstr ""
+msgstr "Aktiv"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:37
 msgid "Provider"
@@ -130,23 +140,23 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:37
 msgid "Consumer"
-msgstr ""
+msgstr "Utnyttjare"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:47
 msgid "Yes"
-msgstr ""
+msgstr "Ja"
 
 #: ckanext/xroad_integration/templates/admin/xroad_services.html:47
 msgid "No"
-msgstr ""
+msgstr "Nej"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:25
 msgid "Number of SOAP services"
-msgstr ""
+msgstr "Antal SOAP-tjänster"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:26
 msgid "Number of Rest services"
-msgstr ""
+msgstr "Antal REST-tjänster"
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:27
 msgid "Number of Distinct services"
@@ -154,14 +164,14 @@ msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:28
 msgid "Number of Unknown services"
-msgstr ""
+msgstr "Antal okända tjänster"
 
 #: ckanext/xroad_integration/views/xroad.py:21
 #: ckanext/xroad_integration/views/xroad.py:37
 #: ckanext/xroad_integration/views/xroad.py:60
 msgid "Need to be system administrator to administer"
-msgstr ""
+msgstr "Man måste vara systemets administratör för administrationen"
 
 #: ckanext/xroad_integration/views/xroad.py:133
 msgid "Need to be organization administrator to administer"
-msgstr ""
+msgstr "Man måste vara organisationens administratör för administrationen"
