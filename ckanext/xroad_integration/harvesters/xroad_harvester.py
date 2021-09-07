@@ -430,7 +430,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 file_name = f.name
 
                 # Prepare file upload
-                resource_data['upload'] = FlaskFileStorage(open(file_name, 'rb'), target_name)
+                resource_data['upload'] = FlaskFileStorage(
+                        open(file_name, 'rb'), target_name,
+                        content_length=len(service_description_data_utf8))
                 resource_data['format'] = resource_format
                 resource_data['valid_content'] = "yes" if valid_wsdl else "no"
             elif unknown_service_link_url is None:
