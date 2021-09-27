@@ -332,6 +332,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         package_dict['name'] = munge_title_to_name(dataset['subsystem']['subsystemCode'])
         package_dict['shared_resource'] = "no"
         package_dict['private'] = False
+        package_dict['access_restriction_level'] = "public"
 
         package_dict['xroad_instance'] = dataset['xRoadInstance']
         package_dict['xroad_memberclass'] = dataset['xRoadMemberClass']
@@ -403,6 +404,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 "xroad_serviceversion": service_version,
                 "xroad_service_type": service_type,
                 "harvested_from_xroad": True,
+                "access_restriction_level": "public"
             }
 
             if service_description:
