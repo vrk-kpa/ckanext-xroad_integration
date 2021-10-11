@@ -10,7 +10,6 @@ xroad_stats_js:
     - javascript/xroad_stats.js
 
 xroad_stats_css:
-  filters: cssrewrite
   output: ckanext-xroad_integration/%(version)s_xroad-stats.css
   contents:
     - css/Chart.css
