@@ -19,7 +19,8 @@ from pprint import pformat
 
 from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
                                              XRoadServiceListSubsystem, XRoadServiceListService,
-                                             XRoadServiceListSecurityServer, XRoadBatchResult)
+                                             XRoadServiceListSecurityServer, XRoadBatchResult,
+                                             XRoadHeartbeat)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
@@ -120,6 +121,7 @@ def update_xroad_organizations(context, data_dict):
         return {'success': False, 'message': json.dumps(errors_by_source)}
     else:
         return {'success': True, 'message': 'Updated {} organizations'.format(updated)}
+
 
 def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
@@ -475,7 +477,6 @@ def fetch_xroad_errors(context, data_dict):
         return {"success": True, "results": results, "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
 
-
 def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
     xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
@@ -791,3 +792,62 @@ def xroad_member_id(member_dict):
     member_class = member_dict.get('member_class')
     member_code = member_dict.get('member_code')
     return '.'.join((xroad_instance, member_class, member_code))
+
+
+def fetch_xroad_heartbeat(context, data_dict):
+    toolkit.check_access('fetch_xroad_heartbeat', context)
+    log.info('Checking X-Road catalog heartbeat')
+
+    xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
+    xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
+    xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+    xroad_client_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_client_certificate')
+
+    if not xroad_catalog_address.startswith('http'):
+        return False
+
+    service = 'heartbeat'
+    url = '{address}/{service}'.format(address=xroad_catalog_address, service=service)
+
+    headers = {'X-Road-Client': xroad_client_id}
+
+    certificate_args = {}
+    if xroad_catalog_certificate and os.path.isfile(xroad_catalog_certificate):
+        certificate_args['verify'] = xroad_catalog_certificate
+    else:
+        certificate_args['verify'] = False
+
+    if xroad_client_certificate and os.path.isfile(xroad_client_certificate):
+        certificate_args['cert'] = xroad_client_certificate
+
+    try:
+        response = http.get(url, headers=headers, **certificate_args)
+        result = response.status_code == 200
+    except Exception:
+        result = False
+
+    log.info('X-Road catalog is %s', 'UP' if result else 'DOWN')
+    XRoadHeartbeat.create(result)
+
+    return {'success': True, 'heartbeat': result}
+
+
+def xroad_heartbeat(context, data_dict):
+    toolkit.check_access('xroad_heartbeat', context)
+    heartbeat = XRoadHeartbeat.get_latest().as_dict()
+    return {'success': True, 'heartbeat': heartbeat}
+
+
+def xroad_heartbeat_history(context, data_dict):
+    toolkit.check_access('xroad_heartbeat', context)
+
+    def parse_datetime_or_now(s):
+        if s is None:
+            return datetime.datetime.now()
+        else:
+            return datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
+
+    since = parse_datetime_or_now(data_dict.get('since', '1900-01-01T00:00:00'))
+    until = parse_datetime_or_now(data_dict.get('until'))
+    items = [i.as_dict() for i in XRoadHeartbeat.get_between(since, until)]
+    return {'success': True, 'items': items}

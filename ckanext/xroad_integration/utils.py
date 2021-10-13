@@ -1,6 +1,7 @@
 from ckan.plugins.toolkit import get_action
 import json
 
+
 def init_db():
     import ckan.model as model
     from ckanext.xroad_integration.model import init_table
@@ -95,3 +96,14 @@ def latest_batch_run_results():
     response = get_action('xroad_latest_batch_results')({'ignore_auth': True}, {})
     return response['results']
 
+
+def fetch_xroad_heartbeat():
+    try:
+        result = get_action('fetch_xroad_heartbeat')({'ignore_auth': True}, {})
+
+        if result.get('success') is True:
+            print('Success:', result.get('heartbeat'))
+        else:
+            print('Error fetching heartbeat: %s', result.get('message', '(no message)'))
+    except Exception as e:
+        print('Error fetching heartbeat: \n', e)

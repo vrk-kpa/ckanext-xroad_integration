@@ -4,6 +4,7 @@ import click
 
 import ckanext.xroad_integration.utils as utils
 
+
 def get_commands():
     return [xroad]
 
@@ -22,6 +23,7 @@ def init_db():
     utils.init_db()
     click.secho(u"DB tables created", fg=u"green")
 
+
 @xroad.command()
 @click.option(u'--yes-i-am-sure')
 def drop_db(yes_i_am_sure):
@@ -34,46 +36,48 @@ def drop_db(yes_i_am_sure):
         click.secho(u"This will delete all xroad data in the database! If you are sure, run this command with the --yes-i-am-sure option.", fg=u"yellow")
 
 
-@xroad.command(
-    u'update_xroad_organizations',
-    help='Updates harvested organizations\' metadata'
-)
+@xroad.command()
 @click.pass_context
-def update_xroad_organizations(ctx, config):
+def update_xroad_organizations(ctx):
+    'Updates harvested organizations\' metadata'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         utils.update_xroad_organization()
 
-@xroad.command(
-    u'fetch_errors',
-    help='Fetches error log from catalog lister'
-)
+
+@xroad.command()
 @click.pass_context
-def fetch_errors(ctx, config):
+def fetch_errors(ctx):
+    'Fetches error log from catalog lister'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         utils.fetch_errors()
 
-@xroad.command(
-    u'fetch_stats',
-    help='Fetches X-Road stats from catalog lister'
-)
+
+@xroad.command()
 @click.pass_context
 @click.option(u'--days', type=int)
-def fetch_stats(ctx, config, days):
-
+def fetch_stats(ctx, days):
+    'Fetches X-Road stats from catalog lister'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         utils.fetch_stats(days)
 
-@xroad.command(
-    u'fetch_service_list',
-    help='Fetches X-Road services from catalog lister'
-)
+
+@xroad.command()
 @click.pass_context
 @click.option(u'--days', type=int)
-def fetch_service_list(ctx, config, days):
-
+def fetch_service_list(ctx, days):
+    'Fetches X-Road services from catalog lister'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         utils.fetch_service_list(days)
+
+
+@xroad.command()
+@click.pass_context
+def fetch_heartbeat(ctx):
+    'Fetches X-Road catalog heartbeat'
+    flask_app = ctx.meta["flask_app"]
+    with flask_app.test_request_context():
+        utils.fetch_xroad_heartbeat()
