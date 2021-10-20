@@ -297,6 +297,33 @@ class XRoadBatchResult(Base, AsDictMixin):
         return results
 
 
+class XRoadHeartbeat(Base, AsDictMixin):
+    __tablename__ = 'xroad_heartbeat'
+
+    timestamp = Column(types.DateTime, primary_key=True, server_default=func.now())
+    success = Column(types.Boolean, nullable=False)
+
+    @classmethod
+    def create(cls, success):
+        xroad_heartbeat = cls(success=success)
+        model.Session.add(xroad_heartbeat)
+        model.repo.commit()
+
+    @classmethod
+    def get_latest(cls):
+        return (model.Session.query(cls)
+                .order_by(cls.timestamp.desc())
+                .first())
+
+    @classmethod
+    def get_between(cls, since, until):
+        return (model.Session.query(cls)
+                .filter(cls.timestamp >= since)
+                .filter(cls.timestamp <= until)
+                .order_by(cls.timestamp.asc())
+                .all())
+
+
 def init_table(engine):
     Base.metadata.create_all(engine)
     log.info("Table for xroad data is set-up")
