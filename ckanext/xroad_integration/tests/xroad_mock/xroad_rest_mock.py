@@ -27,6 +27,10 @@ def create_app(input_file):
     def getServiceStatistics(days=1):
         return json.dumps({'serviceStatisticsList': []})
 
+    @app.route('/heartbeat')
+    def heartbeat():
+        return 'OK'
+
     return app
 
 
