@@ -1,9 +1,9 @@
 'use strict';
 
-ckan.module('xroad_stats', function ($) {
+ckan.module('xroad_distinct_service_stats', function ($) {
   return {
     initialize: function() {
-      console.log('xroad_stats.initialize')
+      console.log('xroad_distinct_service_stats.initialize')
 
       let data = xroadServicesGraphData.concat();
       let distinctServiceCounts = data.map(d => d.distinctServiceCount)
@@ -11,7 +11,7 @@ ckan.module('xroad_stats', function ($) {
       let dataMaxValue = Math.max.apply(null, distinctServiceCounts)
 
       let ctx = document
-        .getElementById('serviceCountCanvas')
+        .getElementById('distinctServiceCountCanvas')
         .getContext('2d');
 
       let chart = new Chart(ctx, {
@@ -20,27 +20,11 @@ ckan.module('xroad_stats', function ($) {
           labels: data.map(d => d.date),
           datasets: [
             {
-              data: data.map(d => d.soapServiceCount),
-              label: 'SOAP services',
-              borderColor: 'rgb(255, 206, 86)',
+              data: distinctServiceCounts,
+              label: 'Distinct services',
+              borderColor: 'rgb(26, 163, 255)',
               fill: true,
-              backgroundColor: 'rgba(255, 206, 86, 0.2)',
-              cubicInterpolationMode: 'monotone',
-            },
-            {
-              data: data.map(d => d.restServiceCount),
-              label: 'REST services',
-              borderColor: 'rgb(255, 99, 132)',
-              fill: true,
-              backgroundColor: 'rgba(255, 99, 132, 0.2)',
-              cubicInterpolationMode: 'monotone',
-            },
-            {
-              data: data.map(d => d.openapiServiceCount),
-              label: 'OpenAPI services',
-              borderColor: 'rgb(75, 192, 192)',
-              fill: true,
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              backgroundColor: 'rgba(26, 163, 255, 0.2)',
               cubicInterpolationMode: 'monotone',
             },
           ],

@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block primary %}
+    <script>
+      const xroadServicesGraphData = [
+        {% for stat in xroad_stats_service_graph_data %}
+        {
+          date: "{{ stat.date }}",
+          distinctServiceCount: {{ stat.distinct_service_count }}
+        },
+      {% endfor %}
+      ]
+    </script>
+    {% asset "xroad_integration/xroad_distinct_service_stats_js" %}
+    {% asset "xroad_integration/xroad_stats_css" %}
+
+    <div data-module="xroad_distinct_service_stats">
+      <canvas id="distinctServiceCountCanvas"></canvas>
+      <table class="table table-bordered" style="table-layout:fixed;">
+          <thead>
+          <tr>
+              <th style="width: 20%">{% trans %}Date{% endtrans %}</th>
+              <th style="width: 20%">{% trans %}Number of Distinct services{% endtrans %}</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for stat in xroad_stats %}
+              <tr>
+                  <td>{{ h.render_datetime(stat.date) }}</td>
+                  <td>{{ stat.distinct_service_count }}</td>
+              </tr>
+          {% endfor %}
+          </tbody>
+      </table>
+    </div>
+
+{% endblock %}
