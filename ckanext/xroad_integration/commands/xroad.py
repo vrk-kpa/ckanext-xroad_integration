@@ -50,6 +50,19 @@ def fetch_stats(ctx, config, days):
 
 
 @xroad_commands.command(
+    u'fetch_distinct_service_stats',
+    help='Fetches X-Road distinct service stats from catalog lister'
+)
+@click_config_option
+@click.pass_context
+@click.option(u'--days', type=int)
+def fetch_distinct_service_stats(ctx, config, days):
+    load_config((config or ctx.obj['config']))
+
+    utils.fetch_distinct_service_stats(days)
+
+
+@xroad_commands.command(
     u'fetch_service_list',
     help='Fetches X-Road services from catalog lister'
 )

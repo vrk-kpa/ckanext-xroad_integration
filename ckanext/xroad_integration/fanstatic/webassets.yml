@@ -9,6 +9,17 @@ xroad_stats_js:
     - javascript/libs/chartjs-datalabels.js
     - javascript/xroad_stats.js
 
+xroad_distinct_service_stats_js:
+  filters: rjsmin
+  output: ckanext-xroad_integration/%(version)s_xroad_distinct_service_stats.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - javascript/libs/Chart.js
+    - javascript/libs/chartjs-datalabels.js
+    - javascript/xroad_distinct_service_stats.js
+
 xroad_stats_css:
   output: ckanext-xroad_integration/%(version)s_xroad-stats.css
   contents:

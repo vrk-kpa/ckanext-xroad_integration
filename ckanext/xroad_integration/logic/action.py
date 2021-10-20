@@ -19,7 +19,7 @@ from pprint import pformat
 
 from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
                                              XRoadServiceListSubsystem, XRoadServiceListService,
-                                             XRoadServiceListSecurityServer, XRoadBatchResult)
+                                             XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat)
 
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
@@ -735,12 +735,11 @@ def fetch_xroad_stats(context, data_dict):
             if stat:
                 stat.soap_service_count = statistics['numberOfSoapServices']
                 stat.rest_service_count = statistics['numberOfRestServices']
-                stat.distinct_service_count = statistics['totalNumberOfDistinctServices']
                 stat.openapi_service_count = statistics['numberOfOpenApiServices']
                 XRoadStat.save(stat)
             else:
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
-                                 statistics['totalNumberOfDistinctServices'], statistics['numberOfOpenApiServices'])
+                                 statistics['numberOfOpenApiServices'])
 
         return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
 
@@ -750,11 +749,57 @@ def fetch_xroad_stats(context, data_dict):
         return {"success": False, "message": "Fetching statistics failed."}
 
 
+def fetch_distinct_service_stats(context, data_dict):
+    toolkit.check_access('fetch_distinct_service_stats', context)
+
+    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
+
+    log.info("Fetching X-Road distinct service stats for the last %s days" % days)
+
+    try:
+        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', str(days)).json()
+
+        if statistics_data is None:
+            log.warn("Calling getDistinctServiceStatistics failed!")
+            return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
+        elif 'serviceStatisticsList' not in statistics_data:
+            return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'.format(statistics_data.get('message', ''))}
+
+        statistics_list = statistics_data.get('distinctServiceStatisticsList', [])
+
+        for statistics in statistics_list:
+            created = statistics['created']
+            date = parse_xroad_catalog_datetime(created).replace(hour=0, minute=0, second=0, microsecond=0)
+
+            stat = XRoadDistinctServiceStat.get_by_date(date)
+            if stat:
+                stat.distinct_service_count = statistics['numberOfDistinctServices']
+                XRoadDistinctServiceStat.save(stat)
+            else:
+                XRoadDistinctServiceStat.create(date, statistics['numberOfDistinctServices'])
+
+        return {"success": True, "message": "Distinct service statistics for %s days stored in database." % len(statistics_list)}
+
+    except ConnectionError as e:
+        log.warn("Calling getDistinctServiceStatistics failed!")
+        log.info(e)
+        return {"success": False, "message": "Fetching distinct service statistics failed."}
+
+
 def xroad_stats(context, data_dict):
 
     toolkit.check_access('xroad_stats', context)
 
     stats = model.Session.query(XRoadStat).order_by(XRoadStat.date.desc()).all()
+
+    return [stat.as_dict() for stat in stats]
+
+
+def xroad_distinct_service_stats(context, data_dict):
+
+    toolkit.check_access('xroad_distinct_service_stats', context)
+
+    stats = model.Session.query(XRoadDistinctServiceStat).order_by(XRoadDistinctServiceStat.date.desc()).all()
 
     return [stat.as_dict() for stat in stats]
 

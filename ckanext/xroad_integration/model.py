@@ -69,13 +69,11 @@ class XRoadStat(Base, AsDictMixin):
     date = Column(types.DateTime, nullable=False)
     soap_service_count = Column(types.Integer, nullable=False)
     rest_service_count = Column(types.Integer, nullable=False)
-    distinct_service_count = Column(types.Integer, nullable=False)
     openapi_service_count = Column(types.Integer, nullable=False)
 
     @classmethod
-    def create(cls, date, soap_service_count, rest_service_count, distinct_service_count, openapi_service_count):
+    def create(cls, date, soap_service_count, rest_service_count, openapi_service_count):
         xroad_stat = XRoadStat(date=date, soap_service_count=soap_service_count, rest_service_count=rest_service_count,
-                               distinct_service_count=distinct_service_count,
                                openapi_service_count=openapi_service_count)
 
         model.Session.add(xroad_stat)
@@ -84,6 +82,31 @@ class XRoadStat(Base, AsDictMixin):
     @classmethod
     def get_by_date(cls, date):
         stat = model.Session.query(XRoadStat).filter(cls.date == date).one_or_none()
+        return stat
+
+    @classmethod
+    def save(cls, obj):
+        model.Session.add(obj)
+        model.repo.commit()
+
+
+class XRoadDistinctServiceStat(Base, AsDictMixin):
+
+    __tablename__ = 'xroad_distinct_service_stats'
+
+    id = Column(types.UnicodeText, primary_key=True, default=make_uuid)
+    date = Column(types.DateTime, nullable=False)
+    distinct_service_count = Column(types.Integer, nullable=False)
+
+    @classmethod
+    def create(cls, date, distinct_service_count):
+        xroad_distinct_service_stat = XRoadDistinctServiceStat(date=date, distinct_service_count=distinct_service_count)
+        model.Session.add(xroad_distinct_service_stat)
+        model.repo.commit()
+
+    @classmethod
+    def get_by_date(cls, date):
+        stat = model.Session.query(XRoadDistinctServiceStat).filter(cls.date == date).one_or_none()
         return stat
 
     @classmethod

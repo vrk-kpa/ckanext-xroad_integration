@@ -66,6 +66,20 @@ def fetch_stats(ctx, config, days):
     with flask_app.test_request_context():
         utils.fetch_stats(days)
 
+
+@xroad.command(
+    u'fetch_distinct_service_stats',
+    help='Fetches X-Road distinct service stats from catalog lister'
+)
+@click.pass_context
+@click.option(u'--days', type=int)
+def fetch_distinct_service_stats(ctx, config, days):
+
+    flask_app = ctx.meta["flask_app"]
+    with flask_app.test_request_context():
+        utils.fetch_distinct_service_stats(days)
+
+
 @xroad.command(
     u'fetch_service_list',
     help='Fetches X-Road services from catalog lister'
