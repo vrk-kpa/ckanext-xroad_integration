@@ -10,6 +10,7 @@ from ckanext.xroad_integration.auth import xroad_error_list
 
 import ckanext.xroad_integration.cli as cli
 
+
 class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IResourceController, inherit=True)
@@ -77,6 +78,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'xroad_service_list': action.xroad_service_list,
             'xroad_batch_result_create': action.xroad_batch_result_create,
             'xroad_latest_batch_results': action.xroad_latest_batch_results,
+            'fetch_xroad_heartbeat': action.fetch_xroad_heartbeat,
+            'xroad_heartbeat': action.xroad_heartbeat,
+            'xroad_heartbeat_history': action.xroad_heartbeat_history,
         }
 
     # IAuthFunctions
@@ -93,6 +97,8 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'fetch_xroad_service_list': sysadmin,
             'xroad_service_list': sysadmin,
             'xroad_batch_result': sysadmin,
+            'fetch_xroad_heartbeat': sysadmin,
+            'xroad_heartbeat': sysadmin,
         }
 
     # IBlueprint
