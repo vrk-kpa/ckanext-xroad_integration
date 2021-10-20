@@ -14,10 +14,7 @@ xroad_commands = paster_click_group(
 )
 
 
-@xroad_commands.command(
-    u'update_xroad_organizations',
-    help='Updates harvested organizations\' metadata'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 def update_xroad_organizations(ctx, config):
@@ -25,10 +22,7 @@ def update_xroad_organizations(ctx, config):
     utils.update_xroad_organizations()
 
 
-@xroad_commands.command(
-    u'fetch_errors',
-    help='Fetches error log from catalog lister'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 def fetch_errors(ctx, config):
@@ -36,10 +30,7 @@ def fetch_errors(ctx, config):
     utils.fetch_errors()
 
 
-@xroad_commands.command(
-    u'fetch_stats',
-    help='Fetches X-Road stats from catalog lister'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 @click.option(u'--days', type=int)
@@ -49,10 +40,7 @@ def fetch_stats(ctx, config, days):
     utils.fetch_stats(days)
 
 
-@xroad_commands.command(
-    u'fetch_distinct_service_stats',
-    help='Fetches X-Road distinct service stats from catalog lister'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 @click.option(u'--days', type=int)
@@ -62,10 +50,7 @@ def fetch_distinct_service_stats(ctx, config, days):
     utils.fetch_distinct_service_stats(days)
 
 
-@xroad_commands.command(
-    u'fetch_service_list',
-    help='Fetches X-Road services from catalog lister'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 @click.option(u'--days', type=int)
@@ -74,10 +59,7 @@ def fetch_service_list(ctx, config, days):
     utils.fetch_service_list(days)
 
 
-@xroad_commands.command(
-    u'latest_batch_run_results',
-    help='Prints the results of the latest batch runs'
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 def latest_batch_run_results(ctx, config):
@@ -96,10 +78,7 @@ def latest_batch_run_results(ctx, config):
     print('\n'.join(row_format.format(*row) for row in rows))
 
 
-@xroad_commands.command(
-    u'init_db',
-    help="Initializes databases for xroad"
-)
+@xroad_commands.command()
 @click_config_option
 @click.pass_context
 def init_db(ctx, config):
@@ -108,9 +87,7 @@ def init_db(ctx, config):
     utils.init_db()
 
 
-@xroad_commands.command(
-        u'drop_db',
-        help='Removes tables created by init_db in the database.')
+@xroad_commands.command()
 @click.option(u'--yes-i-am-sure/--no-i-am-not-sure', default=False)
 @click_config_option
 @click.pass_context
@@ -123,9 +100,7 @@ def drop_db(ctx, config, yes_i_am_sure):
         click.secho(u"This will delete all xroad data in the database! If you are sure, run this command with the --yes-i-am-sure option.", fg=u"yellow")
 
 
-@xroad_commands.command(
-        u'send_latest_batch_run_results_email',
-        help='Sends emails to configured addresses if a previous batch run has failed')
+@xroad_commands.command()
 @click.option(u'--dryrun', is_flag=True)
 @click_config_option
 @click.pass_context
