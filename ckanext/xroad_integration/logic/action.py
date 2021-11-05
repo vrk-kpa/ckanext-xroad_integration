@@ -880,8 +880,11 @@ def fetch_xroad_heartbeat(context, data_dict):
 
 def xroad_heartbeat(context, data_dict):
     toolkit.check_access('xroad_heartbeat', context)
-    heartbeat = XRoadHeartbeat.get_latest().as_dict()
-    return {'success': True, 'heartbeat': heartbeat}
+    heartbeat = XRoadHeartbeat.get_latest()
+    if heartbeat is None:
+        return {'success': False, 'heartbeat': None}
+    else:
+        return {'success': True, 'heartbeat': heartbeat.as_dict()}
 
 
 def xroad_heartbeat_history(context, data_dict):
