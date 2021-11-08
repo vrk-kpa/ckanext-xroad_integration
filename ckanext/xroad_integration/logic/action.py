@@ -764,7 +764,7 @@ def fetch_distinct_service_stats(context, data_dict):
         if statistics_data is None:
             log.warn("Calling getDistinctServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
-        elif 'serviceStatisticsList' not in statistics_data:
+        elif 'distinctServiceStatisticsList' not in statistics_data:
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'.format(statistics_data.get('message', ''))}
 
         statistics_list = statistics_data.get('distinctServiceStatisticsList', [])
