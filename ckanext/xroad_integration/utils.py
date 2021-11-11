@@ -93,6 +93,30 @@ def fetch_distinct_service_stats(days):
         print(results['message'])
 
 
+def fetch_list_errors(days):
+
+    data_dict = {}
+    if days:
+        data_dict['days'] = days
+
+    try:
+        results = get_action('fetch_list_errors')({'ignore_auth': True}, data_dict)
+    except Exception as e:
+        results = {'success': False, 'message': 'Exception: {}'.format(e)}
+
+    success = results.get('success') is True
+    get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_list_errors',
+                                                                    'success': success,
+                                                                    'params': json.dumps(data_dict),
+                                                                    'message': results.get('message')})
+
+    if success:
+        print(results['message'])
+
+    else:
+        print(results['message'])
+
+
 def fetch_service_list(days):
     data_dict = {}
     if days:

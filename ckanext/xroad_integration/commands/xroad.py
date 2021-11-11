@@ -54,6 +54,16 @@ def fetch_distinct_service_stats(ctx, config, days):
 @click_config_option
 @click.pass_context
 @click.option(u'--days', type=int)
+def fetch_list_errors(ctx, config, days):
+    load_config((config or ctx.obj['config']))
+
+    utils.fetch_list_errors(days)
+
+
+@xroad_commands.command()
+@click_config_option
+@click.pass_context
+@click.option(u'--days', type=int)
 def fetch_service_list(ctx, config, days):
     load_config((config or ctx.obj['config']))
     utils.fetch_service_list(days)
