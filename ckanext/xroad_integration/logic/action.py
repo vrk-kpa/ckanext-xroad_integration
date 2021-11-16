@@ -22,12 +22,13 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
                                              XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat,
                                              XRoadHeartbeat)
 
-
 PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
+DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS = 60
+DEFAULT_LIST_ERRORS_PAGE_LIMIT = 20
 
 
 # Add default timeout
@@ -57,7 +58,6 @@ class ContentFetchError(Exception):
 
 
 def update_xroad_organizations(context, data_dict):
-
     toolkit.check_access('update_xroad_organizations', context)
     harvest_source_list = toolkit.get_action('harvest_source_list')
     organization_list = toolkit.get_action('organization_list')
@@ -125,7 +125,6 @@ def update_xroad_organizations(context, data_dict):
 
 
 def _prepare_xroad_organization_patch(organization, source_url, last_updated):
-
     member_class = organization.get('xroad_memberclass')
     member_code = organization.get('xroad_membercode')
     organization_name = organization.get('name')
@@ -173,67 +172,67 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
                     if organization_info.get('organizationNames', {}):
                         org_names = _convert_xroad_value_to_uniform_list(
-                                organization_info.get('organizationNames', {}).get('organizationName', {}))
+                            organization_info.get('organizationNames', {}).get('organizationName', {}))
 
                         org_names_translated = {
-                                "fi": next((name.get('value', '')
-                                            for name in org_names if (name.get('language') == 'fi')
-                                            and name.get('type') == "Name"), ""),
-                                "sv": next((name.get('value', '')
-                                            for name in org_names if (name.get('language') == 'sv')
-                                            and name.get('type') == "Name"), ""),
-                                "en": next((name.get('value', '')
-                                            for name in org_names if (name.get('language') == 'en')
-                                            and name.get('type') == "Name"), ""),
-                                }
+                            "fi": next((name.get('value', '')
+                                        for name in org_names if (name.get('language') == 'fi')
+                                        and name.get('type') == "Name"), ""),
+                            "sv": next((name.get('value', '')
+                                        for name in org_names if (name.get('language') == 'sv')
+                                        and name.get('type') == "Name"), ""),
+                            "en": next((name.get('value', '')
+                                        for name in org_names if (name.get('language') == 'en')
+                                        and name.get('type') == "Name"), ""),
+                        }
 
                         organization_dict['title_translated'] = org_names_translated
 
                     if organization_info.get('organizationDescriptions', {}):
                         org_descriptions = _convert_xroad_value_to_uniform_list(
-                                organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
+                            organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
 
                         org_descriptions_translated = {
-                                "fi": next((description.get('value', '')
-                                            for description in org_descriptions
-                                            if description.get('language') == 'fi'), ""),
-                                "sv": next((description.get('value', '')
-                                            for description in org_descriptions
-                                            if description.get('language') == 'sv'), ""),
-                                "en": next((description.get('value', '')
-                                            for description in org_descriptions
-                                            if description.get('language') == 'en'), "")
-                                }
+                            "fi": next((description.get('value', '')
+                                        for description in org_descriptions
+                                        if description.get('language') == 'fi'), ""),
+                            "sv": next((description.get('value', '')
+                                        for description in org_descriptions
+                                        if description.get('language') == 'sv'), ""),
+                            "en": next((description.get('value', '')
+                                        for description in org_descriptions
+                                        if description.get('language') == 'en'), "")
+                        }
 
                         organization_dict['description_translated'] = org_descriptions_translated
 
                     if organization_info.get('webPages', {}):
                         webpages = _convert_xroad_value_to_uniform_list(
-                                organization_info.get('webPages', {}).get('webPage', {}))
+                            organization_info.get('webPages', {}).get('webPage', {}))
 
                         webpage_addresses = {
-                                "fi": next((webpage.get('url', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'fi'), ""),
-                                "sv": next((webpage.get('url', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'sv'), ""),
-                                "en": next((webpage.get('url', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'en'), "")
-                                }
+                            "fi": next((webpage.get('url', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'fi'), ""),
+                            "sv": next((webpage.get('url', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'sv'), ""),
+                            "en": next((webpage.get('url', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'en'), "")
+                        }
 
                         webpage_descriptions = {
-                                "fi": next((webpage.get('value', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'fi'), ""),
-                                "sv": next((webpage.get('value', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'sv'), ""),
-                                "en": next((webpage.get('value', '')
-                                            for webpage in webpages
-                                            if webpage.get('language') == 'en'), "")
-                                }
+                            "fi": next((webpage.get('value', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'fi'), ""),
+                            "sv": next((webpage.get('value', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'sv'), ""),
+                            "en": next((webpage.get('value', '')
+                                        for webpage in webpages
+                                        if webpage.get('language') == 'en'), "")
+                        }
 
                         organization_dict['webpage_address'] = webpage_addresses
                         organization_dict['webpage_description'] = webpage_descriptions
@@ -275,16 +274,16 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {})
                                                                          .get('companyForm', {}))
                     forms = {
-                            "fi": next((form.get('name')
-                                        for form in company_forms
-                                        if form.get('language') == 'FI'), ""),
-                            "sv": next((form.get('name')
-                                        for form in company_forms
-                                        if form.get('language') == 'SE'), ""),
-                            "en": next((form.get('name')
-                                        for form in company_forms
-                                        if form.get('language') == 'EN'), "")
-                            }
+                        "fi": next((form.get('name')
+                                    for form in company_forms
+                                    if form.get('language') == 'FI'), ""),
+                        "sv": next((form.get('name')
+                                    for form in company_forms
+                                    if form.get('language') == 'SE'), ""),
+                        "en": next((form.get('name')
+                                    for form in company_forms
+                                    if form.get('language') == 'EN'), "")
+                    }
 
                     organization_dict['company_type'] = forms
 
@@ -303,16 +302,16 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                 if company.get('languages'):
                     languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
                     company_languages = {
-                            "fi": next((language.get('name', '')
-                                        for language in languages
-                                        if language.get('language') == 'FI'), ""),
-                            "sv": next((language.get('name', '')
-                                        for language in languages
-                                        if language.get('language') == 'SE'), ""),
-                            "en": next((language.get('name', '')
-                                        for language in languages
-                                        if language.get('language') == 'EN'), "")
-                            }
+                        "fi": next((language.get('name', '')
+                                    for language in languages
+                                    if language.get('language') == 'FI'), ""),
+                        "sv": next((language.get('name', '')
+                                    for language in languages
+                                    if language.get('language') == 'SE'), ""),
+                        "en": next((language.get('name', '')
+                                    for language in languages
+                                    if language.get('language') == 'EN'), "")
+                    }
 
                     organization_dict['company_language'] = company_languages
 
@@ -321,7 +320,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
                 if company.get('businessIdChanges'):
                     business_id_changes = _convert_xroad_value_to_uniform_list(
-                            company.get('businessIdChanges', {}).get('businessIdChange', {}))
+                        company.get('businessIdChanges', {}).get('businessIdChange', {}))
 
                     old_business_ids = [str(business_id_change.get('oldBusinessId'))
                                         for business_id_change in business_id_changes]
@@ -426,7 +425,6 @@ def _convert_xroad_value_to_uniform_list(value):
 
 
 def fetch_xroad_errors(context, data_dict):
-
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
     errors = []
@@ -478,7 +476,7 @@ def fetch_xroad_errors(context, data_dict):
         return {"success": True, "results": results, "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
 
-def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json'):
+def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json', pagination=None):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
     xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
@@ -488,7 +486,10 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
         log.warn("Invalid X-Road catalog url %s" % xroad_catalog_address)
         raise ContentFetchError("Invalid X-Road catalog url %s" % xroad_catalog_address)
 
-    url = '{address}/{service}/{params}'.format(address=xroad_catalog_address, service=service, params=params)
+    url = '{address}/{service}'.format(address=xroad_catalog_address, service=service)
+    for param in params:
+        url += '/' + param
+
     headers = {'Accept': accept,
                'Content-Type': content_type,
                'X-Road-Client': xroad_client_id}
@@ -506,14 +507,13 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
 
 
 def fetch_xroad_service_list(context, data_dict):
-
     toolkit.check_access('fetch_xroad_service_list', context)
     days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
 
     log.info("Fetching X-Road services for the last %s days" % days)
 
     try:
-        service_list_data = xroad_catalog_query('getListOfServices', str(days)).json()
+        service_list_data = xroad_catalog_query('getListOfServices', [str(days)]).json()
     except ConnectionError:
         log.warn("Connection error calling getListOfServices")
         return {'success': False, 'message': 'Connection error calling getListOfServices'}
@@ -606,22 +606,22 @@ def xroad_service_list(context, data_dict):
     organization_ids = set(xroad_member_id(m) for sl in results for m in sl['members'])
 
     organization_titles = {k: json.loads(v) for k, v in (
-            model.Session.query(model.Group.id, model.GroupExtra.value)
+        model.Session.query(model.Group.id, model.GroupExtra.value)
             .filter(model.Group.id.in_(organization_ids))
             .filter(model.Group.id == model.GroupExtra.group_id)
             .filter(model.GroupExtra.key == 'title_translated')
             .filter(model.GroupExtra.state == 'active')
-            ).all()}
+    ).all()}
 
     from sqlalchemy import func
     resource_counts = dict((
-            model.Session.query(model.Group.id, func.count(model.Resource.id))
-            .join(model.Package, model.Package.owner_org == model.Group.id)
-            .join(model.Resource, model.Resource.package_id == model.Package.id)
-            .filter(model.Group.id.in_(organization_ids))
-            .filter(model.Package.state == 'active')
-            .group_by(model.Group.id)
-            ).all())
+                               model.Session.query(model.Group.id, func.count(model.Resource.id))
+                                   .join(model.Package, model.Package.owner_org == model.Group.id)
+                                   .join(model.Resource, model.Resource.package_id == model.Package.id)
+                                   .filter(model.Group.id.in_(organization_ids))
+                                   .filter(model.Package.state == 'active')
+                                   .group_by(model.Group.id)
+                           ).all())
     # from pprint import pformat
     # log.info(pformat(organization_titles))
     # log.info(pformat(resource_counts))
@@ -660,7 +660,6 @@ def parse_xroad_catalog_datetime(dt):
 
 
 def xroad_error_list(context, data_dict):
-
     toolkit.check_access('xroad_error_list', context, data_dict)
 
     date = data_dict.get('date')
@@ -670,15 +669,22 @@ def xroad_error_list(context, data_dict):
         start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     end = start.replace(hour=23, minute=59, second=59)
+    date_start = start
+    date_end = start
+    show_history = False
 
-    rest_services_failed_errors = model.Session.query(XRoadError)\
-        .filter(XRoadError.message.like("Fetch of REST services failed%"))\
+    rest_services_failed_errors = model.Session.query(XRoadError) \
+        .filter(XRoadError.message.like("Fetch of REST services failed%")) \
         .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
 
-    other_errors = model.Session.query(XRoadError)\
-        .filter(not_(XRoadError.message.like("Fetch of REST services failed%")))\
+    other_errors = model.Session.query(XRoadError) \
+        .filter(not_(XRoadError.message.like("Fetch of REST services failed%"))) \
         .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
 
+    list_errors = []
+    page = 0
+    if "page" in data_dict and data_dict.get('page') is not None:
+        page = int(data_dict.get('page'))
     organization_id = data_dict.get('organization')
     if organization_id:
         try:
@@ -686,28 +692,48 @@ def xroad_error_list(context, data_dict):
         except toolkit.ObjectNotFound:
             raise toolkit.ObjectNotFound(toolkit._(u"Organization not found"))
 
+        data_dict['organization'] = organization_id
         xroad_id = organization_id.split('.')
         if len(xroad_id) == 3:  # Valid xroad id
-            rest_services_failed_errors = rest_services_failed_errors.filter(XRoadError.xroad_instance == xroad_id[0])\
-                .filter(XRoadError.member_class == xroad_id[1])\
+            rest_services_failed_errors = rest_services_failed_errors.filter(XRoadError.xroad_instance == xroad_id[0]) \
+                .filter(XRoadError.member_class == xroad_id[1]) \
                 .filter(XRoadError.member_code == xroad_id[2])
 
             other_errors = other_errors.filter(XRoadError.xroad_instance == xroad_id[0]) \
                 .filter(XRoadError.member_class == xroad_id[1]) \
                 .filter(XRoadError.member_code == xroad_id[2])
+
+            list_errors = fetch_list_errors(context, data_dict)
+
+            date_start = start - datetime.timedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)
+            date_end = start
+            show_history = True
         else:
             raise toolkit.Invalid(toolkit._(u"Organization id is not valid X-Road id"))
 
     rest_services_failed_errors = rest_services_failed_errors.all()
     other_errors = other_errors.all()
 
+    max_pages = int(list_errors['numberOfPages']) if "numberOfPages" in list_errors else 1
+    previous_page = (page - 1) if (page > 0) else 0
+    next_page = (page + 1) if (page < max_pages) else max_pages
+    page += 1
+
+    errors = list_errors['errorLogList'] if "errorLogList" in list_errors else list_errors
+
     return {
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
+        "list_errors": [error for error in errors],
         "other_errors": [error.as_dict() for error in other_errors],
         "date": start,
+        "date_start": date_start,
+        "date_end": date_end,
+        "show_history": show_history,
         "previous": (start - relativedelta.relativedelta(days=1)).date(),
         "next": (start + relativedelta.relativedelta(days=1)).date(),
-        "organization": organization_id
+        "organization": organization_id,
+        "previous_page": previous_page,
+        "next_page": next_page
     }
 
 
@@ -719,7 +745,7 @@ def fetch_xroad_stats(context, data_dict):
     log.info("Fetching X-Road stats for the last %s days" % days)
 
     try:
-        statistics_data = xroad_catalog_query('getServiceStatistics', str(days)).json()
+        statistics_data = xroad_catalog_query('getServiceStatistics', [str(days)]).json()
 
         if statistics_data is None:
             log.warn("Calling getServiceStatistics failed!")
@@ -759,7 +785,7 @@ def fetch_distinct_service_stats(context, data_dict):
     log.info("Fetching X-Road distinct service stats for the last %s days" % days)
 
     try:
-        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', str(days)).json()
+        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', [str(days)]).json()
 
         if statistics_data is None:
             log.warn("Calling getDistinctServiceStatistics failed!")
@@ -788,8 +814,46 @@ def fetch_distinct_service_stats(context, data_dict):
         return {"success": False, "message": "Fetching distinct service statistics failed."}
 
 
-def xroad_stats(context, data_dict):
+def fetch_list_errors(context, data_dict):
+    toolkit.check_access('fetch_list_errors', context)
 
+    organization = data_dict.get('organization')
+    page = 0
+    if "page" in data_dict and data_dict.get('page') is not None:
+        page = data_dict.get('page')
+    limit = DEFAULT_LIST_ERRORS_PAGE_LIMIT
+    if "limit" in data_dict and data_dict.get('limit') is not None:
+        limit = data_dict.get('limit')
+    if not organization:
+        return []
+    xroad_id = organization.split('.')
+    xroad_instance = xroad_id[0] if len(xroad_id) == 3 else ''
+    member_class = xroad_id[1] if len(xroad_id) == 3 else ''
+    member_code = xroad_id[2] if len(xroad_id) == 3 else ''
+
+    days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
+
+    log.info("Fetching X-Road errors for the last %s days" % days)
+
+    try:
+        pagination = {"page": str(page), "limit": str(limit)}
+        error_data = xroad_catalog_query('listErrors', [xroad_instance, member_class, member_code, str(days)], pagination=pagination).json()
+
+        if error_data is None:
+            log.warn("Calling listErrors failed!")
+            return {'success': False, 'message': 'Calling listErrors failed!'}
+        elif "errorLogList" not in error_data:
+            return []
+
+        return error_data
+
+    except ConnectionError as e:
+        log.warn("Calling listErrors failed!")
+        log.info(e)
+        return {"success": False, "message": "Fetching errors failed."}
+
+
+def xroad_stats(context, data_dict):
     toolkit.check_access('xroad_stats', context)
 
     stats = model.Session.query(XRoadStat).order_by(XRoadStat.date.desc()).all()
@@ -798,7 +862,6 @@ def xroad_stats(context, data_dict):
 
 
 def xroad_distinct_service_stats(context, data_dict):
-
     toolkit.check_access('xroad_distinct_service_stats', context)
 
     stats = model.Session.query(XRoadDistinctServiceStat).order_by(XRoadDistinctServiceStat.date.desc()).all()

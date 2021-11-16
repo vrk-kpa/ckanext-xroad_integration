@@ -1,7 +1,6 @@
 import click
 
-from ckan.lib.cli import load_config, click_config_option, paster_click_group
-from ckan.plugins.toolkit import get_action
+from ckan.lib.cli import paster_click_group
 import ckan.plugins.toolkit as toolkit
 import ckanext.xroad_integration.utils as utils
 import ckan.lib.mailer as mailer
@@ -15,55 +14,41 @@ xroad_commands = paster_click_group(
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
-def update_xroad_organizations(ctx, config):
-    load_config(config or ctx.obj['config'])
+def update_xroad_organizations():
     utils.update_xroad_organizations()
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
-def fetch_errors(ctx, config):
-    load_config((config or ctx.obj['config']))
+def fetch_errors():
     utils.fetch_errors()
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
 @click.option(u'--days', type=int)
-def fetch_stats(ctx, config, days):
-    load_config((config or ctx.obj['config']))
-
+def fetch_stats(days):
     utils.fetch_stats(days)
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
 @click.option(u'--days', type=int)
-def fetch_distinct_service_stats(ctx, config, days):
-    load_config((config or ctx.obj['config']))
-
+def fetch_distinct_service_stats(days):
     utils.fetch_distinct_service_stats(days)
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
 @click.option(u'--days', type=int)
-def fetch_service_list(ctx, config, days):
-    load_config((config or ctx.obj['config']))
+def fetch_list_errors(days):
+    utils.fetch_list_errors(days)
+
+
+@xroad_commands.command()
+@click.option(u'--days', type=int)
+def fetch_service_list(days):
     utils.fetch_service_list(days)
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
-def latest_batch_run_results(ctx, config):
-    load_config((config or ctx.obj['config']))
+def latest_batch_run_results():
     results = utils.latest_batch_run_results()
 
     columns = ['service', 'result', 'timestamp', 'message']
@@ -79,20 +64,13 @@ def latest_batch_run_results(ctx, config):
 
 
 @xroad_commands.command()
-@click_config_option
-@click.pass_context
-def init_db(ctx, config):
-    load_config((config or ctx.obj['config']))
-
+def init_db():
     utils.init_db()
 
 
 @xroad_commands.command()
 @click.option(u'--yes-i-am-sure/--no-i-am-not-sure', default=False)
-@click_config_option
-@click.pass_context
-def drop_db(ctx, config, yes_i_am_sure):
-    load_config((config or ctx.obj['config']))
+def drop_db(yes_i_am_sure):
     if yes_i_am_sure:
         utils.drop_db()
         click.secho(u"DB tables dropped", fg=u"green")
@@ -102,10 +80,7 @@ def drop_db(ctx, config, yes_i_am_sure):
 
 @xroad_commands.command()
 @click.option(u'--dryrun', is_flag=True)
-@click_config_option
-@click.pass_context
-def send_latest_batch_run_results_email(ctx, config, dryrun):
-    load_config((config or ctx.obj['config']))
+def send_latest_batch_run_results_email(dryrun):
     results = utils.latest_batch_run_results()
     failed = [r for r in results if r.get('success') is not True]
 

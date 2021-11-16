@@ -175,7 +175,7 @@ xroad.add_url_rule(u'/services', view_func=services)
 xroad_organization = Blueprint(u'xroad_organization', __name__, url_prefix=u'/organization/xroad')
 
 
-def organization_errors(organization, date=None):
+def organization_errors(organization):
     try:
         context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
         check_access(u'organization_update', context, {'id': organization})
@@ -183,7 +183,8 @@ def organization_errors(organization, date=None):
         abort(403, _(u'Need to be organization administrator to administer'))
 
     try:
-        error_list = get_action('xroad_error_list')({}, {"date": date, "organization": organization})
+        page = request.args.get(u'page')
+        error_list = get_action('xroad_error_list')({}, {"organization": organization, "page": page})
     except ObjectNotFound:
         abort(404, _(u'Organization not found'))
     except Invalid as e:
@@ -192,7 +193,6 @@ def organization_errors(organization, date=None):
     return render('organization/xroad_errors.html', extra_vars={"error_list": error_list})
 
 
-xroad_organization.add_url_rule(u'/<organization>/errors/<date>', view_func=organization_errors, strict_slashes=False)
 xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
 
 
