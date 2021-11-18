@@ -6,9 +6,9 @@ ckan.module('xroad_stats', function ($) {
       console.log('xroad_stats.initialize')
 
       let data = xroadServicesGraphData.concat();
-      let distinctServiceCounts = data.map(d => d.distinctServiceCount)
-      let dataMinValue = Math.min.apply(null, distinctServiceCounts)
-      let dataMaxValue = Math.max.apply(null, distinctServiceCounts)
+      let serviceCounts = data.map(d => (d.soapServiceCount + d.restServiceCount + d.openapiServiceCount))
+      let dataMinValue = Math.min.apply(null, serviceCounts)
+      let dataMaxValue = Math.max.apply(null, serviceCounts)
 
       let ctx = document
         .getElementById('serviceCountCanvas')
