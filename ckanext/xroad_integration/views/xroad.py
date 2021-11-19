@@ -50,7 +50,7 @@ def stats():
         response = make_response()
         response.headers['Content-Type'] = 'text/csv'
         response.headers['Content-Disposition'] = 'inline; filename="xroad_stats.csv"'
-        fieldnames = ['date', 'soap_service_count', 'rest_service_count', 'openapi_service_count', 'distinct_service_count' ]
+        fieldnames = ['date', 'soap_service_count', 'rest_service_count', 'openapi_service_count']
         writer = csv.DictWriter(response.stream, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -58,8 +58,7 @@ def stats():
             row = {'date': stat.get('date'),
                    'soap_service_count': stat.get('soap_service_count'),
                    'rest_service_count': stat.get('rest_service_count'),
-                   'openapi_service_count': stat.get('openapi_service_count'),
-                   'distinct_service_count': stat.get('distinct_service_count')
+                   'openapi_service_count': stat.get('openapi_service_count')
                    }
             writer.writerow(row)
 
