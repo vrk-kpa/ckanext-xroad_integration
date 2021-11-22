@@ -719,7 +719,11 @@ def xroad_error_list(context, data_dict):
     next_page = (page + 1) if (page < max_pages) else max_pages
     page += 1
 
-    errors = list_errors['errorLogList'] if "errorLogList" in list_errors else list_errors
+    errors = list_errors
+    if "errorLogList" in list_errors:
+        errors = list_errors['errorLogList']
+        for error in errors:
+            error['created'] = parse_xroad_catalog_datetime(error['created'])
 
     return {
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
