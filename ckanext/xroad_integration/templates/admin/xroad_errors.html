@@ -22,7 +22,7 @@
                     <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 35%">{% trans %}Message{% endtrans %}</th>
+                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
                     <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
                 </tr>
             </thead>
@@ -30,8 +30,8 @@
             {% for error in error_list.list_errors %}
                 <tr>
                     <td>{{ h.render_datetime(error.created) }}</td>
-                    <td>{{ error.xroadInstance }}.{{ error.memberClass }}.{{ error.memberCode }}.{{ error.subsystemCode }}</td>
-                    <td>{{ error.serviceCode }}.{{ error.serviceVersion }}</td>
+                    <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
+                    <td>{{ error.service_code }}.{{ error.service_version }}</td>
                     <td>{{ error.message }}</td>
                     <td>{{ error.code }}</td>
                 </tr>
@@ -53,7 +53,7 @@
                     <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 35%">{% trans %}Message{% endtrans %}</th>
+                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
                     <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
                 </tr>
             </thead>
@@ -76,7 +76,7 @@
                     <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
                     <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 35%">{% trans %}Message{% endtrans %}</th>
+                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
                     <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
                 </tr>
             </thead>
