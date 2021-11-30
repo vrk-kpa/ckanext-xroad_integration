@@ -27,7 +27,7 @@ COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
-DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS = 60
+DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS = 90
 DEFAULT_LIST_ERRORS_PAGE_LIMIT = 20
 
 
@@ -681,10 +681,13 @@ def xroad_error_list(context, data_dict):
         .filter(not_(XRoadError.message.like("Fetch of REST services failed%"))) \
         .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
 
-    list_errors = []
+    list_errors = model.Session.query(XRoadError) \
+        .filter(and_(XRoadError.created >= start), (XRoadError.created <= end))
+
     page = 0
     if "page" in data_dict and data_dict.get('page') is not None:
         page = int(data_dict.get('page'))
+
     organization_id = data_dict.get('organization')
     if organization_id:
         try:
@@ -703,7 +706,9 @@ def xroad_error_list(context, data_dict):
                 .filter(XRoadError.member_class == xroad_id[1]) \
                 .filter(XRoadError.member_code == xroad_id[2])
 
-            list_errors = fetch_list_errors(context, data_dict)
+            list_errors = list_errors.filter(XRoadError.xroad_instance == xroad_id[0]) \
+                .filter(XRoadError.member_class == xroad_id[1]) \
+                .filter(XRoadError.member_code == xroad_id[2])
 
             date_start = start - datetime.timedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)
             date_end = start
@@ -714,20 +719,16 @@ def xroad_error_list(context, data_dict):
     rest_services_failed_errors = rest_services_failed_errors.all()
     other_errors = other_errors.all()
 
-    max_pages = int(list_errors['numberOfPages']) if "numberOfPages" in list_errors else 1
+    max_pages = 1
+    if list_errors.count() > DEFAULT_LIST_ERRORS_PAGE_LIMIT:
+        max_pages = int(list_errors.count() / DEFAULT_LIST_ERRORS_PAGE_LIMIT)
     previous_page = (page - 1) if (page > 0) else 0
     next_page = (page + 1) if (page < max_pages) else max_pages
     page += 1
 
-    errors = list_errors
-    if "errorLogList" in list_errors:
-        errors = list_errors['errorLogList']
-        for error in errors:
-            error['created'] = parse_xroad_catalog_datetime(error['created'])
-
     return {
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
-        "list_errors": [error for error in errors],
+        "list_errors": [error.as_dict() for error in list_errors],
         "other_errors": [error.as_dict() for error in other_errors],
         "date": start,
         "date_start": date_start,
@@ -816,45 +817,6 @@ def fetch_distinct_service_stats(context, data_dict):
         log.warn("Calling getDistinctServiceStatistics failed!")
         log.info(e)
         return {"success": False, "message": "Fetching distinct service statistics failed."}
-
-
-def fetch_list_errors(context, data_dict):
-    toolkit.check_access('fetch_list_errors', context)
-
-    organization = data_dict.get('organization')
-    page = 0
-    if "page" in data_dict and data_dict.get('page') is not None:
-        page = data_dict.get('page')
-    limit = DEFAULT_LIST_ERRORS_PAGE_LIMIT
-    if "limit" in data_dict and data_dict.get('limit') is not None:
-        limit = data_dict.get('limit')
-    if not organization:
-        return []
-    xroad_id = organization.split('.')
-    xroad_instance = xroad_id[0] if len(xroad_id) == 3 else ''
-    member_class = xroad_id[1] if len(xroad_id) == 3 else ''
-    member_code = xroad_id[2] if len(xroad_id) == 3 else ''
-
-    days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
-
-    log.info("Fetching X-Road errors for the last %s days" % days)
-
-    try:
-        pagination = {"page": str(page), "limit": str(limit)}
-        error_data = xroad_catalog_query('listErrors', [xroad_instance, member_class, member_code, str(days)], pagination=pagination).json()
-
-        if error_data is None:
-            log.warn("Calling listErrors failed!")
-            return {'success': False, 'message': 'Calling listErrors failed!'}
-        elif "errorLogList" not in error_data:
-            return []
-
-        return error_data
-
-    except ConnectionError as e:
-        log.warn("Calling listErrors failed!")
-        log.info(e)
-        return {"success": False, "message": "Fetching errors failed."}
 
 
 def xroad_stats(context, data_dict):
