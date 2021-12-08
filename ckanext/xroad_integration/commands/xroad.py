@@ -37,12 +37,6 @@ def fetch_distinct_service_stats(days):
 
 @xroad_commands.command()
 @click.option(u'--days', type=int)
-def fetch_list_errors(days):
-    utils.fetch_list_errors(days)
-
-
-@xroad_commands.command()
-@click.option(u'--days', type=int)
 def fetch_service_list(days):
     utils.fetch_service_list(days)
 

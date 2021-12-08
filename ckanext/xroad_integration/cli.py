@@ -77,16 +77,6 @@ def fetch_distinct_service_stats(ctx, days):
 @xroad.command()
 @click.pass_context
 @click.option(u'--days', type=int)
-def fetch_list_errors(ctx, days):
-    'Fetches X-Road errors from catalog lister'
-    flask_app = ctx.meta["flask_app"]
-    with flask_app.test_request_context():
-        utils.fetch_list_errors(days)
-
-
-@xroad.command()
-@click.pass_context
-@click.option(u'--days', type=int)
 def fetch_service_list(ctx, days):
     'Fetches X-Road services from catalog lister'
     flask_app = ctx.meta["flask_app"]
