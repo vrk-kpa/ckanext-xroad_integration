@@ -912,20 +912,23 @@ def fetch_xroad_heartbeat(context, data_dict):
 
 def xroad_heartbeat(context, data_dict):
     toolkit.check_access('xroad_heartbeat', context)
-    heartbeat = XRoadHeartbeat.get_latest().as_dict()
-    return {'success': True, 'heartbeat': heartbeat}
+    heartbeat = XRoadHeartbeat.get_latest()
+    if heartbeat is None:
+        return {'success': False, 'heartbeat': None}
+    else:
+        return {'success': True, 'heartbeat': heartbeat.as_dict()}
 
 
 def xroad_heartbeat_history(context, data_dict):
     toolkit.check_access('xroad_heartbeat', context)
 
     def parse_datetime_or_now(s):
-        if s is None:
-            return datetime.datetime.now()
+        if isinstance(s, datetime.datetime):
+            return s
         else:
             return datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
 
-    since = parse_datetime_or_now(data_dict.get('since', '1900-01-01T00:00:00'))
-    until = parse_datetime_or_now(data_dict.get('until'))
+    since = parse_datetime_or_now(data_dict.get('since', datetime.datetime.min))
+    until = parse_datetime_or_now(data_dict.get('until', datetime.datetime.now()))
     items = [i.as_dict() for i in XRoadHeartbeat.get_between(since, until)]
     return {'success': True, 'items': items}
