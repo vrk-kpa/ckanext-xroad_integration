@@ -37,7 +37,8 @@ def drop_db(yes_i_am_sure):
         utils.drop_db()
         click.secho(u"DB tables dropped", fg=u"green")
     else:
-        click.secho(u"This will delete all xroad data in the database! If you are sure, run this command with the --yes-i-am-sure option.", fg=u"yellow")
+        click.secho(u"This will delete all xroad data in the database! If you are sure, "
+                    u"run this command with the --yes-i-am-sure option.", fg=u"yellow")
 
 
 @xroad.command()
@@ -95,6 +96,7 @@ def fetch_heartbeat(ctx):
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         utils.fetch_xroad_heartbeat()
+
 
 @xroad.command()
 def latest_batch_run_results():

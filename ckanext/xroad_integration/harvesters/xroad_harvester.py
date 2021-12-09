@@ -312,11 +312,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             harvest_object.current = False
             return True
 
-        contains_wsdls = False
-        contains_openapi_descriptions = False
         services = xroad_list_to_list(dataset['subsystem'], 'services', 'service')
-        contains_wsdls = any('data' in s.get('wsdl', {}) for s in services)
-        contains_openapi_descriptions = any('data' in s.get('openapi', {}) for s in services)
 
         if dataset['owner'] is not None:
             local_org = dataset['owner']['name']
@@ -412,7 +408,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 service_description_data_utf8 = service_description_data.encode('utf-8')
 
                 wsdl = service.get('wsdl')
-                openapi = service.get('openapi')
 
                 # Todo: Validity of openapi ?
                 if wsdl:
@@ -438,7 +433,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 resource_data['format'] = resource_format
                 resource_data['valid_content'] = "yes" if valid_wsdl else "no"
             elif unknown_service_link_url is None:
-                log.warn('Unknown type service %s.%s harvested, but ckanext.xroad_integration.unknown_service_link_url is not set!',
+                log.warn('Unknown type service %s.%s harvested, but '
+                         'ckanext.xroad_integration.unknown_service_link_url is not set!',
                          package_dict['id'], name)
                 continue
             else:
@@ -478,7 +474,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         log.info('Created API %s', package_dict['name'])
 
         return result
-
 
     def _get_xroad_catalog(self, url, changed_after):
         # type: (str, str) -> dict
@@ -850,6 +845,7 @@ def parse_service_version(v):
     else:
         raise Exception('Unexpected service version type: {}'.format(repr(type(v))))
 
+
 def generate_service_name(service):
     service_code = service.get('serviceCode')
     if service_code is None:
@@ -860,4 +856,3 @@ def generate_service_name(service):
         return service_code
 
     return '%s.%s' % (service_code, service_version)
-

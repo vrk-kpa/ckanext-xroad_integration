@@ -88,14 +88,12 @@ def distinct_service_stats():
     # Sort by date, pick first data point, last data point and the first data point of each month, then crop to last 24
     xroad_stats_sorted = sorted(xroad_stats, key=lambda d: d.get('date'))
 
-    data_format = request.args.get('format')
-
     xroad_stats_service_graph_data = [d for i, d in enumerate(xroad_stats_sorted)
                                       if i == 0 or i == len(xroad_stats_sorted) - 1
                                       or d.get('date', '')[:7] != xroad_stats_sorted[i - 1].get('date', '')[:7]][-24:]
 
-    return render('/admin/xroad_distinct_service_stats.html', extra_vars={'xroad_stats': xroad_stats,
-                                                                          'xroad_stats_service_graph_data': xroad_stats_service_graph_data})
+    return render('/admin/xroad_distinct_service_stats.html',
+                  extra_vars={'xroad_stats': xroad_stats, 'xroad_stats_service_graph_data': xroad_stats_service_graph_data})
 
 
 xroad.add_url_rule(u'/distinct_service_stats', view_func=distinct_service_stats)
