@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+
 import jinja2
 from ckan.lib import mailer
+
 from datetime import datetime
 
 import click
@@ -52,11 +54,19 @@ def update_xroad_organizations(ctx):
 
 @xroad.command()
 @click.pass_context
-def fetch_errors(ctx):
-    'Fetches error log from catalog lister'
+@click.option(u'--since')
+def fetch_errors(ctx, since):
+    """Fetches error log from catalog lister"""
+    if since:
+        try:
+            datetime.strptime(since, "%Y-%m-%d")
+        except ValueError:
+            click.secho("Since dates should be given in format YYYY-MM-DD", fg="red")
+            return
+
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.fetch_errors()
+        utils.fetch_errors(since)
 
 
 @xroad.command()

@@ -26,9 +26,9 @@ def update_xroad_organizations():
                                                                     'message': result.get('message')})
 
 
-def fetch_errors():
+def fetch_errors(since):
     try:
-        results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {})
+        results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {'since': since })
     except Exception as e:
         results = {'success': False, 'message': 'Exception: {}'.format(e)}
 
