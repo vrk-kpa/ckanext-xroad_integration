@@ -84,8 +84,6 @@ setup(
         wsdl_view=ckanext.xroad_integration.view:WSDL_ViewPlugin
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
-        [paste.paster_command]
-        xroad = ckanext.xroad_integration.commands.xroad:xroad_commands
     ''',
 
     # If you are changing from the default layout of your extension, you may
