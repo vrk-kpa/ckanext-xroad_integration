@@ -434,11 +434,14 @@ def fetch_xroad_errors(context, data_dict):
         source_title = harvest_source.get('title', '')
         source_url = harvest_source.get('url', '')
 
-        last_fetched = XRoadError.get_last_date()
-        if last_fetched is None:
-            last_fetched = '2016-01-01T00:00:00'
+        if data_dict.get('since'):
+            last_fetched = data_dict.get('since') + "T:00:00:00"
         else:
-            last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
+            last_fetched = XRoadError.get_last_date()
+            if last_fetched is None:
+                last_fetched = '2016-01-01T00:00:00'
+            else:
+                last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
 
         log.info("Fetching errors since %s for %s" % (last_fetched, source_title))
 
