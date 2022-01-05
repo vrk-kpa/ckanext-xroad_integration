@@ -526,7 +526,8 @@ def fetch_xroad_service_list(context, data_dict):
         return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
     elif 'memberData' not in service_list_data:
         print(service_list_data)
-        return {'success': False, 'message': 'Calling getListOfServices returned message: "{}"'.format(service_list_data.get('message', ''))}
+        return {'success': False, 'message': 'Calling getListOfServices returned message: "{}"'
+                .format(service_list_data.get('message', ''))}
 
     for member_list_data in service_list_data.get('memberData', []):
         fetch_timestamp = parse_xroad_catalog_datetime(member_list_data.get('date'))
@@ -608,26 +609,22 @@ def xroad_service_list(context, data_dict):
     # Enrich data with current information
     organization_ids = set(xroad_member_id(m) for sl in results for m in sl['members'])
 
-    organization_titles = {k: json.loads(v) for k, v in (
-        model.Session.query(model.Group.id, model.GroupExtra.value)
-            .filter(model.Group.id.in_(organization_ids))
-            .filter(model.Group.id == model.GroupExtra.group_id)
-            .filter(model.GroupExtra.key == 'title_translated')
-            .filter(model.GroupExtra.state == 'active')
-    ).all()}
+    organization_titles = {
+        k: json.loads(v) for k, v in (model.Session.query(model.Group.id, model.GroupExtra.value)
+                                      .filter(model.Group.id.in_(organization_ids))
+                                      .filter(model.Group.id == model.GroupExtra.group_id)
+                                      .filter(model.GroupExtra.key == 'title_translated')
+                                      .filter(model.GroupExtra.state == 'active')).all()
+    }
 
     from sqlalchemy import func
-    resource_counts = dict((
-                               model.Session.query(model.Group.id, func.count(model.Resource.id))
-                                   .join(model.Package, model.Package.owner_org == model.Group.id)
-                                   .join(model.Resource, model.Resource.package_id == model.Package.id)
-                                   .filter(model.Group.id.in_(organization_ids))
-                                   .filter(model.Package.state == 'active')
-                                   .group_by(model.Group.id)
-                           ).all())
-    # from pprint import pformat
-    # log.info(pformat(organization_titles))
-    # log.info(pformat(resource_counts))
+    resource_counts = dict((model.Session.query(model.Group.id, func.count(model.Resource.id))
+                            .join(model.Package, model.Package.owner_org == model.Group.id)
+                            .join(model.Resource, model.Resource.package_id == model.Package.id)
+                            .filter(model.Group.id.in_(organization_ids))
+                            .filter(model.Package.state == 'active')
+                            .group_by(model.Group.id)).all()
+                           )
 
     # Remove unnecessary data from response
     for sl in results:
@@ -759,7 +756,8 @@ def fetch_xroad_stats(context, data_dict):
             log.warn("Calling getServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getServiceStatistics failed!'}
         elif 'serviceStatisticsList' not in statistics_data:
-            return {'success': False, 'message': 'Calling getServiceStatistics returned message: "{}"'.format(statistics_data.get('message', ''))}
+            return {'success': False, 'message': 'Calling getServiceStatistics returned message: "{}"'
+                    .format(statistics_data.get('message', ''))}
 
         statistics_list = statistics_data.get('serviceStatisticsList', [])
 
@@ -799,7 +797,8 @@ def fetch_distinct_service_stats(context, data_dict):
             log.warn("Calling getDistinctServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
         elif 'distinctServiceStatisticsList' not in statistics_data:
-            return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'.format(statistics_data.get('message', ''))}
+            return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'
+                    .format(statistics_data.get('message', ''))}
 
         statistics_list = statistics_data.get('distinctServiceStatisticsList', [])
 
@@ -814,7 +813,8 @@ def fetch_distinct_service_stats(context, data_dict):
             else:
                 XRoadDistinctServiceStat.create(date, statistics['numberOfDistinctServices'])
 
-        return {"success": True, "message": "Distinct service statistics for %s days stored in database." % len(statistics_list)}
+        return {"success": True, "message": "Distinct service statistics for %s days stored in database."
+                                            % len(statistics_list)}
 
     except ConnectionError as e:
         log.warn("Calling getDistinctServiceStatistics failed!")
@@ -840,7 +840,8 @@ def xroad_distinct_service_stats(context, data_dict):
 
 def xroad_batch_result_create(context, data_dict):
     toolkit.check_access('xroad_batch_result', context)
-    XRoadBatchResult.create(data_dict['service'], data_dict['success'], params=data_dict.get('params'), message=data_dict.get('message'))
+    XRoadBatchResult.create(data_dict['service'], data_dict['success'], params=data_dict.get('params'),
+                            message=data_dict.get('message'))
     return {'success': True}
 
 

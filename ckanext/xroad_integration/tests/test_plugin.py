@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
 
-from  ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock 
+from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 import pytest
 import json
 import os
@@ -8,13 +8,13 @@ from multiprocessing import Process
 from ckanext.xroad_integration.harvesters.xroad_harvester import XRoadHarvesterPlugin
 from ckantoolkit.tests.helpers import call_action
 from ckanext.harvest.tests.lib import run_harvest
-from ckan.logic import NotFound
 
 
 XROAD_REST_ADAPTERS = {
         'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'test_listmembers.json'},
         'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092, 'content': 'test_delete_listmembers.json'}
         }
+
 
 def xroad_rest_adapter_url(adapter_name):
     return 'http://{host}:{port}/rest-adapter-service'.format(**XROAD_REST_ADAPTERS[adapter_name])
@@ -50,6 +50,7 @@ def xroad_database_setup():
     yield
 
     drop_db()
+
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 @pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
@@ -102,9 +103,9 @@ def test_delete(xroad_rest_adapter_mocks):
 
     results = run_harvest(url=xroad_rest_adapter_url('delete_one_of_each'), harvester=harvester)
     large = call_action('package_show', id='TEST.ORG.000003-3.LargeSubsystem')
-    should_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
 
     # FIXME: Unclear whether organizations should actually be removed
+    # hould_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
     # assert(should_be_removed_org.get('state') == 'deleted')
     assert(results['TEST.ORG.000003-3.EmptySubsystem']['report_status'] == 'deleted')
     assert(set(r['name'] for r in large.get('resources', [])) == set(['openapiService.1', 'unknown', 'unknownWithVersion.1']))

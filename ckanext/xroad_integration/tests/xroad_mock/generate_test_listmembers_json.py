@@ -4,6 +4,7 @@ import json
 # Utilities
 #
 
+
 def xroad_list(inner_name, contents):
     if len(contents) == 0:
         return ''
@@ -96,6 +97,7 @@ SOME_LATER_DATE = '2020-02-20T02:02:20.202+02:00'
 # Test data generators
 #
 
+
 def generate_unknown_service():
     return create_service('unknown', SOME_DATE, SOME_DATE, SOME_DATE)
 
@@ -157,7 +159,8 @@ def generate_removed_member():
 
 def generate_member_with_one_empty_subsystem():
     subsystems = [generate_empty_subsystem()]
-    return create_member('TEST', 'MUN', '000002-2', 'One subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
+    return create_member('TEST', 'MUN', '000002-2', 'One subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE,
+                         subsystems=subsystems)
 
 
 def generate_member_with_one_wsdl_subsystem():
@@ -166,7 +169,8 @@ def generate_member_with_one_wsdl_subsystem():
                 generate_service_with_wsdl()
             ])
         ]
-    return create_member('TEST', 'MUN', '00000442', 'One wsdl subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
+    return create_member('TEST', 'MUN', '00000442', 'One wsdl subsystem organization', SOME_DATE, SOME_DATE, SOME_DATE,
+                         subsystems=subsystems)
 
 
 def generate_member_with_various_subsystems():
@@ -176,7 +180,8 @@ def generate_member_with_various_subsystems():
             generate_subsystem_with_one_unknown_service(),
             generate_subsystem_with_various_services(),
             ]
-    return create_member('TEST', 'ORG', '000003-3', 'Large organization', SOME_DATE, SOME_DATE, SOME_DATE, subsystems=subsystems)
+    return create_member('TEST', 'ORG', '000003-3', 'Large organization', SOME_DATE, SOME_DATE, SOME_DATE,
+                         subsystems=subsystems)
 
 
 def generate_base_memberlist():
@@ -193,19 +198,28 @@ def generate_base_memberlist():
 
 def generate_delete_one_of_each_memberlist():
     return create_memberlist(members=[
-            dict(generate_member_with_one_wsdl_subsystem(), fetched=SOME_LATER_DATE, changed=SOME_LATER_DATE, removed=SOME_LATER_DATE),
-            create_member('TEST', 'ORG', '000003-3', 'Updated Large Organization',
-                          SOME_DATE, SOME_LATER_DATE, SOME_LATER_DATE, subsystems=[
-                dict(generate_empty_subsystem(), removed=SOME_LATER_DATE),
-                create_subsystem('LargeSubsystem', SOME_DATE, SOME_LATER_DATE, SOME_LATER_DATE, services=[
-                    dict(generate_service_with_wsdl(), fetched=SOME_LATER_DATE, changed=SOME_LATER_DATE, removed=SOME_LATER_DATE),
-                ])
-            ])
-        ])
+                                 dict(generate_member_with_one_wsdl_subsystem(),
+                                      fetched=SOME_LATER_DATE,
+                                      changed=SOME_LATER_DATE,
+                                      removed=SOME_LATER_DATE),
+                                 create_member('TEST', 'ORG', '000003-3', 'Updated Large Organization',
+                                               SOME_DATE, SOME_LATER_DATE, SOME_LATER_DATE,
+                                               subsystems=[
+                                                   dict(generate_empty_subsystem(), removed=SOME_LATER_DATE),
+                                                   create_subsystem('LargeSubsystem', SOME_DATE, SOME_LATER_DATE,
+                                                                    SOME_LATER_DATE, services=[
+                                                                        dict(generate_service_with_wsdl(),
+                                                                             fetched=SOME_LATER_DATE,
+                                                                             changed=SOME_LATER_DATE,
+                                                                             removed=SOME_LATER_DATE),
+                                                                    ])
+                                               ])
+                             ])
 
 #
 # Main
 #
+
 
 if __name__ == '__main__':
     import sys
@@ -227,5 +241,3 @@ if __name__ == '__main__':
     else:
         sys.stderr.write('ERROR: No such generator: {}'.format(args.generator))
         sys.exit(-1)
-
-
