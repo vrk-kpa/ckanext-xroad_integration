@@ -428,50 +428,68 @@ def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
     errors = []
-    harvest_sources = xroad_harvest_sources(context)
 
-    for harvest_source in harvest_sources:
-        source_title = harvest_source.get('title', '')
-        source_url = harvest_source.get('url', '')
+    page = 0
+    if "page" in data_dict and data_dict.get('page') is not None:
+        page = data_dict.get('page')
+    limit = DEFAULT_LIST_ERRORS_PAGE_LIMIT
+    if "limit" in data_dict and data_dict.get('limit') is not None:
+        limit = data_dict.get('limit')
 
-        if data_dict.get('since'):
-            last_fetched = data_dict.get('since') + "T00:00:00"
-        else:
-            last_fetched = XRoadError.get_last_date()
-            if last_fetched is None:
-                last_fetched = '2016-01-01T00:00:00'
-            else:
-                last_fetched = last_fetched.strftime('%Y-%m-%dT%H:%M:%S')
+    days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
+    log.info("Fetching X-Road errors for the last %s days" % days)
 
-        log.info("Fetching errors since %s for %s" % (last_fetched, source_title))
+    try:
+        pagination = {"page": str(page), "limit": str(limit)}
+        error_data = xroad_catalog_query('listErrors', [str(days)], pagination=pagination).json()
 
-        try:
-            r = http.get(source_url + '/Consumer/GetErrors', params={'since': last_fetched},
-                         headers={'Accept': 'application/json'})
+        if error_data is None:
+            log.warn("Calling listErrors failed!")
+            return {'success': False, 'message': 'Calling listErrors failed!'}
+        elif "errorLogList" not in error_data:
+            return []
 
-            error_log = r.json().get('errorLogList', {}).get('errorLog', [])
-            for error in error_log:
-                mapped_error = {
-                    "message": error['message'],
-                    "code": error['code'],
-                    "created": error['created'],
-                    "xroad_instance": error['xRoadInstance'],
-                    "member_class": error['memberClass'],
-                    "member_code": error['memberCode'],
-                    "subsystem_code": error['subsystemCode'],
-                    "service_code": error.get('serviceCode', ''),
-                    "service_version": error.get('serviceVersion', ''),
-                    "server_code": error.get('serverCode', ''),
-                    "security_category_code": error.get('securityCategoryCode', ''),
-                    "group_code": error.get('groupCode', '')
-                }
+        no_of_pages = error_data.get('numberOfPages', 0)
+        for page_no in range(no_of_pages):
+            try:
+                pagination = {"page": str(page_no), "limit": str(limit)}
+                error_data = xroad_catalog_query('listErrors', [str(days)], pagination=pagination).json()
 
-                XRoadError.create(**mapped_error)
+                if error_data is None:
+                    log.warn("Calling listErrors failed!")
+                    return {'success': False, 'message': 'Calling listErrors failed!'}
+                elif "errorLogList" not in error_data:
+                    return []
 
-            results.append({"message": "%d errors stored to database." % len(error_log)})
-        except ConnectionError:
-            log.warn("Calling GetErrors failed for %s!", source_title)
-            errors.append("Calling GetErrors failed for %s!" % source_title)
+                error_log_list = error_data.get('errorLogList', [])
+
+                for error in error_log_list:
+                    mapped_error = {
+                        "message": error['message'],
+                        "code": error['code'],
+                        "created": error['created'],
+                        "xroad_instance": error['xroadInstance'],
+                        "member_class": error['memberClass'],
+                        "member_code": error['memberCode'],
+                        "subsystem_code": error['subsystemCode'],
+                        "service_code": error.get('serviceCode', ''),
+                        "service_version": error.get('serviceVersion', ''),
+                        "server_code": error.get('serverCode', ''),
+                        "security_category_code": error.get('securityCategoryCode', ''),
+                        "group_code": error.get('groupCode', '')
+                    }
+                    XRoadError.create(**mapped_error)
+
+                results.append({"message": "%d errors stored to database." % len(error_log_list)})
+            except ConnectionError as e:
+                log.warn("Calling listErrors failed!")
+                log.info(e)
+                return {"success": False, "message": "Fetching errors failed."}
+
+    except ConnectionError as e:
+        log.warn("Calling listErrors failed!")
+        log.info(e)
+        return {"success": False, "message": "Fetching errors failed."}
 
     if errors:
         return {"success": False, "message": ", ".join(errors)}
@@ -794,7 +812,7 @@ def fetch_distinct_service_stats(context, data_dict):
         statistics_data = xroad_catalog_query('getDistinctServiceStatistics', [str(days)]).json()
 
         if statistics_data is None:
-            log.warn("Calling getDistinctServiceStatistics failed!")
+            log.warn("Calling geftDistinctServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
         elif 'distinctServiceStatisticsList' not in statistics_data:
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'
