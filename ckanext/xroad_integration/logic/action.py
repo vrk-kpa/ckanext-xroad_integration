@@ -432,7 +432,6 @@ def fetch_xroad_errors(context, data_dict):
 
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
-        source_url = harvest_source.get('url', '')
 
         if "since" in data_dict:
             since = data_dict.get('since')
