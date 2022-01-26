@@ -441,8 +441,10 @@ def fetch_xroad_errors(context, data_dict):
         days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
         fetch_since = datetime.datetime.strptime(since, "%Y-%m-%d")
         max_fetch_date_in_past = (datetime.datetime.now() - relativedelta
-                                  .relativedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS))\
-                                  .replace(hour=0, minute=0, second=0, microsecond=0)
+                                  .relativedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)).replace(hour=0,
+                                                                                                    minute=0,
+                                                                                                    second=0,
+                                                                                                    microsecond=0)
         last_fetched = max_fetch_date_in_past
 
         if fetch_since > max_fetch_date_in_past:
