@@ -831,7 +831,7 @@ def fetch_distinct_service_stats(context, data_dict):
         statistics_data = xroad_catalog_query('getDistinctServiceStatistics', [str(days)]).json()
 
         if statistics_data is None:
-            log.warn("Calling geftDistinctServiceStatistics failed!")
+            log.warn("Calling getDistinctServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
         elif 'distinctServiceStatisticsList' not in statistics_data:
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'
