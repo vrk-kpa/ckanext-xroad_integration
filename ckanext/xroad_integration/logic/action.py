@@ -433,16 +433,16 @@ def fetch_xroad_errors(context, data_dict):
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
 
-        if "since" in data_dict:
+        if data_dict.get('since'):
             since = data_dict.get('since')
         else:
-            since = datetime.datetime.strptime(datetime.datetime.today(), "%Y-%m-%d")
+            since = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
 
         days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
         fetch_since = datetime.datetime.strptime(since, "%Y-%m-%d")
-        max_fetch_date_in_past = (datetime.datetime.today() -
-                                  relativedelta.relativedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS))\
-            .replace(hour=0, minute=0, second=0, microsecond=0)
+        max_fetch_date_in_past = (datetime.datetime.now() - relativedelta.relativedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)).replace(hour=0, minute=0,
+                                                                                                                                           second=0,
+                                                                                                                                           microsecond=0)
         last_fetched = max_fetch_date_in_past
 
         if fetch_since > max_fetch_date_in_past:
@@ -486,7 +486,7 @@ def fetch_xroad_errors(context, data_dict):
                         mapped_error = {
                             "message": error['message'],
                             "code": error['code'],
-                            "created": error['created'],
+                            "created": parse_xroad_catalog_datetime(error['created']),
                             "xroad_instance": error['xroadInstance'],
                             "member_class": error['memberClass'],
                             "member_code": error['memberCode'],
