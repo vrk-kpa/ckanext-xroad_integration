@@ -433,7 +433,7 @@ def fetch_xroad_errors(context, data_dict):
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
 
-        if data_dict.get('since'):
+        if "since" in data_dict and data_dict.get('since') is not None:
             since = data_dict.get('since')
         else:
             since = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
@@ -492,9 +492,9 @@ def fetch_xroad_errors(context, data_dict):
                             "xroad_instance": error['xroadInstance'],
                             "member_class": error['memberClass'],
                             "member_code": error['memberCode'],
-                            "subsystem_code": error['subsystemCode'],
+                            "subsystem_code": error.get('subsystemCode', ''),
                             "service_code": error.get('serviceCode', ''),
-                            "service_version": error.get('serviceVersion', ''),
+                            "service_version": error.get('serviceVersion', '') if error.get('serviceVersion', '') is not None else '',
                             "server_code": error.get('serverCode', ''),
                             "security_category_code": error.get('securityCategoryCode', ''),
                             "group_code": error.get('groupCode', '')
