@@ -433,7 +433,7 @@ def fetch_xroad_errors(context, data_dict):
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
 
-        if "since" in data_dict and data_dict.get('since') is not None:
+        if data_dict.get('since'):
             since = data_dict.get('since')
         else:
             since = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
