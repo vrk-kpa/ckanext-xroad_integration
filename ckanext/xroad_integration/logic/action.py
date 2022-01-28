@@ -428,6 +428,7 @@ def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
     errors = []
+    error_count = 0
     harvest_sources = xroad_harvest_sources(context)
 
     for harvest_source in harvest_sources:
@@ -449,6 +450,7 @@ def fetch_xroad_errors(context, data_dict):
 
         if fetch_since > max_fetch_date_in_past:
             days = (datetime.datetime.today() - fetch_since).days
+            days = days if days > 0 else 1
             last_fetched = fetch_since
 
         page = 0
@@ -501,8 +503,8 @@ def fetch_xroad_errors(context, data_dict):
                             "group_code": error.get('groupCode') if error.get('groupCode') is not None else '',
                         }
                         XRoadError.create(**mapped_error)
+                        error_count = error_count + 1
 
-                    results.append({"message": "%d errors stored to database." % len(error_log_list)})
                 except ConnectionError as e:
                     log.warn("Calling listErrors failed!")
                     log.info(e)
@@ -513,6 +515,7 @@ def fetch_xroad_errors(context, data_dict):
             log.info(e)
             return {"success": False, "message": "Fetching errors failed."}
 
+    results.append({"message": "%d errors stored to database." % str(error_count)})
     if errors:
         return {"success": False, "message": ", ".join(errors)}
     else:
