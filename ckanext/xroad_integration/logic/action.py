@@ -428,6 +428,7 @@ def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
     errors = []
+    error_count = 0
     harvest_sources = xroad_harvest_sources(context)
 
     for harvest_source in harvest_sources:
@@ -445,11 +446,10 @@ def fetch_xroad_errors(context, data_dict):
                                                                                                     minute=0,
                                                                                                     second=0,
                                                                                                     microsecond=0)
-        last_fetched = max_fetch_date_in_past
 
         if fetch_since > max_fetch_date_in_past:
             days = (datetime.datetime.today() - fetch_since).days
-            last_fetched = fetch_since
+            days = days if days > 0 else 1
 
         page = 0
         if "page" in data_dict and data_dict.get('page') is not None:
@@ -458,7 +458,7 @@ def fetch_xroad_errors(context, data_dict):
         if "limit" in data_dict and data_dict.get('limit') is not None:
             limit = data_dict.get('limit')
 
-        log.info("Fetching errors since %s for %s" % (last_fetched, source_title))
+        log.info("Fetching errors for the last %s days for %s" % (days, source_title))
 
         try:
             pagination = {"page": str(page), "limit": str(limit)}
@@ -501,8 +501,8 @@ def fetch_xroad_errors(context, data_dict):
                             "group_code": error.get('groupCode') if error.get('groupCode') is not None else '',
                         }
                         XRoadError.create(**mapped_error)
+                        error_count = error_count + 1
 
-                    results.append({"message": "%d errors stored to database." % len(error_log_list)})
                 except ConnectionError as e:
                     log.warn("Calling listErrors failed!")
                     log.info(e)
@@ -513,6 +513,7 @@ def fetch_xroad_errors(context, data_dict):
             log.info(e)
             return {"success": False, "message": "Fetching errors failed."}
 
+    results.append({"message": "%d errors stored to database." % error_count})
     if errors:
         return {"success": False, "message": ", ".join(errors)}
     else:
