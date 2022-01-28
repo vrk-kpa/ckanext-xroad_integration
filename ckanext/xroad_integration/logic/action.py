@@ -515,7 +515,7 @@ def fetch_xroad_errors(context, data_dict):
             log.info(e)
             return {"success": False, "message": "Fetching errors failed."}
 
-    results.append({"message": "%d errors stored to database." % str(error_count)})
+    results.append({"message": "%d errors stored to database." % error_count})
     if errors:
         return {"success": False, "message": ", ".join(errors)}
     else:
