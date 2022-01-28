@@ -487,13 +487,13 @@ def fetch_xroad_errors(context, data_dict):
                     for error in error_log_list:
                         security_category_code = error.get('securityCategoryCode')
                         mapped_error = {
-                            "message": error['message'],
-                            "code": error['code'],
+                            "message": error.get('message') if error.get('message') is not None else '',
+                            "code": error.get('code') if error.get('code') is not None else '',
                             "created": parse_xroad_catalog_datetime(error['created']),
-                            "xroad_instance": error['xroadInstance'],
-                            "member_class": error['memberClass'],
-                            "member_code": error['memberCode'],
-                            "subsystem_code": error.get('subsystemCode', ''),
+                            "xroad_instance": error.get('xroadInstance') if error.get('xroadInstance') is not None else '',
+                            "member_class": error.get('memberClass') if error.get('memberClass') is not None else '',
+                            "member_code": error.get('memberCode') if error.get('memberCode') is not None else '',
+                            "subsystem_code": error.get('subsystemCode') if error.get('subsystemCode') is not None else '',
                             "service_code": error.get('serviceCode') if error.get('serviceCode') is not None else '',
                             "service_version": error.get('serviceVersion') if error.get('serviceVersion') is not None else '',
                             "server_code": error.get('serverCode') if error.get('serverCode') is not None else '',
