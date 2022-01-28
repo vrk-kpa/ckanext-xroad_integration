@@ -485,6 +485,7 @@ def fetch_xroad_errors(context, data_dict):
                     error_log_list = error_data.get('errorLogList', [])
 
                     for error in error_log_list:
+                        service_version = error.get('serviceVersion')
                         mapped_error = {
                             "message": error['message'],
                             "code": error['code'],
@@ -492,9 +493,9 @@ def fetch_xroad_errors(context, data_dict):
                             "xroad_instance": error['xroadInstance'],
                             "member_class": error['memberClass'],
                             "member_code": error['memberCode'],
-                            "subsystem_code": error['subsystemCode'],
+                            "subsystem_code": error.get('subsystemCode', ''),
                             "service_code": error.get('serviceCode', ''),
-                            "service_version": error.get('serviceVersion', ''),
+                            "service_version": service_version if service_version is not None else '',
                             "server_code": error.get('serverCode', ''),
                             "security_category_code": error.get('securityCategoryCode', ''),
                             "group_code": error.get('groupCode', '')
