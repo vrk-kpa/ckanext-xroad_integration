@@ -22,8 +22,8 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
                                              XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat,
                                              XRoadHeartbeat)
 
-PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
-COMPANY_CLASSES = ['COM']
+# PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
+# COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
@@ -79,7 +79,6 @@ def update_xroad_organizations(context, data_dict):
             continue
 
         source_config = json.loads(harvest_source.get('config', '{}'))
-        source_url = harvest_source.get('url')
         source_title = harvest_source.get('title')
 
         if source_config.get('disable_xroad_organization_updates') is True:
@@ -96,7 +95,7 @@ def update_xroad_organizations(context, data_dict):
 
             last_updated = organization.get('metadata_updated_from_xroad_timestamp') or '2011-01-01T00:00:00'
             try:
-                patch = _prepare_xroad_organization_patch(organization, source_url, last_updated)
+                patch = _prepare_xroad_organization_patch(organization, last_updated)
 
                 if patch is not None:
                     log.debug('Updating organization %s data from %s', organization_name, source_title)
@@ -124,8 +123,7 @@ def update_xroad_organizations(context, data_dict):
         return {'success': True, 'message': 'Updated {} organizations'.format(updated)}
 
 
-def _prepare_xroad_organization_patch(organization, source_url, last_updated):
-    member_class = organization.get('xroad_memberclass')
+def _prepare_xroad_organization_patch(organization, last_updated):
     member_code = organization.get('xroad_membercode')
     organization_name = organization.get('name')
 
@@ -135,35 +133,18 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
 
     organization_dict = {'id': organization['id']}
 
-    if member_class in PUBLIC_ORGANIZATION_CLASSES:
-        try:
-            if 'organization_guid' in organization:
-                organization_changed = not last_updated or \
-                                       _get_organization_changes(source_url, organization.get('organization_guid'),
-                                                                 last_updated)
+    try:
+        organization_changed = not last_updated or _get_organization_changes(member_code, last_updated)
+        if not organization_changed:
+            log.info('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
+            return None
 
-                if not organization_changed:
-                    log.info('No changes to organization %s since last update at %s, skipping...',
-                             organization_name, last_updated)
-                    return None
-
-            org_information_list = _get_organization_information(source_url, member_code)
-
-            organization_info = None
-
-            if not org_information_list:
-                return None
-
-            else:
-                # If PTV has only one matching organization
-                if type(org_information_list) is dict:
-                    log.info("Only one matching organization in ptv for organization %s" % organization_name)
-                    organization_info = org_information_list
-                else:
-                    log.info("Multiple organizations found in ptv for organization %s" % organization_name)
-                    # Match only if PTV title matches our organization title
-                    organization_info = _parse_organization_info(org_information_list, organization_name)
-
+        org_information_list = _get_organization_information(member_code)
+        if not org_information_list:
+            return None
+        else:
+            if org_information_list.get('organizationData'):
+                organization_info = org_information_list.get('organizationData')
                 if not organization_info:
                     log.warn('Could not parse organization information for %s', organization_name)
                     return None
@@ -250,168 +231,92 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                 organization_dict['email_address'] = emails
 
                         organization_dict['organization_guid'] = organization_info.get('guid', '')
+            else:
+                company = org_information_list.get('companyData')
+                if type(company) is dict:
+                    if company.get('companyForms'):
+                        company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {})
+                                                                             .get('companyForm', {}))
+                        forms = {
+                            "fi": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'FI'), ""),
+                            "sv": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'SE'), ""),
+                            "en": next((form.get('name')
+                                        for form in company_forms
+                                        if form.get('language') == 'EN'), "")
+                        }
 
-        except Exception:
-            log.warn("Failed to fetch organization information with id %s", member_code)
-            raise
+                        organization_dict['company_type'] = forms
 
-    elif member_class in COMPANY_CLASSES:
-        try:
-            company_changed = not last_updated or _get_company_changes(source_url, member_code, last_updated)
+                    if company.get('businessAddresses'):
+                        business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {})
+                                                                                  .get('businessAddress', {}))
 
-            if not company_changed:
-                log.debug('No changes to company %s since last update at %s, skipping...', organization_name, last_updated)
-                return None
+                        business_address = business_addresses[0] if business_addresses else None
 
-            company = _get_companies_information(source_url, member_code)
+                        # TODO: language should be country
+                        organization_dict['postal_address'] = \
+                            business_address.get('street') + ', ' \
+                            + str(business_address.get('postCode')) + ', ' \
+                            + business_address.get('city') + ', ' + business_address.get('language')
 
-            if company is None:
-                log.warn('Received empty company information')
-                return None
+                    if company.get('languages'):
+                        languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
+                        company_languages = {
+                            "fi": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'FI'), ""),
+                            "sv": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'SE'), ""),
+                            "en": next((language.get('name', '')
+                                        for language in languages
+                                        if language.get('language') == 'EN'), "")
+                        }
 
-            if type(company) is dict:
-                if company.get('companyForms'):
-                    company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {})
-                                                                         .get('companyForm', {}))
-                    forms = {
-                        "fi": next((form.get('name')
-                                    for form in company_forms
-                                    if form.get('language') == 'FI'), ""),
-                        "sv": next((form.get('name')
-                                    for form in company_forms
-                                    if form.get('language') == 'SE'), ""),
-                        "en": next((form.get('name')
-                                    for form in company_forms
-                                    if form.get('language') == 'EN'), "")
-                    }
+                        organization_dict['company_language'] = company_languages
 
-                    organization_dict['company_type'] = forms
+                    # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
+                    organization_dict['company_registration_date'] = company.get('registrationDate', '').split(".")[0]
 
-                if company.get('businessAddresses'):
-                    business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {})
-                                                                              .get('businessAddress', {}))
+                    if company.get('businessIdChanges'):
+                        business_id_changes = _convert_xroad_value_to_uniform_list(
+                            company.get('businessIdChanges', {}).get('businessIdChange', {}))
 
-                    business_address = business_addresses[0] if business_addresses else None
+                        old_business_ids = [str(business_id_change.get('oldBusinessId'))
+                                            for business_id_change in business_id_changes]
+                        organization_dict['old_business_ids'] = json.dumps(old_business_ids)
 
-                    # TODO: language should be country
-                    organization_dict['postal_address'] = \
-                        business_address.get('street') + ', ' \
-                        + str(business_address.get('postCode')) + ', ' \
-                        + business_address.get('city') + ', ' + business_address.get('language')
-
-                if company.get('languages'):
-                    languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
-                    company_languages = {
-                        "fi": next((language.get('name', '')
-                                    for language in languages
-                                    if language.get('language') == 'FI'), ""),
-                        "sv": next((language.get('name', '')
-                                    for language in languages
-                                    if language.get('language') == 'SE'), ""),
-                        "en": next((language.get('name', '')
-                                    for language in languages
-                                    if language.get('language') == 'EN'), "")
-                    }
-
-                    organization_dict['company_language'] = company_languages
-
-                # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
-                organization_dict['company_registration_date'] = company.get('registrationDate', '').split(".")[0]
-
-                if company.get('businessIdChanges'):
-                    business_id_changes = _convert_xroad_value_to_uniform_list(
-                        company.get('businessIdChanges', {}).get('businessIdChange', {}))
-
-                    old_business_ids = [str(business_id_change.get('oldBusinessId'))
-                                        for business_id_change in business_id_changes]
-                    organization_dict['old_business_ids'] = json.dumps(old_business_ids)
-
-        except Exception:
-            log.warn("Failed to fetch company information with id %s", member_code)
-            raise
-
-    else:
-        log.debug('Skipping %s because of class %s', organization_name, member_class)
-        return None
+    except Exception:
+        log.warn("Exception")
+        raise
 
     return organization_dict
 
-
-def _get_organization_information(url, business_code):
+def _get_organization_information(business_code):
     try:
-        r = http.get(url + '/Consumer/GetOrganizations', params={'businessCode': business_code},
-                     headers={'Accept': 'application/json'})
-
-        response_json = r.json()
-        if response_json.get("error"):
-            log.info(response_json.get("error").get("string"))
-            raise ContentFetchError(response_json.get("error").get("string"))
-
-        if response_json.get('organizationList', {}).get('organization') is dict:
-            return [response_json['organizationList']['organization']]
-
-        return response_json.get('organizationList', {}).get('organization')
+        organization_json = xroad_catalog_query('getOrganization', [business_code]).json()
+        if organization_json.get('organizationData') or organization_json.get('companyData'):
+            return [organization_json]
+        else:
+            return []
     except ConnectionError:
-        log.error("Calling XRoad service GetOrganizations failed")
-        raise ContentFetchError("Calling XRoad service GetOrganizations failed")
+        log.error("Calling XRoad service getOrganization failed")
+        raise ContentFetchError("Calling XRoad service getOrganization failed")
 
 
-def _parse_organization_info(data, organization_name):
-    organization_info = next((org_info for org_info in data for name in
-                              _convert_xroad_value_to_uniform_list(org_info.get('organizationNames', {})
-                                                                   .get('organizationName'))
-                              if name.get('value', {}) == organization_name), None)
-
-    return organization_info
-
-
-def _get_companies_information(url, business_id):
+def _get_organization_changes(business_code, changed_after):
     try:
-        r = http.get(url + '/Consumer/GetCompanies', params={'businessId': business_id},
-                     headers={'Accept': 'application/json'})
+        since = datetime.datetime.strptime(changed_after, '%Y-%m-%dT%H:%M:%S').date().strftime('%Y-%m-%d')
+        organization_changes = xroad_catalog_query('getOrganizationChanges', [business_code, since]).json()
+        return organization_changes.get('changed')
 
-        response_json = r.json()
-        if response_json.get("error"):
-            log.warn(response_json.get("error").get("string"))
-            raise ContentFetchError(response_json.get("error").get("string"))
-
-        return response_json.get('companyList', {}).get('company')
     except ConnectionError:
-        log.error("Calling XRoad service GetCompanies failed")
-        raise ContentFetchError("Calling XRoad service GetCompanies failed")
-
-
-def _get_organization_changes(url, guid, changed_after):
-    try:
-        r = http.get(url + '/Consumer/HasOrganizationChanged', params={'guid': guid, 'changedAfter': changed_after},
-                     headers={'Accept': 'application/json'})
-
-        response_json = r.json()
-        if response_json.get("error"):
-            log.warn(response_json.get("error").get("string"))
-            raise ContentFetchError(response_json.get("error").get("string"))
-
-        return r.json()
-    except ConnectionError:
-        log.error("Calling XRoad service HasOrganizationChanged failed")
-        raise ContentFetchError("Calling XRoad service HasOrganizationChanged failed")
-
-
-def _get_company_changes(url, business_id, changed_after):
-    try:
-        r = http.get(url + '/Consumer/HasCompanyChanged', params={'businessId': business_id,
-                                                                  'changedAfter': changed_after},
-                     headers={'Accept': 'application/json'})
-
-        response_json = r.json()
-        if response_json.get("error"):
-            log.warn(response_json.get("error").get("string"))
-            raise ContentFetchError(response_json.get("error").get("string"))
-
-        return r.json()
-    except ConnectionError:
-        log.error("Calling XRoad service HasCompanyChanged failed")
-        raise ContentFetchError("Calling XRoad service HasCompanyChanged failed")
+        log.error("Calling XRoad service getOrganizationChanges failed")
+        raise ContentFetchError("Calling XRoad service getOrganizationChanges failed")
 
 
 def _convert_xroad_value_to_uniform_list(value):
