@@ -296,6 +296,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
     return organization_dict
 
+
 def _get_organization_information(business_code):
     try:
         organization_json = xroad_catalog_query('getOrganization', [business_code]).json()
