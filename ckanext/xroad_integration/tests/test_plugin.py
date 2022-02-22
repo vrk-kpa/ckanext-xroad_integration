@@ -12,7 +12,8 @@ from ckanext.harvest.tests.lib import run_harvest
 
 XROAD_REST_ADAPTERS = {
         'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'xroad-catalog-mock-responses/test_listmembers.json'},
-        'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092, 'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'}
+        'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092,
+                               'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'}
         }
 
 
