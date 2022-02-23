@@ -79,7 +79,7 @@ def update_xroad_organizations(context, data_dict):
             continue
 
         source_config = json.loads(harvest_source.get('config', '{}'))
-        source_url = harvest_source.get('url')
+        source_url = toolkit.config.get('ckanext.xroad_integration.xroad_gateway_address')
         source_title = harvest_source.get('title')
 
         if source_config.get('disable_xroad_organization_updates') is True:
@@ -146,7 +146,6 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                     log.info('No changes to organization %s since last update at %s, skipping...',
                              organization_name, last_updated)
                     return None
-
             org_information_list = _get_organization_information(source_url, member_code)
 
             organization_info = None
@@ -247,7 +246,7 @@ def _prepare_xroad_organization_patch(organization, source_url, last_updated):
                                              if 'value' in item and item.get('language') == lang]
                                       for lang in languages}
                             if emails:
-                                organization_dict['email_address'] = emails
+                                organization_dict['email_address'] = emails.get('fi', '')
 
                         organization_dict['organization_guid'] = organization_info.get('guid', '')
 

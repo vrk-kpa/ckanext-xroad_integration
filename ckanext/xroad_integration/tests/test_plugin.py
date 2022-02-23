@@ -1,5 +1,6 @@
 """Tests for plugin.py."""
-
+from ckan import model
+from ckan.plugins import toolkit
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 import pytest
 import json
@@ -11,8 +12,11 @@ from ckanext.harvest.tests.lib import run_harvest
 
 
 XROAD_REST_ADAPTERS = {
-        'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'test_listmembers.json'},
-        'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092, 'content': 'test_delete_listmembers.json'}
+        'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'xroad-catalog-mock-responses/test_listmembers.json'},
+        'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092,
+                               'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'},
+        'get_organizations': {'host': '127.0.0.1', 'port': 9093,
+                              'content': 'xroad-catalog-mock-responses/test_getorganizations.json'}
         }
 
 
@@ -112,13 +116,30 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_gateway_address', xroad_rest_adapter_url('get_organizations'))
 def test_update_xroad_organizations(xroad_rest_adapter_mocks):
-    call_action('update_xroad_organizations')
+    harvester = XRoadHarvesterPlugin()
+    run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config="{}")
+
+    user = toolkit.get_action('get_site_user')(
+        {'model': model, 'ignore_auth': True}, {}
+    )['name']
+
+    context = {'model': model, 'session': model.Session,
+               'user': user, 'api_version': 3, 'ignore_auth': True}
+
+    result = call_action('update_xroad_organizations', context=context)
+    assert result['message'] == 'Updated 4 organizations'
+
+    updated_organization = call_action('organization_show', context=context, id='TEST.ORG.000000-0')
+    assert updated_organization['title_translated']['fi'] == "Empty organization in finnish"
+    assert updated_organization['title_translated']['sv'] == "Empty organization in swedish"
+    assert updated_organization['title_translated']['en'] == "Empty organization in english"
+
+    assert updated_organization['email_address'] == ['othervalue@example.com', 'value@example.com']
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
 def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
     call_action('fetch_xroad_errors')
     call_action('xroad_error_list')

@@ -19,7 +19,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        ckan-version: [2.9, 2.9-py2]
+        ckan-version: [2.9]
       fail-fast: false
 
     name: CKAN ${{ matrix.ckan-version }}
@@ -47,6 +47,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Install requirements
         run: |
           git clone https://github.com/ckan/ckanext-harvest
@@ -54,6 +56,28 @@ jobs:
           pip install -r pip-requirements.txt
           pip install -e .
           cd ..
+
+          git clone https://github.com/vrk-kpa/api-catalog
+          cd api-catalog
+          git submodule update --init --recursive
+
+          cd ckanext/ckanext-apicatalog_routes
+          pip install -e .
+
+          cd ../ckanext-apicatalog_ui
+          pip install -e .
+
+          cd ../ckanext-scheming
+          pip install -e .
+
+          cd ../ckanext-apicatalog_scheming
+          pip install -e .
+
+          cd ../ckanext-fluent
+          pip install -e .
+
+          cd ../../..
+
           pip install -r pip-requirements.txt
           pip install -r dev-requirements.txt
           pip install -e .

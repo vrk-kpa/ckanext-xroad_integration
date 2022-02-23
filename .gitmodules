@@ -1,0 +1,3 @@
+[submodule "ckanext/xroad_integration/tests/xroad-catalog-mock-responses"]
+	path = ckanext/xroad_integration/tests/xroad-catalog-mock-responses
+	url = https://github.com/vrk-kpa/xroad-catalog-mock-responses.git
