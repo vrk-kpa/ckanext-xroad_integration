@@ -73,7 +73,7 @@ jobs:
           cd ../ckanext-apicatalog_scheming
           pip install -e .
 
-          cd ../..
+          cd ../../..
 
           pip install -r pip-requirements.txt
           pip install -r dev-requirements.txt
