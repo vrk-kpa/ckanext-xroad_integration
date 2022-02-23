@@ -60,8 +60,8 @@ jobs:
           git clone https://github.com/vrk-kpa/api-catalog
           cd api-catalog
           git submodule update --init --recursive
+
           cd ckanext/ckanext-apicatalog_routes
-          pip install -r dev-requirements.txt
           pip install -e .
 
           cd ../ckanext-apicatalog_ui
@@ -74,7 +74,7 @@ jobs:
           pip install -e .
 
           cd ..
-          
+
           pip install -r pip-requirements.txt
           pip install -r dev-requirements.txt
           pip install -e .
