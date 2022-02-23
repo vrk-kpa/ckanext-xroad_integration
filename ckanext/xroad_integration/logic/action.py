@@ -79,7 +79,7 @@ def update_xroad_organizations(context, data_dict):
             continue
 
         source_config = json.loads(harvest_source.get('config', '{}'))
-        source_url = harvest_source.get('url')
+        source_url = toolkit.config.get('ckanext.xroad_integration.xroad_gateway_address')
         source_title = harvest_source.get('title')
 
         if source_config.get('disable_xroad_organization_updates') is True:
