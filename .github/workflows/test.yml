@@ -73,6 +73,9 @@ jobs:
           cd ../ckanext-apicatalog_scheming
           pip install -e .
 
+          cd ../ckanext-fluent
+          pip install -e
+
           cd ../../..
 
           pip install -r pip-requirements.txt
