@@ -22,8 +22,6 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
                                              XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat,
                                              XRoadHeartbeat)
 
-# PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
-# COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
@@ -79,7 +77,6 @@ def update_xroad_organizations(context, data_dict):
             continue
 
         source_config = json.loads(harvest_source.get('config', '{}'))
-        source_url = toolkit.config.get('ckanext.xroad_integration.xroad_gateway_address')
         source_title = harvest_source.get('title')
 
         if source_config.get('disable_xroad_organization_updates') is True:
