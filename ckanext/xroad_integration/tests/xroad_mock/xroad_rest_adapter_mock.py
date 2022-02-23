@@ -113,7 +113,7 @@ def instance(data_path, app_name='xroad_rest_adapter_mock'):
     @app.route('/rest-adapter-service/Consumer/GetOrganizations')
     def get_organizations():
         # business_code = request.args.get('businessCode')
-        return jsonify({'organizationList': {'organization': {}}})
+        return send_file(data_path)
 
     @app.route('/rest-adapter-service/Consumer/GetCompanies')
     def get_companies():
