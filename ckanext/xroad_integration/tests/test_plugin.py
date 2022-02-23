@@ -1,7 +1,6 @@
 """Tests for plugin.py."""
 from ckan import model
 from ckan.plugins import toolkit
-from ckanext.harvest.tests.factories import HarvestSourceObj
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 import pytest
 import json
@@ -10,7 +9,6 @@ from multiprocessing import Process
 from ckanext.xroad_integration.harvesters.xroad_harvester import XRoadHarvesterPlugin
 from ckantoolkit.tests.helpers import call_action
 from ckanext.harvest.tests.lib import run_harvest
-import ckan.tests.factories as factories
 
 
 XROAD_REST_ADAPTERS = {
@@ -133,15 +131,15 @@ def test_update_xroad_organizations(xroad_rest_adapter_mocks):
     result = call_action('update_xroad_organizations', context=context)
     assert result['message'] == 'Updated 4 organizations'
 
-    updated_organization = call_action('organization_show', context=context, id = 'TEST.ORG.000000-0')
+    updated_organization = call_action('organization_show', context=context, id='TEST.ORG.000000-0')
     assert updated_organization['title_translated']['fi'] == "Empty organization in finnish"
     assert updated_organization['title_translated']['sv'] == "Empty organization in swedish"
     assert updated_organization['title_translated']['en'] == "Empty organization in english"
 
     assert updated_organization['email_address'] == ['othervalue@example.com', 'value@example.com']
 
+
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-#@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
 def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
     call_action('fetch_xroad_errors')
     call_action('xroad_error_list')
