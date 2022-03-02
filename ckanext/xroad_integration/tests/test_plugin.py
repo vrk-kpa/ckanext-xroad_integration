@@ -105,4 +105,3 @@ def test_xroad_heartbeat(xroad_rest_mocks):
     result = call_action('fetch_xroad_heartbeat')
     assert result['heartbeat'] is True
     assert result['success'] is True
-
