@@ -24,11 +24,14 @@ XROAD_REST_SERVICES = {
     'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'}
 }
 
+
 def xroad_rest_adapter_url(adapter_name):
     return 'http://{host}:{port}/rest-adapter-service'.format(**XROAD_REST_ADAPTERS[adapter_name])
 
+
 def xroad_rest_service_url(service_name):
     return 'http://{host}:{port}/'.format(**XROAD_REST_SERVICES[service_name])
+
 
 @pytest.fixture(scope='module')
 def xroad_rest_adapter_mocks():
@@ -71,6 +74,7 @@ def xroad_rest_mocks():
     for mock_proc in procs:
         mock_proc.terminate()
         mock_proc.join()
+
 
 @pytest.fixture(scope='module')
 def xroad_database_setup():
@@ -174,5 +178,5 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('heartbeat'))
 def test_xroad_heartbeat(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_heartbeat')
-    assert result['heartbeat'] == True
-    assert result['success'] == True
+    assert result['heartbeat'] is True
+    assert result['success'] is True
