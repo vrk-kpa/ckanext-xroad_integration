@@ -175,6 +175,8 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
     call_action('fetch_xroad_errors')
     call_action('xroad_error_list')
 
+
+@pytest.mark.usefixtures('clean_db')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('heartbeat'))
 def test_xroad_heartbeat(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_heartbeat')
