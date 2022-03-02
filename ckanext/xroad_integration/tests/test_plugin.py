@@ -2,6 +2,7 @@
 from ckan import model
 from ckan.plugins import toolkit
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
+from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_mock as rest_mock
 import pytest
 import json
 import os
@@ -19,10 +20,15 @@ XROAD_REST_ADAPTERS = {
                               'content': 'xroad-catalog-mock-responses/test_getorganizations.json'}
         }
 
+XROAD_REST_SERVICES = {
+    'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'}
+}
 
 def xroad_rest_adapter_url(adapter_name):
     return 'http://{host}:{port}/rest-adapter-service'.format(**XROAD_REST_ADAPTERS[adapter_name])
 
+def xroad_rest_service_url(service_name):
+    return 'http://{host}:{port}/'.format(**XROAD_REST_SERVICES[service_name])
 
 @pytest.fixture(scope='module')
 def xroad_rest_adapter_mocks():
@@ -44,6 +50,27 @@ def xroad_rest_adapter_mocks():
         mock_proc.terminate()
         mock_proc.join()
 
+
+@pytest.fixture(scope='module')
+def xroad_rest_mocks():
+    procs = []
+
+    for service in XROAD_REST_SERVICES.values():
+        data_path = os.path.join(os.path.dirname(__file__), service['content'])
+        xroad_rest_mock_app = rest_mock.create_app(data_path)
+
+        mock_proc = Process(target=xroad_rest_mock_app.run, kwargs={
+            'host': service['host'],
+            'port': service['port']
+        })
+        mock_proc.start()
+        procs.append(mock_proc)
+
+    yield XROAD_REST_SERVICES.keys()
+
+    for mock_proc in procs:
+        mock_proc.terminate()
+        mock_proc.join()
 
 @pytest.fixture(scope='module')
 def xroad_database_setup():
@@ -143,3 +170,9 @@ def test_update_xroad_organizations(xroad_rest_adapter_mocks):
 def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
     call_action('fetch_xroad_errors')
     call_action('xroad_error_list')
+
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('heartbeat'))
+def test_xroad_heartbeat(xroad_rest_mocks, xroad_database_setup):
+    result = call_action('fetch_xroad_heartbeat')
+    assert result['heartbeat'] == True
+    assert result['success'] == True
