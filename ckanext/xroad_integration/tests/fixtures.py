@@ -64,7 +64,7 @@ def xroad_rest_mocks():
 
 @pytest.fixture
 def xroad_database_setup():
-    from ckanext.xroad_integration.utils import init_db, drop_db
+    from ckanext.xroad_integration.utils import init_db
 
     init_db()
 
