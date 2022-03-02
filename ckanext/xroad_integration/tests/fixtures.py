@@ -68,10 +68,6 @@ def xroad_database_setup():
 
     init_db()
 
-    yield
-
-    drop_db()
-
 
 def xroad_rest_adapter_url(adapter_name):
     return 'http://{host}:{port}/rest-adapter-service'.format(**XROAD_REST_ADAPTERS[adapter_name])
