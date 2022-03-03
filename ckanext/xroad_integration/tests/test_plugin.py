@@ -1,59 +1,13 @@
 """Tests for plugin.py."""
 from ckan import model
 from ckan.plugins import toolkit
-from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 import pytest
 import json
-import os
-from multiprocessing import Process
 from ckanext.xroad_integration.harvesters.xroad_harvester import XRoadHarvesterPlugin
 from ckantoolkit.tests.helpers import call_action
 from ckanext.harvest.tests.lib import run_harvest
 
-
-XROAD_REST_ADAPTERS = {
-        'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'xroad-catalog-mock-responses/test_listmembers.json'},
-        'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092,
-                               'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'},
-        'get_organizations': {'host': '127.0.0.1', 'port': 9093,
-                              'content': 'xroad-catalog-mock-responses/test_getorganizations.json'}
-        }
-
-
-def xroad_rest_adapter_url(adapter_name):
-    return 'http://{host}:{port}/rest-adapter-service'.format(**XROAD_REST_ADAPTERS[adapter_name])
-
-
-@pytest.fixture(scope='module')
-def xroad_rest_adapter_mocks():
-    procs = []
-
-    for adapter in XROAD_REST_ADAPTERS.values():
-        data_path = os.path.join(os.path.dirname(__file__), adapter['content'])
-        xroad_rest_adapter_mock_app = adapter_mock.instance(data_path)
-
-        mock_proc = Process(target=xroad_rest_adapter_mock_app.run, kwargs={
-            'host': adapter['host'],
-            'port': adapter['port']})
-        mock_proc.start()
-        procs.append(mock_proc)
-
-    yield XROAD_REST_ADAPTERS.keys()
-
-    for mock_proc in procs:
-        mock_proc.terminate()
-        mock_proc.join()
-
-
-@pytest.fixture(scope='module')
-def xroad_database_setup():
-    from ckanext.xroad_integration.utils import init_db, drop_db
-
-    init_db()
-
-    yield
-
-    drop_db()
+from .fixtures import xroad_rest_service_url, xroad_rest_adapter_url
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
@@ -143,3 +97,11 @@ def test_update_xroad_organizations(xroad_rest_adapter_mocks):
 def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
     call_action('fetch_xroad_errors')
     call_action('xroad_error_list')
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('heartbeat'))
+def test_xroad_heartbeat(xroad_rest_mocks):
+    result = call_action('fetch_xroad_heartbeat')
+    assert result['heartbeat'] is True
+    assert result['success'] is True

@@ -29,7 +29,7 @@ def create_app(input_file):
 
     @app.route('/heartbeat')
     def heartbeat():
-        return 'OK'
+        return mock_data
 
     return app
 
