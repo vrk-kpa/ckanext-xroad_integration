@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
-from ckan import model
-from ckan.plugins import toolkit
+# from ckan import model
+# from ckan.plugins import toolkit
 import pytest
 import json
 from ckanext.xroad_integration.harvesters.xroad_harvester import XRoadHarvesterPlugin
@@ -105,6 +105,7 @@ def test_xroad_heartbeat(xroad_rest_mocks):
     result = call_action('fetch_xroad_heartbeat')
     assert result['heartbeat'] is True
     assert result['success'] is True
+
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('get_organizations'))
