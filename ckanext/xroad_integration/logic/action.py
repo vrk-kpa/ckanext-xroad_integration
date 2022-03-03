@@ -22,6 +22,8 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
                                              XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat,
                                              XRoadHeartbeat)
 
+# PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
+# COMPANY_CLASSES = ['COM']
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
