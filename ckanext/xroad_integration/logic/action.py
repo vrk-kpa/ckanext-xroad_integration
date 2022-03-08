@@ -168,9 +168,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
                         organization_dict['title_translated'] = org_names_translated
 
-                    if organization_info.get('organizationDescriptions', {}):
-                        org_descriptions = _convert_xroad_value_to_uniform_list(
-                            organization_info.get('organizationDescriptions', {}).get('organizationDescription', {}))
+                    if organization_info.get('organizationDescriptions'):
+                        org_descriptions = _convert_xroad_value_to_uniform_list(organization_info.get('organizationDescriptions', {}))
 
                         org_descriptions_translated = {
                             "fi": next((description.get('value', '')
@@ -186,9 +185,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
                         organization_dict['description_translated'] = org_descriptions_translated
 
-                    if organization_info.get('webPages', {}):
-                        webpages = _convert_xroad_value_to_uniform_list(
-                            organization_info.get('webPages', {}).get('webPage', {}))
+                    if organization_info.get('webPages'):
+                        webpages = _convert_xroad_value_to_uniform_list(organization_info.get('webPages', {}))
 
                         webpage_addresses = {
                             "fi": next((webpage.get('url', '')
@@ -217,9 +215,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['webpage_address'] = webpage_addresses
                         organization_dict['webpage_description'] = webpage_descriptions
 
-                    emails_field = organization_info.get('emails', {})
-                    if emails_field:
-                        email_data = _convert_xroad_value_to_uniform_list(emails_field.get('email'))
+                    if organization_info.get('emails'):
+                        email_data = _convert_xroad_value_to_uniform_list(organization_info.get('emails'))
                         if email_data:
                             languages = set(item['language'] for item in email_data)
                             emails = {lang: [item['value']
@@ -234,8 +231,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                 company = org_information_list.get('companyData')
                 if type(company) is dict:
                     if company.get('companyForms'):
-                        company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {})
-                                                                             .get('companyForm', {}))
+                        company_forms = _convert_xroad_value_to_uniform_list(company.get('companyForms', {}))
                         forms = {
                             "fi": next((form.get('name')
                                         for form in company_forms
@@ -251,9 +247,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['company_type'] = forms
 
                     if company.get('businessAddresses'):
-                        business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {})
-                                                                                  .get('businessAddress', {}))
-
+                        business_addresses = _convert_xroad_value_to_uniform_list(company.get('businessAddresses', {}))
                         business_address = business_addresses[0] if business_addresses else None
 
                         # TODO: language should be country
@@ -263,7 +257,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                             + business_address.get('city') + ', ' + business_address.get('language')
 
                     if company.get('languages'):
-                        languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}).get('language', {}))
+                        languages = _convert_xroad_value_to_uniform_list(company.get('languages', {}))
                         company_languages = {
                             "fi": next((language.get('name', '')
                                         for language in languages
@@ -282,8 +276,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                     organization_dict['company_registration_date'] = company.get('registrationDate', '').split(".")[0]
 
                     if company.get('businessIdChanges'):
-                        business_id_changes = _convert_xroad_value_to_uniform_list(
-                            company.get('businessIdChanges', {}).get('businessIdChange', {}))
+                        business_id_changes = _convert_xroad_value_to_uniform_list(company.get('businessIdChanges', {}))
 
                         old_business_ids = [str(business_id_change.get('oldBusinessId'))
                                             for business_id_change in business_id_changes]
