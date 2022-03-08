@@ -134,12 +134,12 @@ def _prepare_xroad_organization_patch(organization, last_updated):
     organization_dict = {'id': organization['id']}
 
     try:
-        organization_changed = not last_updated or _get_organization_changes(member_code, last_updated)
-        if not organization_changed:
+        if last_updated or _get_organization_changes(member_code, last_updated):
+            org_information_list = _get_organization_information(member_code)
+        else:
             log.info('No changes to organization %s since last update at %s, skipping...', organization_name, last_updated)
             return None
 
-        org_information_list = _get_organization_information(member_code)
         if not org_information_list:
             return None
         else:
@@ -151,9 +151,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                 else:
                     log.info("Parsing organization information for %s" % organization_name)
 
-                    if organization_info.get('organizationNames', {}):
-                        org_names = _convert_xroad_value_to_uniform_list(
-                            organization_info.get('organizationNames', {}).get('organizationName', {}))
+                    if organization_info.get('organizationNames'):
+                        org_names = _convert_xroad_value_to_uniform_list(organization_info.get('organizationNames', {}))
 
                         org_names_translated = {
                             "fi": next((name.get('value', '')
@@ -300,10 +299,11 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 def _get_organization_information(business_code):
     try:
         organization_json = xroad_catalog_query('getOrganization', [business_code]).json()
+
         if organization_json.get('organizationData') or organization_json.get('companyData'):
-            return [organization_json]
+            return organization_json
         else:
-            return []
+            return None
     except ConnectionError:
         log.error("Calling XRoad service getOrganization failed")
         raise ContentFetchError("Calling XRoad service getOrganization failed")
@@ -437,6 +437,7 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
         raise ContentFetchError("Invalid X-Road catalog url %s" % xroad_catalog_address)
 
     url = '{address}/{service}'.format(address=xroad_catalog_address, service=service)
+
     for param in params:
         url += '/' + param
 
