@@ -93,4 +93,3 @@ def test_xroad_get_organizations(xroad_rest_mocks):
     result = call_action('update_xroad_organizations', context=context)
     assert result['success'] is True
     assert result['message'] == 'Updated 4 organizations'
-
