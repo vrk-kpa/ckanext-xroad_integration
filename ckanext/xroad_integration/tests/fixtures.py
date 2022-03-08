@@ -76,4 +76,3 @@ def xroad_rest_adapter_url(adapter_name):
 
 def xroad_rest_service_url(service_name):
     return 'http://{host}:{port}'.format(**XROAD_REST_SERVICES[service_name])
-
