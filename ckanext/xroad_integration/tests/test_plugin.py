@@ -84,7 +84,8 @@ def test_xroad_heartbeat(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getOrganizationOrganizationData'))
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
+                         xroad_rest_service_url('getOrganizationOrganizationData'))
 def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
@@ -97,19 +98,20 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
     assert updated_organization['title_translated']['fi'] == "Pukkilan kunta"
     assert updated_organization['title_translated']['sv'] == ""
     assert updated_organization['title_translated']['en'] == ""
-    assert updated_organization['description_translated']['fi'] == "Pukkilan kunta sijaitsee itäisellä Uudellamaalla " \
-                                                                   "Porvoonjokilaakson maalaismaisemassa. Laajat kumpuilevat " \
-                                                                   "peltoaukeat ja hyvin säilynyt kyläidylli tervehtivät tulijaa. " \
-                                                                   "Pukkila on viihtyisä n. 1900 asukkaan kotipaikka, " \
-                                                                   "johon kuuluu kuusi kylää: Kirkonkylä, Naarkoski, Savijoki, " \
-                                                                   "Syvänoja, Kantele ja Torppi. Yhteisöllisessä kunnassa on " \
-                                                                   "erinomaiset palvelut, paljon tapahtumia ja monipuolisia " \
-                                                                   "harrastusmahdollisuuksia. Päiväkoti Vekara ja " \
-                                                                   "Hyvinvointikeskus Onni tarjoavat korkeatasoisia " \
-                                                                   "palveluja keskitetysti.\n\nPyrimme kunnassamme " \
-                                                                   "toimimaan arvojemme rohkeus – läheisyys – " \
-                                                                   "sujuvuus mukaisesti. Arvot ovat tavoitetila, " \
-                                                                   "jota pidämme ohjenuorana kuntamme toiminnassa."
+    assert updated_organization['description_translated']['fi'] == \
+           "Pukkilan kunta sijaitsee itäisellä Uudellamaalla " \
+           "Porvoonjokilaakson maalaismaisemassa. Laajat kumpuilevat " \
+           "peltoaukeat ja hyvin säilynyt kyläidylli tervehtivät tulijaa. " \
+           "Pukkila on viihtyisä n. 1900 asukkaan kotipaikka, " \
+           "johon kuuluu kuusi kylää: Kirkonkylä, Naarkoski, Savijoki, " \
+           "Syvänoja, Kantele ja Torppi. Yhteisöllisessä kunnassa on " \
+           "erinomaiset palvelut, paljon tapahtumia ja monipuolisia " \
+           "harrastusmahdollisuuksia. Päiväkoti Vekara ja " \
+           "Hyvinvointikeskus Onni tarjoavat korkeatasoisia " \
+           "palveluja keskitetysti.\n\nPyrimme kunnassamme " \
+           "toimimaan arvojemme rohkeus – läheisyys – " \
+           "sujuvuus mukaisesti. Arvot ovat tavoitetila, " \
+           "jota pidämme ohjenuorana kuntamme toiminnassa."
     assert updated_organization['description_translated']['sv'] == ""
     assert updated_organization['description_translated']['en'] == ""
     assert updated_organization['webpage_address']['fi'] == "http://www.pukkila.fi/index.php"
