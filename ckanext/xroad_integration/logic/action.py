@@ -226,7 +226,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                             if emails:
                                 organization_dict['email_address'] = emails
 
-                        organization_dict['organization_guid'] = organization_info.get('guid', '')
+                    organization_dict['organization_guid'] = organization_info.get('guid', '')
             else:
                 company = org_information_list.get('companyData')
                 if type(company) is dict:
@@ -273,7 +273,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['company_language'] = company_languages
 
                     # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
-                    organization_dict['company_registration_date'] = company.get('registrationDate', '').split(".")[0]
+                    #[1993,3,19,0,0]
+                    organization_dict['company_registration_date'] = _convert_xroad_datetime_list_to_datetime(company.get('registrationDate', ''))
 
                     if company.get('businessIdChanges'):
                         business_id_changes = _convert_xroad_value_to_uniform_list(company.get('businessIdChanges', {}))
@@ -286,6 +287,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
         log.warn("Exception")
         raise
 
+    organization_dict['email_address'] = 'rerere'
     return organization_dict
 
 
@@ -321,6 +323,13 @@ def _convert_xroad_value_to_uniform_list(value):
         return [value]
 
     return value
+
+
+def _convert_xroad_datetime_list_to_datetime(value):
+    if type(value) is list:
+        return "{0}-{1}-{2}T0{3}:0{4}:00".format(value[0], value[1], value[2], value[3], value[4])
+    else:
+        return None
 
 
 def fetch_xroad_errors(context, data_dict):

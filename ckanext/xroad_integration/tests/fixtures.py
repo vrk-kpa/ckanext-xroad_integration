@@ -15,8 +15,18 @@ XROAD_REST_ADAPTERS = {
 
 XROAD_REST_SERVICES = {
     'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'},
-    'getOrganization': {'host': '127.0.0.1', 'port': 9192,
-                        'content': 'xroad-catalog-mock-responses/test_getorganizations.json'}
+    'getOrganizationOrganizationData': {
+            'host': '127.0.0.1',
+            'port': 9192,
+            'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
+    'getOrganizationCompanyData': {
+        'host': '127.0.0.1',
+        'port': 9193,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_company_data.json'},
+    'getOrganizationEmptyData': {
+        'host': '127.0.0.1',
+        'port': 9194,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'}
 }
 
 
