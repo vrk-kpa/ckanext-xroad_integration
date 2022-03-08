@@ -274,7 +274,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
                     # Convert "2001-06-11T00:00:00.000+03:00" to "2001-06-11T00:00:00"
                     #[1993,3,19,0,0]
-                    organization_dict['company_registration_date'] = _convert_xroad_datetime_list_to_datetime(company.get('registrationDate', ''))
+                    organization_dict['company_registration_date'] = \
+                        _convert_xroad_datetime_list_to_datetime(company.get('registrationDate', ''))
 
                     if company.get('businessIdChanges'):
                         business_id_changes = _convert_xroad_value_to_uniform_list(company.get('businessIdChanges', {}))
