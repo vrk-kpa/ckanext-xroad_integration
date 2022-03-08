@@ -95,29 +95,16 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
     assert result['success'] is True
     assert result['message'] == 'Updated 4 organizations'
     updated_organization = call_action('organization_show', context=context, id='TEST.ORG.000000-0')
-    assert updated_organization['title_translated']['fi'] == "Pukkilan kunta"
+    assert updated_organization['title_translated']['fi'] == "Testiorganisaatio"
     assert updated_organization['title_translated']['sv'] == ""
     assert updated_organization['title_translated']['en'] == ""
-    assert updated_organization['description_translated']['fi'] == \
-           "Pukkilan kunta sijaitsee itäisellä Uudellamaalla " \
-           "Porvoonjokilaakson maalaismaisemassa. Laajat kumpuilevat " \
-           "peltoaukeat ja hyvin säilynyt kyläidylli tervehtivät tulijaa. " \
-           "Pukkila on viihtyisä n. 1900 asukkaan kotipaikka, " \
-           "johon kuuluu kuusi kylää: Kirkonkylä, Naarkoski, Savijoki, " \
-           "Syvänoja, Kantele ja Torppi. Yhteisöllisessä kunnassa on " \
-           "erinomaiset palvelut, paljon tapahtumia ja monipuolisia " \
-           "harrastusmahdollisuuksia. Päiväkoti Vekara ja " \
-           "Hyvinvointikeskus Onni tarjoavat korkeatasoisia " \
-           "palveluja keskitetysti.\n\nPyrimme kunnassamme " \
-           "toimimaan arvojemme rohkeus – läheisyys – " \
-           "sujuvuus mukaisesti. Arvot ovat tavoitetila, " \
-           "jota pidämme ohjenuorana kuntamme toiminnassa."
+    assert updated_organization['description_translated']['fi'] == "Tämä on testiorganisaatio"
     assert updated_organization['description_translated']['sv'] == ""
     assert updated_organization['description_translated']['en'] == ""
-    assert updated_organization['webpage_address']['fi'] == "http://www.pukkila.fi/index.php"
+    assert updated_organization['webpage_address']['fi'] == "https://www.testiorganisaatio.fi"
     assert updated_organization['webpage_address']['sv'] == ""
     assert updated_organization['webpage_address']['en'] == ""
-    assert updated_organization['webpage_description']['fi'] == "Pukkilan kunnan kotisivut"
+    assert updated_organization['webpage_description']['fi'] == "Testiorganisaation kotisivu"
     assert updated_organization['webpage_address']['sv'] == ""
     assert updated_organization['webpage_address']['en'] == ""
 
@@ -137,7 +124,7 @@ def test_xroad_get_organizations_company_data(xroad_rest_mocks):
     assert updated_organization['company_type']['fi'] == "Osakeyhtiö"
     assert updated_organization['company_type']['sv'] == "Aktiebolag"
     assert updated_organization['company_type']['en'] == "Limited company"
-    assert updated_organization['postal_address'] == "Keilaranta 14, 02101, ESPOO, FI"
+    assert updated_organization['postal_address'] == "Katu 14, 12345, ESPOO, FI"
     assert updated_organization['company_language']['fi'] == "Suomi"
     assert updated_organization['company_language']['sv'] == "Finska"
     assert updated_organization['company_language']['en'] == "Finnish"
