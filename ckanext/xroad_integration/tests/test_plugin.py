@@ -121,7 +121,8 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getOrganizationCompanyData'))
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
+                         xroad_rest_service_url('getOrganizationCompanyData'))
 def test_xroad_get_organizations_company_data(xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
