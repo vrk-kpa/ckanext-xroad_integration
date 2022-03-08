@@ -169,7 +169,8 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['title_translated'] = org_names_translated
 
                     if organization_info.get('organizationDescriptions'):
-                        org_descriptions = _convert_xroad_value_to_uniform_list(organization_info.get('organizationDescriptions', {}))
+                        org_descriptions = \
+                            _convert_xroad_value_to_uniform_list(organization_info.get('organizationDescriptions', {}))
 
                         org_descriptions_translated = {
                             "fi": next((description.get('value', '')
