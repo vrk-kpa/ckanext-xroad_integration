@@ -31,6 +31,10 @@ def create_app(input_file):
     def heartbeat():
         return mock_data
 
+    @app.route('/getOrganization/<business_code>')
+    def getOrganization(business_code='000000-0'):
+        return mock_data
+
     return app
 
 

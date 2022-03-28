@@ -6,16 +6,27 @@ import pytest
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_mock as rest_mock
 
+
 XROAD_REST_ADAPTERS = {
     'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'xroad-catalog-mock-responses/test_listmembers.json'},
     'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092,
-                           'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'},
-    'get_organizations': {'host': '127.0.0.1', 'port': 9093,
-                          'content': 'xroad-catalog-mock-responses/test_getorganizations.json'}
+                           'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'}
 }
 
 XROAD_REST_SERVICES = {
-    'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'}
+    'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'},
+    'getOrganizationOrganizationData': {
+            'host': '127.0.0.1',
+            'port': 9192,
+            'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
+    'getOrganizationCompanyData': {
+        'host': '127.0.0.1',
+        'port': 9193,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_company_data.json'},
+    'getOrganizationEmptyData': {
+        'host': '127.0.0.1',
+        'port': 9194,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'}
 }
 
 
@@ -74,4 +85,4 @@ def xroad_rest_adapter_url(adapter_name):
 
 
 def xroad_rest_service_url(service_name):
-    return 'http://{host}:{port}/'.format(**XROAD_REST_SERVICES[service_name])
+    return 'http://{host}:{port}'.format(**XROAD_REST_SERVICES[service_name])
