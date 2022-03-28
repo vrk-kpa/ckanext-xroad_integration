@@ -669,10 +669,11 @@ def xroad_error_list(context, data_dict):
 
     rest_services_failed_errors = rest_services_failed_errors.all()
     other_errors = other_errors.all()
+    list_errors = list_errors.all()
 
     max_pages = 1
-    if list_errors.count() > DEFAULT_LIST_ERRORS_PAGE_LIMIT:
-        max_pages = int(list_errors.count() / DEFAULT_LIST_ERRORS_PAGE_LIMIT)
+    if len(list_errors) > DEFAULT_LIST_ERRORS_PAGE_LIMIT:
+        max_pages = int(len(list_errors) / DEFAULT_LIST_ERRORS_PAGE_LIMIT)
     previous_page = (page - 1) if (page > 0) else 0
     next_page = (page + 1) if (page < max_pages) else max_pages
     page += 1
