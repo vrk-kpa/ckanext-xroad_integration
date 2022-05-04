@@ -64,7 +64,7 @@ jobs:
           cd ckanext/ckanext-apicatalog_routes
           pip install -e .
 
-          cd ../ckanext-apicatalog_ui
+          cd ../ckanext-apicatalog
           pip install -e .
 
           cd ../ckanext-scheming
