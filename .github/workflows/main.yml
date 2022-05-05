@@ -17,9 +17,4 @@ jobs:
 
   test:
     needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test
-        uses: ./.github/workflows/test.yml
-      - name: Coveralls
-        uses: AndreMiras/coveralls-python-action@develop
+    uses: ./.github/workflows/test.yml
