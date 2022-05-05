@@ -61,9 +61,6 @@ jobs:
           cd api-catalog
           git submodule update --init --recursive
 
-          cd ckanext/ckanext-apicatalog_routes
-          pip install -e .
-
           cd ../ckanext-apicatalog
           pip install -e .
 
