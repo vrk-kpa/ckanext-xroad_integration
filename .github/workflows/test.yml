@@ -1,28 +1,11 @@
-name: Tests
-on: [push, pull_request, workflow_dispatch, workflow_call]
+name: Run tests
+on: workflow_call
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.6'
-      - name: Install requirements
-        run: pip install flake8 pycodestyle
-      - name: Check syntax
-        run: flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics --exclude ckan
-      - name: Run flake8
-        run: flake8 . --count --max-line-length=127 --statistics --exclude ckan
-
-  test:
-    needs: lint
-    strategy:
-      matrix:
-        ckan-version: [2.9]
-      fail-fast: false
-
-    name: CKAN ${{ matrix.ckan-version }}
+  strategy:
+    matrix:
+      ckan-version: [ 2.9 ]
+    fail-fast: false
+  name: CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
     container:
       image: openknowledge/ckan-dev:${{ matrix.ckan-version }}
@@ -84,5 +67,3 @@ jobs:
           ckan -c test.ini xroad init-db
       - name: Run tests
         run: pytest --ckan-ini=test.ini --cov=ckanext.xroad_integration --disable-warnings ckanext/xroad_integration/tests
-      - name: Coveralls
-        uses: AndreMiras/coveralls-python-action@develop
