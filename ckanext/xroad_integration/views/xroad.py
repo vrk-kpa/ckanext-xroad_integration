@@ -8,7 +8,7 @@ import logging
 import csv
 
 try:
-    from ckanext.apicatalog_ui.plugin import get_translated
+    from ckanext.apicatalog.plugin import get_translated
 except ImportError:
     from ckan.lib.helpers import get_translated
 
