@@ -70,9 +70,6 @@ jobs:
           cd ../ckanext-scheming
           pip install -e .
 
-          cd ../ckanext-apicatalog_scheming
-          pip install -e .
-
           cd ../ckanext-fluent
           pip install -e .
 
