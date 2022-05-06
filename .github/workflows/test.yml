@@ -61,7 +61,7 @@ jobs:
           cd api-catalog
           git submodule update --init --recursive
 
-          cd ../ckanext-apicatalog
+          cd ckanext/ckanext-apicatalog
           pip install -e .
 
           cd ../ckanext-scheming
