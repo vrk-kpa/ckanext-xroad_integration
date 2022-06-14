@@ -1,25 +1,28 @@
-from ckanext.harvest.harvesters import HarvesterBase
-from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
-from sqlalchemy import text
-import ckan.plugins as p
-from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
-from datetime import datetime
-from werkzeug.datastructures import FileStorage as FlaskFileStorage
-
+import os
+import tempfile
 import logging
 import json
 import requests
+import lxml.etree as etree
+import six
+import iso8601
+
+from sqlalchemy import text, exists
+from datetime import datetime
 from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-import os
-import tempfile
-from sqlalchemy import exists
-import lxml.etree as etree
-import six
-from ckan import model
 
+from ckanext.harvest.harvesters import HarvesterBase
+from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
+import ckan.plugins as p
+
+from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
+from ckan import model
 from ckan import logic
+
+from werkzeug.datastructures import FileStorage as FlaskFileStorage
+
 
 try:
     from ckan.common import asbool  # CKAN 2.9
@@ -344,15 +347,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             try:
                 service_removed_string = service.get('removed')
-                service_removed = (
-                        datetime.strptime(service_removed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                        if service_removed_string else None)
+                service_removed = iso8601.parse_date(service_removed_string) if service_removed_string else None
                 if service_removed:
                     named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
                     for resource in named_resources:
                         log.info("Service deleted: %s", name)
                         p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
-            except ValueError as e:
+            except iso8601.ParseError as e:
                 log.error('Error parsing Service remove timestamp: %s' % e)
 
         if result not in (True, "unchanged"):
@@ -384,10 +385,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             else:
                 changed_string = service.get('changed', service.get('created'))
             try:
-                changed = (
-                        datetime.strptime(changed_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                        if changed_string else None)
-            except ValueError as e:
+                changed = iso8601.parse_date(changed_string) if changed_string else None
+            except iso8601.ParseError as e:
                 log.error('Error parsing service timestamp: %s' % e)
                 continue
 
@@ -455,10 +454,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 for resource in named_resources:
                     try:
                         previous_string = resource.get(timestamp_field, None)
-                        previous = (
-                                datetime.strptime(previous_string.split('.', 2)[0], '%Y-%m-%dT%H:%M:%S')
-                                if previous_string else None)
-                    except ValueError as e:
+                        previous = iso8601.parse_date(previous_string) if previous_string else None
+                    except iso8601.ParseError as e:
                         log.error('Error parsing previous timestamp: %s' % e)
                         continue
 
