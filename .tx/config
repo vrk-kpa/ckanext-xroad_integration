@@ -1,8 +1,9 @@
 [main]
 host = https://www.transifex.com
 
-[liityntakatalogi.ckanext-xroad_integration]
+[o:avoindata:p:liityntakatalogi:r:ckanext-xroad_integration]
 file_filter = ckanext/xroad_integration/i18n/<lang>/LC_MESSAGES/ckanext-xroad_integration.po
 source_file = ckanext/xroad_integration/i18n/ckanext-xroad_integration.pot
 source_lang = en
-type = PO
+type        = PO
+
