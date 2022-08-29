@@ -49,7 +49,7 @@ def update_xroad_organizations(ctx):
     'Updates harvested organizations\' metadata'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.update_xroad_organization()
+        utils.update_xroad_organizations()
 
 
 @xroad.command()
