@@ -1,6 +1,8 @@
 from flask import Blueprint
 
 import ckan.model as model
+import ckan.plugins as p
+from ckan import logic
 from ckan.plugins.toolkit import render, check_access, NotAuthorized, abort, _, g, get_action, ObjectNotFound, Invalid
 from datetime import datetime
 from flask import request, make_response
@@ -191,6 +193,21 @@ def organization_errors(organization):
 
 
 xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
+
+
+def graphs():
+    context = {u'user': g.user, u'auth_user_obj': g.userobj}
+
+    try:
+        p.toolkit.check_access('xroad_graphs', context, {})
+    except logic.NotAuthorized:
+        p.toolkit.abort(403, _(u'Not authorized to see this page'))
+        return
+
+    return p.toolkit.render('admin/xroad_graphs.html')
+
+
+xroad.add_url_rule(u'/graphs', view_func=graphs)
 
 
 def get_blueprints():

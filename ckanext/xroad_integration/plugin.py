@@ -63,6 +63,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
 
     def get_helpers(self):
         return {'xroad_subsystem_path': helpers.xroad_subsystem_path,
+                'fetch_xroad_statistics': helpers.fetch_xroad_statistics,
                 'get_xroad_environment': helpers.get_xroad_environment,
                 'get_xroad_stats': helpers.get_xroad_stats,
                 'get_xroad_distinct_services': helpers.get_xroad_distinct_services}
@@ -103,6 +104,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'xroad_batch_result': sysadmin,
             'fetch_xroad_heartbeat': sysadmin,
             'xroad_heartbeat': sysadmin,
+            'xroad_graphs': sysadmin,
         }
 
     # IBlueprint
