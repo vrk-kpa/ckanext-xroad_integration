@@ -36,8 +36,9 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     def configure(self, config):
         xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address')
         xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
+        xroad_environment = toolkit.config.get('ckanext.xroad_integration.xroad_environment')
 
-        if not (xroad_catalog_address or xroad_client_id):
+        if not (xroad_catalog_address and xroad_client_id and xroad_environment):
             raise Exception("X-Road catalog has not been configured.")
 
     # IResourceController
@@ -61,7 +62,11 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     # ITemplateHelpers
 
     def get_helpers(self):
-        return {'xroad_subsystem_path': helpers.xroad_subsystem_path}
+        return {'xroad_subsystem_path': helpers.xroad_subsystem_path,
+                'fetch_xroad_statistics': helpers.fetch_xroad_statistics,
+                'get_xroad_environment': helpers.get_xroad_environment,
+                'get_xroad_stats': helpers.get_xroad_stats,
+                'get_xroad_distinct_services': helpers.get_xroad_distinct_services}
 
     # IActions
 
@@ -99,6 +104,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
             'xroad_batch_result': sysadmin,
             'fetch_xroad_heartbeat': sysadmin,
             'xroad_heartbeat': sysadmin,
+            'xroad_graphs': sysadmin,
         }
 
     # IBlueprint
