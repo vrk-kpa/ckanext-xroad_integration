@@ -226,7 +226,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                             log.warn('Empty WSDL service description returned for %s', generate_service_name(service))
 
                     if 'openapi' in service:
-                        openapi_data = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi')
+                        openapi_data = self._get_openapi(harvest_object.source.url,
+                                                         service['openapi']['externalId']).get('openapi')
                         if openapi_data:
                             service['openapi']['data'] = openapi_data
                         else:
