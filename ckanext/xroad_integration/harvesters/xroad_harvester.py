@@ -6,6 +6,7 @@ import requests
 import lxml.etree as etree
 import six
 import iso8601
+from typing import Optional, Any, List, Union, Dict
 
 from sqlalchemy import text, exists
 from datetime import datetime
@@ -28,8 +29,6 @@ try:
     from ckan.common import asbool  # CKAN 2.9
 except ImportError:
     from paste.deploy.converters import asbool
-
-from typing import Union
 
 
 NotFound = logic.NotFound
@@ -60,7 +59,7 @@ http.mount("http://", adapter)
 
 
 class XRoadHarvesterPlugin(HarvesterBase):
-    config = None
+    config = {}
 
     def _set_config(self, config_str):
         if config_str:
@@ -106,7 +105,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         if self.config.get('force_all', False) is True:
             last_time = "2011-01-01"
         elif self.config.get('since'):
-            last_time = self.config.get('since')
+            last_time = str(self.config.get('since'))
         else:
             last_time = self._last_error_free_job_time(harvest_job) or "2011-01-01"
 
@@ -114,7 +113,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                  last_time)
         try:
             catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
-            members = self._parse_xroad_data(catalog)
+            members: List[Dict] = self._parse_xroad_data(catalog)
         except ContentFetchError as e:
             self._save_gather_error('%r' % e.message, harvest_job)
             return False
@@ -127,7 +126,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # Service = resource = WSDL
 
         object_ids = []
-        for member in members:  # type: dict
+        for member in members:
             if isinstance(member, six.string_types):
                 continue
 
@@ -135,9 +134,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             if member.get('removed', None):
                 continue
 
-            # if there is only 1 subsystem, wrap it with list
-            if member['subsystems'] and (type(member['subsystems']['subsystem']) is dict):
-                member['subsystems']['subsystem'] = [member['subsystems']['subsystem']]
+            subsystems: List[Dict] = xroad_list_to_list(member, 'subsystems', 'subsystem')
 
             # TODO: X-Road Catalog IsProvider is not in use for now, restore by uncommenting lines below
             # Fetch member type
@@ -147,14 +144,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             # If X-Road catalog is not used, following sets member_type to provider
             # if subsystem has at least one active service
             member_type = 'consumer'
-            if member['subsystems']:
-                for subsystem in member['subsystems'].get('subsystem', []):  # type: dict
-                    services = subsystem.get('services', [])
-                    if type(services) is dict:
-                        services = [services]
-                    for service in services:  # type: Union[str, dict]
-                        if type(service) is dict and not service.get('removed'):
-                            member_type = 'provider'
+            for subsystem in subsystems:
+                services: List[Union[str, Dict]] = xroad_one_or_many_to_list(subsystem.get('services', []))
+                for service in services:
+                    if type(service) is dict and not service.get('removed'):
+                        member_type = 'provider'
 
             # Create organization id
             org_id = substitute_ascii_equivalents(u'.'.join(six.text_type(member.get(p, ''))
@@ -182,25 +176,23 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                         % (org_id, member['name']), harvest_job)
                 continue
 
-            if member.get('subsystems'):
-                for subsystem in member['subsystems']['subsystem']:
+            for subsystem in subsystems:
+                # Generate GUID
+                guid = substitute_ascii_equivalents(u'%s.%s'
+                                                    % (org_id, six.text_type(subsystem.get('subsystemCode', ''))))
 
-                    # Generate GUID
-                    guid = substitute_ascii_equivalents(u'%s.%s'
-                                                        % (org_id, six.text_type(subsystem.get('subsystemCode', ''))))
+                # Create harvest object
+                obj = HarvestObject(guid=guid, job=harvest_job,
+                                    content=json.dumps({
+                                        'xRoadInstance': member.get('xRoadInstance', ''),
+                                        'xRoadMemberClass': member.get('memberClass', ''),
+                                        'xRoadMemberCode': member.get('memberCode', ''),
+                                        'owner': org,
+                                        'subsystem': subsystem
+                                    }))
 
-                    # Create harvest object
-                    obj = HarvestObject(guid=guid, job=harvest_job,
-                                        content=json.dumps({
-                                            'xRoadInstance': member.get('xRoadInstance', ''),
-                                            'xRoadMemberClass': member.get('memberClass', ''),
-                                            'xRoadMemberCode': member.get('memberCode', ''),
-                                            'owner': org,
-                                            'subsystem': subsystem
-                                        }))
-
-                    obj.save()
-                    object_ids.append(obj.id)
+                obj.save()
+                object_ids.append(obj.id)
 
         return object_ids
 
@@ -225,12 +217,20 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         log.info("Service %s has been removed, no need to fetch api descriptions or types,"
                                  " skipping.." % service['serviceCode'])
                         continue
+
                     if 'wsdl' in service:
-                        service['wsdl']['data'] = self._get_wsdl(harvest_object.source.url,
-                                                                 service['wsdl']['externalId']).get('wsdl', '')
+                        wsdl_data = self._get_wsdl(harvest_object.source.url, service['wsdl']['externalId']).get('wsdl')
+                        if wsdl_data:
+                            service['wsdl']['data'] = wsdl_data
+                        else:
+                            log.warn('Empty WSDL service description returned for %s', generate_service_name(service))
+
                     if 'openapi' in service:
-                        service['openapi']['data'] = self._get_openapi(harvest_object.source.url,
-                                                                       service['openapi']['externalId']).get('openapi', '')
+                        openapi_data = self._get_openapi(harvest_object.source.url, service['openapi']['externalId']).get('openapi')
+                        if openapi_data:
+                            service['openapi']['data'] = openapi_data
+                        else:
+                            log.warn('Empty OpenApi service description returned for %s', generate_service_name(service))
 
                     service_version = parse_service_version(service.get('serviceVersion'))
                     if service_version:
@@ -403,8 +403,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             }
 
             if service_description:
-                service_description_data = service_description.get('data')
-                service_description_data_utf8 = service_description_data.encode('utf-8')
+                service_description_data_utf8 = service_description['data'].encode('utf-8')
 
                 wsdl = service.get('wsdl')
 
@@ -426,9 +425,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 file_name = f.name
 
                 # Prepare file upload
-                resource_data['upload'] = FlaskFileStorage(
-                        open(file_name, 'rb'), target_name,
-                        content_length=len(service_description_data_utf8))
+                content_length = len(service_description_data_utf8)
+                log.debug('Uploading service %s description (size: %d bytes)',
+                          service_version_name(service_code, service_version), content_length)
+                resource_data['upload'] = FlaskFileStorage(open(file_name, 'rb'), target_name, content_length=content_length)
                 resource_data['format'] = resource_format
                 resource_data['valid_content'] = "yes" if valid_wsdl else "no"
             elif unknown_service_link_url is None:
@@ -441,7 +441,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 resource_data['url'] = unknown_service_link_url
                 timestamp_field = 'unknown_timestamp'
 
-            resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S')
+            resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S') if changed else None
 
             named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
 
@@ -460,7 +460,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         continue
 
                     if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
-                        log.info('Service changed after last harvest, replacing...')
+                        log.info('Service %s.%s changed after last harvest, replacing...',
+                                 resource.get('xroad_servicecode'), resource.get('xroad_serviceversion'))
                         resource_data['id'] = resource['id']
                         p.toolkit.get_action('resource_patch')(context, resource_data)
                         result = True
@@ -472,7 +473,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return result
 
-    def _get_xroad_catalog(self, url, changed_after):
+    def _get_xroad_catalog(self, url, changed_after: str):
         # type: (str, str) -> dict
         try:
             r = http.get(url + '/Consumer/ListMembers', params={'changedAfter': changed_after},
@@ -593,7 +594,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 return job
 
     @classmethod
-    def _last_error_free_job_time(cls, harvest_job):
+    def _last_error_free_job_time(cls, harvest_job) -> Optional[str]:
         query = model.Session.query(HarvestJob.gather_started).from_statement(text('''
             select gather_started
             from harvest_job hj
@@ -820,17 +821,21 @@ class ContentFetchError(Exception):
     pass
 
 
-def xroad_list_to_list(obj, key1, key2):
+def xroad_list_to_list(obj: Dict[Any, Any], key1: Any, key2: Any) -> List[Any]:
     maybe_list = (obj.get(key1) or {}).get(key2) or []
-    if type(maybe_list) is list:
-        return maybe_list
-    elif type(maybe_list) is dict:
-        return [maybe_list]
+    return xroad_one_or_many_to_list(maybe_list)
+
+
+def xroad_one_or_many_to_list(list_or_dict: Union[Dict, List]) -> List:
+    if type(list_or_dict) is list:
+        return list_or_dict
+    elif type(list_or_dict) is dict:
+        return [list_or_dict]
     else:
         return []
 
 
-def parse_service_version(v):
+def parse_service_version(v) -> Optional[str]:
     if v is None:
         return v
     elif type(v) in (str, six.text_type):
@@ -843,12 +848,16 @@ def parse_service_version(v):
         raise Exception('Unexpected service version type: {}'.format(repr(type(v))))
 
 
-def generate_service_name(service):
+def generate_service_name(service) -> Optional[str]:
     service_code = service.get('serviceCode')
     if service_code is None:
         return None
 
     service_version = parse_service_version(service.get('serviceVersion'))
+    return service_version_name(service_code, service_version)
+
+
+def service_version_name(service_code: str, service_version: Optional[str]) -> str:
     if service_version is None:
         return service_code
 
