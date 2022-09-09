@@ -1,5 +1,6 @@
 import logging
 import json
+from multiprocessing.sharedctypes import Value
 import os.path
 
 from dateutil import relativedelta
@@ -27,7 +28,6 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
-DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS = 90
 DEFAULT_LIST_ERRORS_PAGE_LIMIT = 20
 
 
@@ -350,27 +350,46 @@ def fetch_xroad_errors(context, data_dict):
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
 
-        if data_dict.get('since'):
-            since = data_dict.get('since')
-        else:
-            since = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        start_date = data_dict.get('start_date')
+        end_date = data_dict.get('end_date')
 
-        days = DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS
-        fetch_since = datetime.datetime.strptime(since, "%Y-%m-%d")
-        max_fetch_date_in_past = (datetime.datetime.now() - relativedelta
-                                  .relativedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)).replace(hour=0,
-                                                                                                    minute=0,
-                                                                                                    second=0,
-                                                                                                    microsecond=0)
+        if end_date and not start_date:
+            return {"success": False, "message": "Please give start date to go with the end date"}
+        if start_date and end_date and start_date > end_date:
+            return {"success": False, "message": "Start date cannot be later than end date"}
 
-        if fetch_since > max_fetch_date_in_past:
-            startDate = fetch_since
+        # If request includes start_date use that (and verify it is a valid date)
+        # else default to yesterday
+        if start_date:
+            try:
+                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+                if start_date > datetime.datetime.now():
+                    return {"success": False, "message": "Start date cannot be in the future"}
+                start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
+            except ValueError:
+                log.error('Start date cannot be parsed into a valid date')
+                return {"success": False, "message": "Start date cannot be parsed into a valid date"}
         else:
-            startDate = max_fetch_date_in_past
+            start_date = datetime.datetime.strftime(datetime.datetime.now() -
+                                                    relativedelta.relativedelta(days=+1), "%Y-%m-%d")
+
+        # If request includes end_date use that (and verify it is a valid date)
+        # else default to current time
+        if end_date:
+            try:
+                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+                if end_date > datetime.datetime.now():
+                    return {"success": False, "message": "End date cannot be in the future"}
+                end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
+            except ValueError:
+                log.error('End date cannot be parsed into a valid date')
+                return {"success": False, "message": "End date cannot be parsed into a valid date"}
+        else:
+            end_date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d")
 
         queryparams = {
-            'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
-            'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+            'startDate': start_date,
+            'endDate': end_date
         }
 
         page = 0
@@ -380,7 +399,7 @@ def fetch_xroad_errors(context, data_dict):
         if "limit" in data_dict and data_dict.get('limit') is not None:
             limit = data_dict.get('limit')
 
-        log.info("Fetching errors for the last %s days for %s" % (days, source_title))
+        log.info("Fetching errors from %s to %s for %s" % (start_date, end_date, source_title))
 
         try:
             pagination = {"page": str(page), "limit": str(limit)}

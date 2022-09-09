@@ -1,4 +1,5 @@
 from ckan.plugins.toolkit import get_action
+from datetime import datetime
 import json
 
 
@@ -24,25 +25,6 @@ def update_xroad_organizations():
     get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'update_xroad_organizations',
                                                                     'success': success,
                                                                     'message': result.get('message')})
-
-
-def fetch_errors(since):
-    try:
-        results = get_action('fetch_xroad_errors')({'ignore_auth': True}, {'since': since})
-    except Exception as e:
-        results = {'success': False, 'message': 'Exception: {}'.format(e)}
-
-    success = results.get('success') is True
-    get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_errors',
-                                                                    'success': success,
-                                                                    'message': results.get('message')})
-
-    if success:
-        for result in results.get('results', []):
-            print(result['message'])
-
-    else:
-        print(results['message'])
 
 
 def fetch_stats(days):

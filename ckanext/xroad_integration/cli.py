@@ -9,6 +9,7 @@ import click
 
 import ckanext.xroad_integration.utils as utils
 from ckan.plugins import toolkit
+get_action = toolkit.get_action
 
 
 def get_commands():
@@ -54,19 +55,48 @@ def update_xroad_organizations(ctx):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'--since')
-def fetch_errors(ctx, since):
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+def fetch_errors(ctx, start_date, end_date):
     """Fetches error log from catalog lister"""
-    if since:
-        try:
-            datetime.strptime(since, "%Y-%m-%d")
-        except ValueError:
-            click.secho("Since dates should be given in format YYYY-MM-DD", fg="red")
-            return
+    if end_date and not start_date:
+        click.secho("Please give a start date to go with the end date", fg="red")
+        return
+    if start_date and end_date and end_date < start_date:
+        click.secho("Start date cannot be later than end date", fg="red")
+        return
+    if start_date and start_date > datetime.now():
+        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
+        return
+    if end_date and end_date > datetime.now():
+        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
+        return
+
+    if start_date:
+        start_date = datetime.strftime(start_date, "%Y-%m-%d")
+    if end_date:
+        end_date = datetime.strftime(end_date, "%Y-%m-%d")
 
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.fetch_errors(since)
+        try:
+            results = get_action('fetch_xroad_errors')({'ignore_auth': True},
+                                                       {'start_date': start_date,
+                                                        'end_date': end_date})
+        except Exception as e:
+            results = {'success': False, 'message': 'Exception: {}'.format(e)}
+
+        success = results.get('success') is True
+        get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_errors',
+                                                                        'success': success,
+                                                                        'message': results.get('message')})
+
+        if success:
+            for result in results.get('results', []):
+                click.secho(result['message'], fg="green")
+
+        else:
+            click.secho(results['message'], fg="red")
 
 
 @xroad.command()
