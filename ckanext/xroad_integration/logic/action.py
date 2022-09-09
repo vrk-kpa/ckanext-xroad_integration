@@ -294,7 +294,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
 def _get_organization_information(business_code):
     try:
-        organization_json = xroad_catalog_query('getOrganization', [business_code]).json()
+        organization_json = xroad_catalog_query('getOrganization', params=[business_code]).json()
 
         if organization_json.get('organizationData') or organization_json.get('companyData'):
             return organization_json
@@ -308,7 +308,14 @@ def _get_organization_information(business_code):
 def _get_organization_changes(business_code, changed_after):
     try:
         since = datetime.datetime.strptime(changed_after, '%Y-%m-%dT%H:%M:%S').date().strftime('%Y-%m-%d')
-        organization_changes = xroad_catalog_query('getOrganizationChanges', [business_code, since]).json()
+
+        queryparams = {
+            'startDate': since,
+            'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        }
+
+        organization_changes = xroad_catalog_query('getOrganizationChanges',
+                                                   params=[business_code], queryparams=queryparams).json()
         return organization_changes.get('changed')
 
     except ConnectionError:
@@ -357,8 +364,14 @@ def fetch_xroad_errors(context, data_dict):
                                                                                                     microsecond=0)
 
         if fetch_since > max_fetch_date_in_past:
-            days = (datetime.datetime.today() - fetch_since).days
-            days = days if days > 0 else 1
+            startDate = fetch_since
+        else:
+            startDate = max_fetch_date_in_past
+
+        queryparams = {
+            'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
+            'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        }
 
         page = 0
         if "page" in data_dict and data_dict.get('page') is not None:
@@ -371,7 +384,9 @@ def fetch_xroad_errors(context, data_dict):
 
         try:
             pagination = {"page": str(page), "limit": str(limit)}
-            error_data = xroad_catalog_query('listErrors', [str(days)], pagination=pagination).json()
+            error_data = xroad_catalog_query('listErrors',
+                                             queryparams=queryparams,
+                                             pagination=pagination).json()
 
             if error_data is None:
                 log.warn("Calling listErrors failed!")
@@ -383,7 +398,9 @@ def fetch_xroad_errors(context, data_dict):
             for page_no in range(no_of_pages):
                 try:
                     pagination = {"page": str(page_no), "limit": str(limit)}
-                    error_data = xroad_catalog_query('listErrors', [str(days)], pagination=pagination).json()
+                    error_data = xroad_catalog_query('listErrors',
+                                                     queryparams=queryparams,
+                                                     pagination=pagination).json()
 
                     if error_data is None:
                         log.warn("Calling listErrors failed!")
@@ -429,7 +446,8 @@ def fetch_xroad_errors(context, data_dict):
         return {"success": True, "results": results, "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
 
-def xroad_catalog_query(service, params='', content_type='application/json', accept='application/json', pagination=None):
+def xroad_catalog_query(service, params=[],
+                        queryparams={}, content_type='application/json', accept='application/json', pagination=None):
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
     xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
@@ -457,19 +475,30 @@ def xroad_catalog_query(service, params='', content_type='application/json', acc
     if xroad_client_certificate and os.path.isfile(xroad_client_certificate):
         certificate_args['cert'] = xroad_client_certificate
 
-    return http.get(url, headers=headers, **certificate_args)
+    return http.get(url, params=queryparams, headers=headers, **certificate_args)
 
 
 def fetch_xroad_service_list(context, data_dict):
     toolkit.check_access('fetch_xroad_service_list', context)
     days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
+    startDate = (datetime.datetime.now() - relativedelta
+                 .relativedelta(days=days)).replace(hour=0,
+                                                    minute=0,
+                                                    second=0,
+                                                    microsecond=0)
+
+    queryparams = {
+        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
+        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+    }
 
     log.info("Fetching X-Road services for the last %s days" % days)
 
     try:
-        service_list_data = xroad_catalog_query('getListOfServices', [str(days)]).json()
-    except ConnectionError:
+        service_list_data = xroad_catalog_query('getListOfServices', queryparams=queryparams).json()
+    except ConnectionError as e:
         log.warn("Connection error calling getListOfServices")
+        log.info(e)
         return {'success': False, 'message': 'Connection error calling getListOfServices'}
 
     if service_list_data is None:
@@ -698,11 +727,21 @@ def fetch_xroad_stats(context, data_dict):
     toolkit.check_access('fetch_xroad_stats', context)
 
     days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
+    startDate = (datetime.datetime.now() - relativedelta
+                 .relativedelta(days=days)).replace(hour=0,
+                                                    minute=0,
+                                                    second=0,
+                                                    microsecond=0)
+
+    queryparams = {
+        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
+        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+    }
 
     log.info("Fetching X-Road stats for the last %s days" % days)
 
     try:
-        statistics_data = xroad_catalog_query('getServiceStatistics', [str(days)]).json()
+        statistics_data = xroad_catalog_query('getServiceStatistics', queryparams=queryparams).json()
 
         if statistics_data is None:
             log.warn("Calling getServiceStatistics failed!")
@@ -739,11 +778,21 @@ def fetch_distinct_service_stats(context, data_dict):
     toolkit.check_access('fetch_distinct_service_stats', context)
 
     days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
+    startDate = (datetime.datetime.now() - relativedelta
+                 .relativedelta(days=days)).replace(hour=0,
+                                                    minute=0,
+                                                    second=0,
+                                                    microsecond=0)
+
+    queryparams = {
+        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
+        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+    }
 
     log.info("Fetching X-Road distinct service stats for the last %s days" % days)
 
     try:
-        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', [str(days)]).json()
+        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', queryparams=queryparams).json()
 
         if statistics_data is None:
             log.warn("Calling getDistinctServiceStatistics failed!")
