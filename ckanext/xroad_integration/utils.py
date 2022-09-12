@@ -27,33 +27,6 @@ def update_xroad_organizations():
                                                                     'message': result.get('message')})
 
 
-
-
-
-def fetch_distinct_service_stats(days):
-
-    data_dict = {}
-    if days:
-        data_dict['days'] = days
-
-    try:
-        results = get_action('fetch_distinct_service_stats')({'ignore_auth': True}, data_dict)
-    except Exception as e:
-        results = {'success': False, 'message': 'Exception: {}'.format(e)}
-
-    success = results.get('success') is True
-    get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_distinct_service_stats',
-                                                                    'success': success,
-                                                                    'params': json.dumps(data_dict),
-                                                                    'message': results.get('message')})
-
-    if success:
-        print(results['message'])
-
-    else:
-        print(results['message'])
-
-
 def fetch_service_list(days):
     data_dict = {}
     if days:

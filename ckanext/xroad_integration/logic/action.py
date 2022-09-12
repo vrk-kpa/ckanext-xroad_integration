@@ -800,19 +800,17 @@ def fetch_xroad_stats(context, data_dict):
 def fetch_distinct_service_stats(context, data_dict):
     toolkit.check_access('fetch_distinct_service_stats', context)
 
-    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
-    startDate = (datetime.datetime.now() - relativedelta
-                 .relativedelta(days=days)).replace(hour=0,
-                                                    minute=0,
-                                                    second=0,
-                                                    microsecond=0)
+    start_date = data_dict.get('start_date')
+    end_date = data_dict.get('end_date')
+
+    start_date, end_date = determine_start_and_end_date(start_date, end_date)
 
     queryparams = {
-        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
-        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        'startDate': start_date,
+        'endDate': end_date
     }
 
-    log.info("Fetching X-Road distinct service stats for the last %s days" % days)
+    log.info("Fetching X-Road distinct service stats from %s to %s" % (start_date, end_date))
 
     try:
         statistics_data = xroad_catalog_query('getDistinctServiceStatistics', queryparams=queryparams).json()
