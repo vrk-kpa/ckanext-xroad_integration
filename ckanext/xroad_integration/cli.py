@@ -73,8 +73,12 @@ def update_xroad_organizations(ctx):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
-@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+    help="""If source_id provided as included, then only it's failed jobs will be aborted.
+    You can use comma as a separator to provide multiple source_id's""",)
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+    help="""If source_id provided as included, then only it's failed jobs will be aborted.
+    You can use comma as a separator to provide multiple source_id's""",)
 def fetch_errors(ctx, start_date, end_date):
     """Fetches error log from catalog lister"""
     if end_date and not start_date:

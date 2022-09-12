@@ -75,9 +75,9 @@ def xroad_rest_mocks():
 
 @pytest.fixture
 def xroad_database_setup():
-    from ckanext.xroad_integration.utils import init_db
-
-    init_db()
+    import ckan.model as model
+    from ckanext.xroad_integration.model import init_table
+    init_table(model.meta.engine)
 
 
 def xroad_rest_adapter_url(adapter_name):
