@@ -505,19 +505,18 @@ def xroad_catalog_query(service, params=[],
 
 def fetch_xroad_service_list(context, data_dict):
     toolkit.check_access('fetch_xroad_service_list', context)
-    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
-    startDate = (datetime.datetime.now() - relativedelta
-                 .relativedelta(days=days)).replace(hour=0,
-                                                    minute=0,
-                                                    second=0,
-                                                    microsecond=0)
+
+    start_date = data_dict.get('start_date')
+    end_date = data_dict.get('end_date')
+
+    start_date, end_date = determine_start_and_end_date(start_date, end_date)
 
     queryparams = {
-        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
-        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        'startDate': start_date,
+        'endDate': end_date
     }
 
-    log.info("Fetching X-Road services for the last %s days" % days)
+    log.info("Fetching X-Road services from %s to %s" % (start_date, end_date))
 
     try:
         service_list_data = xroad_catalog_query('getListOfServices', queryparams=queryparams).json()
