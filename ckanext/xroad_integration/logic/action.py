@@ -340,6 +340,44 @@ def _convert_xroad_datetime_list_to_datetime(value):
         return None
 
 
+def determine_start_and_end_date(start_date, end_date):
+    if end_date and not start_date:
+        return {"success": False, "message": "Please give start date to go with the end date"}
+    if start_date and end_date and start_date > end_date:
+        return {"success": False, "message": "Start date cannot be later than end date"}
+
+    # If request includes start_date use that (and verify it is a valid date)
+    # else default to yesterday
+    if start_date:
+        try:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            if start_date > datetime.datetime.now():
+                return {"success": False, "message": "Start date cannot be in the future"}
+            start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
+        except ValueError:
+            log.error('Start date cannot be parsed into a valid date')
+            return {"success": False, "message": "Start date cannot be parsed into a valid date"}
+    else:
+        start_date = datetime.datetime.strftime(datetime.datetime.now() -
+                                                relativedelta.relativedelta(days=+1), "%Y-%m-%d")
+
+    # If request includes end_date use that (and verify it is a valid date)
+    # else default to current time
+    if end_date:
+        try:
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+            if end_date > datetime.datetime.now():
+                return {"success": False, "message": "End date cannot be in the future"}
+            end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
+        except ValueError:
+            log.error('End date cannot be parsed into a valid date')
+            return {"success": False, "message": "End date cannot be parsed into a valid date"}
+    else:
+        end_date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d")
+
+    return start_date, end_date
+
+
 def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
@@ -353,39 +391,7 @@ def fetch_xroad_errors(context, data_dict):
         start_date = data_dict.get('start_date')
         end_date = data_dict.get('end_date')
 
-        if end_date and not start_date:
-            return {"success": False, "message": "Please give start date to go with the end date"}
-        if start_date and end_date and start_date > end_date:
-            return {"success": False, "message": "Start date cannot be later than end date"}
-
-        # If request includes start_date use that (and verify it is a valid date)
-        # else default to yesterday
-        if start_date:
-            try:
-                start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-                if start_date > datetime.datetime.now():
-                    return {"success": False, "message": "Start date cannot be in the future"}
-                start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
-            except ValueError:
-                log.error('Start date cannot be parsed into a valid date')
-                return {"success": False, "message": "Start date cannot be parsed into a valid date"}
-        else:
-            start_date = datetime.datetime.strftime(datetime.datetime.now() -
-                                                    relativedelta.relativedelta(days=+1), "%Y-%m-%d")
-
-        # If request includes end_date use that (and verify it is a valid date)
-        # else default to current time
-        if end_date:
-            try:
-                end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-                if end_date > datetime.datetime.now():
-                    return {"success": False, "message": "End date cannot be in the future"}
-                end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
-            except ValueError:
-                log.error('End date cannot be parsed into a valid date')
-                return {"success": False, "message": "End date cannot be parsed into a valid date"}
-        else:
-            end_date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d")
+        start_date, end_date = determine_start_and_end_date(start_date, end_date)
 
         queryparams = {
             'startDate': start_date,
@@ -745,19 +751,17 @@ def xroad_error_list(context, data_dict):
 def fetch_xroad_stats(context, data_dict):
     toolkit.check_access('fetch_xroad_stats', context)
 
-    days = data_dict.get('days', DEFAULT_DAYS_TO_FETCH)
-    startDate = (datetime.datetime.now() - relativedelta
-                 .relativedelta(days=days)).replace(hour=0,
-                                                    minute=0,
-                                                    second=0,
-                                                    microsecond=0)
+    start_date = data_dict.get('start_date')
+    end_date = data_dict.get('end_date')
+
+    start_date, end_date = determine_start_and_end_date(start_date, end_date)
 
     queryparams = {
-        'startDate': datetime.datetime.strftime(startDate, "%Y-%m-%d"),
-        'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+        'startDate': start_date,
+        'endDate': end_date
     }
 
-    log.info("Fetching X-Road stats for the last %s days" % days)
+    log.info("Fetching X-Road stats from %s to %s" % (start_date, end_date))
 
     try:
         statistics_data = xroad_catalog_query('getServiceStatistics', queryparams=queryparams).json()

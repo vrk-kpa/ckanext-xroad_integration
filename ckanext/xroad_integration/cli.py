@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import json
 import jinja2
 from ckan.lib import mailer
 
@@ -101,12 +102,48 @@ def fetch_errors(ctx, start_date, end_date):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'--days', type=int)
-def fetch_stats(ctx, days):
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+def fetch_stats(ctx, start_date, end_date):
     'Fetches X-Road stats from catalog lister'
+    if end_date and not start_date:
+        click.secho("Please give a start date to go with the end date", fg="red")
+        return
+    if start_date and end_date and end_date < start_date:
+        click.secho("Start date cannot be later than end date", fg="red")
+        return
+    if start_date and start_date > datetime.now():
+        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
+        return
+    if end_date and end_date > datetime.now():
+        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
+        return
+
+    if start_date:
+        start_date = datetime.strftime(start_date, "%Y-%m-%d")
+    if end_date:
+        end_date = datetime.strftime(end_date, "%Y-%m-%d")
+
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.fetch_stats(days)
+        data_dict = {"start_date": start_date,
+                     "end_date": end_date}
+        try:
+            results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
+        except Exception as e:
+            results = {'success': False, 'message': 'Exception: {}'.format(e)}
+
+        success = results.get('success') is True
+        get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'fetch_xroad_stats',
+                                                                        'success': success,
+                                                                        'params': json.dumps(data_dict),
+                                                                        'message': results.get('message')})
+
+        if success:
+            click.secho(results['message'], fg="green")
+
+        else:
+            click.secho(results['message'], fg="red")
 
 
 @xroad.command()
