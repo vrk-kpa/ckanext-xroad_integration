@@ -340,41 +340,32 @@ def _convert_xroad_datetime_list_to_datetime(value):
         return None
 
 
-def determine_start_and_end_date(start_date, end_date):
+def check_start_and_end_date(start_date, end_date):
     if end_date and not start_date:
-        return {"success": False, "message": "Please give start date to go with the end date"}
-    if start_date and end_date and start_date > end_date:
-        return {"success": False, "message": "Start date cannot be later than end date"}
+        raise ValueError("Please give start date to go with the end date")
 
     # If request includes start_date use that (and verify it is a valid date)
     # else default to yesterday
     if start_date:
-        try:
-            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-            if start_date > datetime.datetime.now():
-                return {"success": False, "message": "Start date cannot be in the future"}
-            start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
-        except ValueError:
-            log.error('Start date cannot be parsed into a valid date')
-            return {"success": False, "message": "Start date cannot be parsed into a valid date"}
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        if start_date > datetime.datetime.now():
+            raise ValueError("Start date cannot be in the future")
     else:
-        start_date = datetime.datetime.strftime(datetime.datetime.now() -
-                                                relativedelta.relativedelta(days=+1), "%Y-%m-%d")
+        start_date = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
 
     # If request includes end_date use that (and verify it is a valid date)
     # else default to current time
     if end_date:
-        try:
-            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-            if end_date > datetime.datetime.now():
-                return {"success": False, "message": "End date cannot be in the future"}
-            end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
-        except ValueError:
-            log.error('End date cannot be parsed into a valid date')
-            return {"success": False, "message": "End date cannot be parsed into a valid date"}
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        if start_date > end_date:
+            raise ValueError("Start date cannot be later than end date")
+        if end_date > datetime.datetime.now():
+            raise ValueError("End date cannot be in the future")
     else:
-        end_date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d")
+        end_date = datetime.datetime.now()
 
+    start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
+    end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
     return start_date, end_date
 
 
@@ -391,7 +382,10 @@ def fetch_xroad_errors(context, data_dict):
         start_date = data_dict.get('start_date')
         end_date = data_dict.get('end_date')
 
-        start_date, end_date = determine_start_and_end_date(start_date, end_date)
+        try:
+            start_date, end_date = check_start_and_end_date(start_date, end_date)
+        except ValueError as e:
+            return {'success': False, 'message': str(e)}
 
         queryparams = {
             'startDate': start_date,
@@ -509,7 +503,10 @@ def fetch_xroad_service_list(context, data_dict):
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
 
-    start_date, end_date = determine_start_and_end_date(start_date, end_date)
+    try:
+        start_date, end_date = check_start_and_end_date(start_date, end_date)
+    except ValueError as e:
+        return {'success': False, 'message': str(e)}
 
     queryparams = {
         'startDate': start_date,
@@ -753,7 +750,10 @@ def fetch_xroad_stats(context, data_dict):
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
 
-    start_date, end_date = determine_start_and_end_date(start_date, end_date)
+    try:
+        start_date, end_date = check_start_and_end_date(start_date, end_date)
+    except ValueError as e:
+        return {'success': False, 'message': str(e)}
 
     queryparams = {
         'startDate': start_date,
@@ -802,7 +802,10 @@ def fetch_distinct_service_stats(context, data_dict):
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
 
-    start_date, end_date = determine_start_and_end_date(start_date, end_date)
+    try:
+        start_date, end_date = check_start_and_end_date(start_date, end_date)
+    except ValueError as e:
+        return {'success': False, 'message': str(e)}
 
     queryparams = {
         'startDate': start_date,
