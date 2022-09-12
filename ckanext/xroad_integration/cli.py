@@ -8,13 +8,17 @@ from datetime import datetime
 
 import click
 
-import ckanext.xroad_integration.utils as utils
 from ckan.plugins import toolkit
 get_action = toolkit.get_action
 
 
 def get_commands():
     return [xroad]
+
+
+def get_latest_batch_run_results():
+    response = get_action('xroad_latest_batch_results')({'ignore_auth': True}, {})
+    return response['results']
 
 
 @click.group()
@@ -28,7 +32,10 @@ def xroad():
 def init_db():
     """Creates the necessary tables in the database.
     """
-    utils.init_db()
+    import ckan.model as model
+    from ckanext.xroad_integration.model import init_table
+    init_table(model.meta.engine)
+
     click.secho(u"DB tables created", fg=u"green")
 
 
@@ -38,7 +45,9 @@ def drop_db(yes_i_am_sure):
     """Removes tables created by init_db in the database.
     """
     if yes_i_am_sure:
-        utils.drop_db()
+        import ckan.model as model
+        from ckanext.xroad_integration.model import drop_table
+        drop_table(model.meta.engine)
         click.secho(u"DB tables dropped", fg=u"green")
     else:
         click.secho(u"This will delete all xroad data in the database! If you are sure, "
@@ -51,7 +60,15 @@ def update_xroad_organizations(ctx):
     'Updates harvested organizations\' metadata'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.update_xroad_organizations()
+        try:
+            result = get_action('update_xroad_organizations')({'ignore_auth': True}, {})
+        except Exception as e:
+            result = {'success': False, 'message': 'Exception: {}'.format(e)}
+
+        success = result.get('success') is True
+        get_action('xroad_batch_result_create')({'ignore_auth': True}, {'service': 'update_xroad_organizations',
+                                                                        'success': success,
+                                                                        'message': result.get('message')})
 
 
 @xroad.command()
@@ -245,12 +262,20 @@ def fetch_heartbeat(ctx):
     'Fetches X-Road catalog heartbeat'
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        utils.fetch_xroad_heartbeat()
+        try:
+            result = get_action('fetch_xroad_heartbeat')({'ignore_auth': True}, {})
+
+            if result.get('success') is True:
+                print('Success:', result.get('heartbeat'))
+            else:
+                click.secho('Error fetching heartbeat: %s' % result.get('message', '(no message)'), fg='red')
+        except Exception as e:
+            print('Error fetching heartbeat: \n', e)
 
 
 @xroad.command()
 def latest_batch_run_results():
-    results = utils.latest_batch_run_results()
+    results = get_latest_batch_run_results()
 
     columns = ['service', 'result', 'timestamp', 'message']
     rows = [[r.get('service'),
@@ -267,7 +292,7 @@ def latest_batch_run_results():
 @xroad.command()
 @click.option(u'--dryrun', is_flag=True)
 def send_latest_batch_run_results_email(dryrun):
-    results = utils.latest_batch_run_results()
+    results = get_latest_batch_run_results()
     failed = [r for r in results if r.get('success') is not True]
 
     if not failed:

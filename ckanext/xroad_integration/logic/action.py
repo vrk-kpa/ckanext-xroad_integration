@@ -1,6 +1,5 @@
 import logging
 import json
-from multiprocessing.sharedctypes import Value
 import os.path
 
 from dateutil import relativedelta
@@ -28,6 +27,7 @@ from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadService
 
 DEFAULT_TIMEOUT = 3  # seconds
 DEFAULT_DAYS_TO_FETCH = 1
+DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS = 90
 DEFAULT_LIST_ERRORS_PAGE_LIMIT = 20
 
 
@@ -929,7 +929,7 @@ def fetch_xroad_heartbeat(context, data_dict):
     log.info('X-Road catalog is %s', 'UP' if result else 'DOWN')
     XRoadHeartbeat.create(result)
 
-    return {'success': True, 'heartbeat': result}
+    return {'success': True if result else False, 'heartbeat': result}
 
 
 def xroad_heartbeat(context, data_dict):
