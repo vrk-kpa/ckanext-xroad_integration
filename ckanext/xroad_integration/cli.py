@@ -74,11 +74,10 @@ def update_xroad_organizations(ctx):
 @xroad.command()
 @click.pass_context
 @click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="""If source_id provided as included, then only it's failed jobs will be aborted.
-    You can use comma as a separator to provide multiple source_id's""",)
+              help="""Optional, unless end-date is given in which case start-date is also required.
+              If not given yesterday is used as a default.""",)
 @click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="""If source_id provided as included, then only it's failed jobs will be aborted.
-    You can use comma as a separator to provide multiple source_id's""",)
+              help="""Optional. If not given current date is used as a default""",)
 def fetch_errors(ctx, start_date, end_date):
     """Fetches error log from catalog lister"""
     if end_date and not start_date:
@@ -123,8 +122,11 @@ def fetch_errors(ctx, start_date, end_date):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
-@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional, unless end-date is given in which case start-date is also required.
+              If not given yesterday is used as a default.""",)
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional. If not given current date is used as a default""",)
 def fetch_stats(ctx, start_date, end_date):
     'Fetches X-Road stats from catalog lister'
     if end_date and not start_date:
@@ -169,8 +171,11 @@ def fetch_stats(ctx, start_date, end_date):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
-@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional, unless end-date is given in which case start-date is also required.
+              If not given yesterday is used as a default.""",)
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional. If not given current date is used as a default""",)
 def fetch_distinct_service_stats(ctx, start_date, end_date):
     'Fetches X-Road distinct service stats from catalog lister'
     if end_date and not start_date:
@@ -215,8 +220,11 @@ def fetch_distinct_service_stats(ctx, start_date, end_date):
 
 @xroad.command()
 @click.pass_context
-@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]))
-@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]))
+@click.option(u'-s', u'--start-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional, unless end-date is given in which case start-date is also required.
+              If not given yesterday is used as a default.""",)
+@click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="""Optional. If not given current date is used as a default""",)
 def fetch_service_list(ctx, start_date, end_date):
     'Fetches X-Road services from catalog lister'
     if end_date and not start_date:
