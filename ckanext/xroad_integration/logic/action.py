@@ -932,7 +932,7 @@ def fetch_xroad_heartbeat(context, data_dict):
     log.info('X-Road catalog is %s', 'UP' if result else 'DOWN')
     XRoadHeartbeat.create(result)
 
-    return {'success': True if result else False, 'heartbeat': result}
+    return {'success': True, 'heartbeat': result}
 
 
 def xroad_heartbeat(context, data_dict):
