@@ -350,7 +350,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 service_removed_string = service.get('removed')
                 service_removed = iso8601.parse_date(service_removed_string) if service_removed_string else None
                 if service_removed:
-                    named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+                    named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
                     for resource in named_resources:
                         log.info("Service deleted: %s", name)
                         p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
@@ -444,7 +444,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S') if changed else None
 
-            named_resources = [r for r in package_dict.get('resources', {}) if r['name'] == name]
+            named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
 
             # Create or update resources
 
