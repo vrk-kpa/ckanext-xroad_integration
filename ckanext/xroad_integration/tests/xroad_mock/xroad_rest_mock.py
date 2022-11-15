@@ -11,21 +11,17 @@ def create_app(input_file):
     app = Flask(__name__)
     mock_data = json.load(open(input_file, 'r', encoding='utf-8'))
 
-    @app.route('/getListOfServices/<int:days>')
-    def getListOfServices(days=1):
-        now = datetime.now()
-        member_data = []
-        for i in range(days):
-            dt = now - timedelta(days=i)
-            date = [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond]
-            member_data.append({'date': date, 'memberDataList': mock_data['memberData'][0]['memberDataList']})
+    @app.route('/getListOfServices')
+    def getListOfServices():
+        return mock_data
 
-        data = {'memberData': member_data, 'securityServerData': mock_data['securityServerData']}
-        return json.dumps(data)
+    @app.route('/getServiceStatistics')
+    def getServiceStatistics():
+        return mock_data
 
-    @app.route('/getServiceStatistics/<int:days>')
-    def getServiceStatistics(days=1):
-        return json.dumps({'serviceStatisticsList': []})
+    @app.route('/getDistinctServiceStatistics')
+    def getDistinctServiceStatistics():
+        return mock_data
 
     @app.route('/heartbeat')
     def heartbeat():

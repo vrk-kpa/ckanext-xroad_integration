@@ -590,8 +590,8 @@ def fetch_xroad_service_list(context, data_dict):
 
                     XRoadServiceListService.create(subsystem.id, created, service_code, service_version, active)
 
-    return {"success": True, "message": "Statistics for %s days stored in database." %
-                                        len(service_list_data.get('memberData', []))}
+    return {"success": True, "message": "Services from %s to %s stored in database."
+                                        % (start_date, end_date)}
 
 
 def xroad_service_list(context, data_dict):
@@ -655,7 +655,7 @@ def parse_xroad_catalog_datetime(dt):
     if type(dt) is dict:
         return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
     elif type(dt) is list:
-        return datetime.datetime(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5])
+        return datetime.datetime(*dt)
     else:
         return None
 
@@ -788,7 +788,7 @@ def fetch_xroad_stats(context, data_dict):
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
                                  statistics['numberOfOpenApiServices'])
 
-        return {"success": True, "message": "Statistics for %s days stored in database." % len(statistics_list)}
+        return {"success": True, "message": "Statistics from %s to %s stored in database." % (start_date, end_date)}
 
     except ConnectionError as e:
         log.warn("Calling getServiceStatistics failed!")
@@ -837,8 +837,8 @@ def fetch_distinct_service_stats(context, data_dict):
             else:
                 XRoadDistinctServiceStat.create(date, statistics['numberOfDistinctServices'])
 
-        return {"success": True, "message": "Distinct service statistics for %s days stored in database."
-                                            % len(statistics_list)}
+        return {"success": True, "message": "Distinct service statistics from %s to %s stored in database."
+                                            % (start_date, end_date)}
 
     except ConnectionError as e:
         log.warn("Calling getDistinctServiceStatistics failed!")

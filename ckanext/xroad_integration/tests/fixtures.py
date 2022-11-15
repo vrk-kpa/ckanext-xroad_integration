@@ -16,9 +16,9 @@ XROAD_REST_ADAPTERS = {
 XROAD_REST_SERVICES = {
     'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'},
     'getOrganizationOrganizationData': {
-            'host': '127.0.0.1',
-            'port': 9192,
-            'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
+        'host': '127.0.0.1',
+        'port': 9192,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
     'getOrganizationCompanyData': {
         'host': '127.0.0.1',
         'port': 9193,
@@ -26,7 +26,19 @@ XROAD_REST_SERVICES = {
     'getOrganizationEmptyData': {
         'host': '127.0.0.1',
         'port': 9194,
-        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'}
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'},
+    'getListOfServices': {
+        'host': '127.0.0.1',
+        'port': 9195,
+        'content': 'xroad-catalog-mock-responses/test_getlistofservices.json'},
+    'getServiceStatistics': {
+        'host': '127.0.0.1',
+        'port': 9196,
+        'content': 'xroad-catalog-mock-responses/test_getservicestatistics.json'},
+    'getDistinctServiceStatistics': {
+        'host': '127.0.0.1',
+        'port': 9197,
+        'content': 'xroad-catalog-mock-responses/test_getdistinctservicestatistics.json'}
 }
 
 
