@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
 from datetime import datetime
-from ckanext.xroad_integration.model import XRoadServiceList, XRoadStat, XRoadDistinctServiceStat, XRoadError
+from ckanext.xroad_integration.model import XRoadServiceList, XRoadStat, XRoadDistinctServiceStat
 from ckan import model
 from ckan.plugins import toolkit
 import pytest
