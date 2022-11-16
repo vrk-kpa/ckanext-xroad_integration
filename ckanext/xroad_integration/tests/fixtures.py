@@ -3,6 +3,9 @@ from multiprocessing import Process
 import os
 import pytest
 
+import ckan.model as model
+from ckanext.xroad_integration.model import init_table
+
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_mock as rest_mock
 
@@ -87,8 +90,6 @@ def xroad_rest_mocks():
 
 @pytest.fixture
 def xroad_database_setup():
-    import ckan.model as model
-    from ckanext.xroad_integration.model import init_table
     init_table(model.meta.engine)
 
 

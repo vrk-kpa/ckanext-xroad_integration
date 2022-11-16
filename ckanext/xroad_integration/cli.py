@@ -8,6 +8,9 @@ from datetime import datetime
 
 import click
 
+import ckan.model as model
+from ckanext.xroad_integration.model import init_table, drop_table
+
 from ckan.plugins import toolkit
 get_action = toolkit.get_action
 
@@ -32,8 +35,6 @@ def xroad():
 def init_db():
     """Creates the necessary tables in the database.
     """
-    import ckan.model as model
-    from ckanext.xroad_integration.model import init_table
     init_table(model.meta.engine)
 
     click.secho(u"DB tables created", fg=u"green")
@@ -45,8 +46,6 @@ def drop_db(yes_i_am_sure):
     """Removes tables created by init_db in the database.
     """
     if yes_i_am_sure:
-        import ckan.model as model
-        from ckanext.xroad_integration.model import drop_table
         drop_table(model.meta.engine)
         click.secho(u"DB tables dropped", fg=u"green")
     else:
