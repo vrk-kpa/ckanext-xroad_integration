@@ -277,11 +277,11 @@ def fetch_heartbeat(ctx):
             result = get_action('fetch_xroad_heartbeat')({'ignore_auth': True}, {})
 
             if result.get('success') is True:
-                print('Success:', result.get('heartbeat'))
+                click.secho('Success: %s' % result.get('heartbeat'), fg='green')
             else:
                 click.secho('Error fetching heartbeat: %s' % result.get('message', '(no message)'), fg='red')
         except Exception as e:
-            print('Error fetching heartbeat: \n', e)
+            click.secho('Error fetching heartbeat: \n %s' % e, fg='red')
 
 
 @xroad.command()
