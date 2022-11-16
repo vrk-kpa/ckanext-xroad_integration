@@ -351,10 +351,18 @@ def date_to_string(date):
     return datetime.datetime.strftime(date, "%Y-%m-%d")
 
 
-def validate_date_range(start_date, end_date):
+def set_date_range_defaults(start_date, end_date):
     if end_date and not start_date:
         raise ValueError("Please give start date to go with the end date")
 
+    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+    start_date = start_date or yesterday
+    end_date = end_date or yesterday
+
+    return start_date, end_date
+
+
+def validate_date_range(start_date, end_date):
     if start_date and start_date > datetime.datetime.now():
         raise ValueError("Start date cannot be in the future")
 
@@ -363,8 +371,6 @@ def validate_date_range(start_date, end_date):
 
     if end_date and end_date > datetime.datetime.now():
         raise ValueError("End date cannot be in the future")
-
-    return start_date, end_date
 
 
 def fetch_xroad_errors(context, data_dict):
@@ -377,13 +383,12 @@ def fetch_xroad_errors(context, data_dict):
     for harvest_source in harvest_sources:
         source_title = harvest_source.get('title', '')
 
-        start_date = data_dict.get('start_date')
-        end_date = data_dict.get('end_date')
-        yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+        start_date = string_to_date(data_dict.get('start_date'))
+        end_date = string_to_date(data_dict.get('end_date'))
 
         try:
-            start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
-                                                       string_to_date(end_date) or yesterday)
+            start_date, end_date = set_date_range_defaults(start_date, end_date)
+            validate_date_range(start_date, end_date)
         except ValueError as e:
             return {'success': False, 'message': str(e)}
 
@@ -500,13 +505,12 @@ def xroad_catalog_query(service, params=[],
 def fetch_xroad_service_list(context, data_dict):
     toolkit.check_access('fetch_xroad_service_list', context)
 
-    start_date = data_dict.get('start_date')
-    end_date = data_dict.get('end_date')
-    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+    start_date = string_to_date(data_dict.get('start_date'))
+    end_date = string_to_date(data_dict.get('end_date'))
 
     try:
-        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
-                                                   string_to_date(end_date) or yesterday)
+        start_date, end_date = set_date_range_defaults(start_date, end_date)
+        validate_date_range(start_date, end_date)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
@@ -749,13 +753,12 @@ def xroad_error_list(context, data_dict):
 def fetch_xroad_stats(context, data_dict):
     toolkit.check_access('fetch_xroad_stats', context)
 
-    start_date = data_dict.get('start_date')
-    end_date = data_dict.get('end_date')
-    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+    start_date = string_to_date(data_dict.get('start_date'))
+    end_date = string_to_date(data_dict.get('end_date'))
 
     try:
-        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
-                                                   string_to_date(end_date) or yesterday)
+        start_date, end_date = set_date_range_defaults(start_date, end_date)
+        validate_date_range(start_date, end_date)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
@@ -804,13 +807,12 @@ def fetch_xroad_stats(context, data_dict):
 def fetch_distinct_service_stats(context, data_dict):
     toolkit.check_access('fetch_distinct_service_stats', context)
 
-    start_date = data_dict.get('start_date')
-    end_date = data_dict.get('end_date')
-    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+    start_date = string_to_date(data_dict.get('start_date'))
+    end_date = string_to_date(data_dict.get('end_date'))
 
     try:
-        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
-                                                   string_to_date(end_date) or yesterday)
+        start_date, end_date = set_date_range_defaults(start_date, end_date)
+        validate_date_range(start_date, end_date)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
