@@ -340,32 +340,30 @@ def _convert_xroad_datetime_list_to_datetime(value):
         return None
 
 
-def check_start_and_end_date(start_date, end_date):
+def string_to_date(date):
+    if date:
+        return datetime.datetime.strptime(date, '%Y-%m-%d')
+    else:
+        return None
+
+
+def date_to_string(date):
+    return datetime.datetime.strftime(date, "%Y-%m-%d")
+
+
+def validate_date_range(start_date, end_date):
     if end_date and not start_date:
         raise ValueError("Please give start date to go with the end date")
 
-    # If request includes start_date use that (and verify it is a valid date)
-    # else default to yesterday
-    if start_date:
-        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-        if start_date > datetime.datetime.now():
-            raise ValueError("Start date cannot be in the future")
-    else:
-        start_date = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
+    if start_date and start_date > datetime.datetime.now():
+        raise ValueError("Start date cannot be in the future")
 
-    # If request includes end_date use that (and verify it is a valid date)
-    # else default to current time
-    if end_date:
-        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-        if start_date > end_date:
-            raise ValueError("Start date cannot be later than end date")
-        if end_date > datetime.datetime.now():
-            raise ValueError("End date cannot be in the future")
-    else:
-        end_date = datetime.datetime.now()
+    if start_date and end_date and start_date > end_date:
+        raise ValueError("Start date cannot be later than end date")
 
-    start_date = datetime.datetime.strftime(start_date, "%Y-%m-%d")
-    end_date = datetime.datetime.strftime(end_date, "%Y-%m-%d")
+    if end_date and end_date > datetime.datetime.now():
+        raise ValueError("End date cannot be in the future")
+
     return start_date, end_date
 
 
@@ -381,15 +379,17 @@ def fetch_xroad_errors(context, data_dict):
 
         start_date = data_dict.get('start_date')
         end_date = data_dict.get('end_date')
+        yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
 
         try:
-            start_date, end_date = check_start_and_end_date(start_date, end_date)
+            start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
+                                                       string_to_date(end_date) or yesterday)
         except ValueError as e:
             return {'success': False, 'message': str(e)}
 
         queryparams = {
-            'startDate': start_date,
-            'endDate': end_date
+            'startDate': date_to_string(start_date),
+            'endDate': date_to_string(end_date)
         }
 
         page = 0
@@ -502,18 +502,20 @@ def fetch_xroad_service_list(context, data_dict):
 
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
+    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
 
     try:
-        start_date, end_date = check_start_and_end_date(start_date, end_date)
+        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
+                                                   string_to_date(end_date) or yesterday)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
     queryparams = {
-        'startDate': start_date,
-        'endDate': end_date
+        'startDate': date_to_string(start_date),
+        'endDate': date_to_string(end_date)
     }
 
-    log.info("Fetching X-Road services from %s to %s" % (start_date, end_date))
+    log.info("Fetching X-Road services from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
         service_list_data = xroad_catalog_query('getListOfServices', queryparams=queryparams).json()
@@ -591,7 +593,7 @@ def fetch_xroad_service_list(context, data_dict):
                     XRoadServiceListService.create(subsystem.id, created, service_code, service_version, active)
 
     return {"success": True, "message": "Services from %s to %s stored in database."
-                                        % (start_date, end_date)}
+                                        % (queryparams['startDate'], queryparams['endDate'])}
 
 
 def xroad_service_list(context, data_dict):
@@ -749,18 +751,20 @@ def fetch_xroad_stats(context, data_dict):
 
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
+    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
 
     try:
-        start_date, end_date = check_start_and_end_date(start_date, end_date)
+        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
+                                                   string_to_date(end_date) or yesterday)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
     queryparams = {
-        'startDate': start_date,
-        'endDate': end_date
+        'startDate': date_to_string(start_date),
+        'endDate': date_to_string(end_date)
     }
 
-    log.info("Fetching X-Road stats from %s to %s" % (start_date, end_date))
+    log.info("Fetching X-Road stats from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
         statistics_data = xroad_catalog_query('getServiceStatistics', queryparams=queryparams).json()
@@ -788,7 +792,8 @@ def fetch_xroad_stats(context, data_dict):
                 XRoadStat.create(date, statistics['numberOfSoapServices'], statistics['numberOfRestServices'],
                                  statistics['numberOfOpenApiServices'])
 
-        return {"success": True, "message": "Statistics from %s to %s stored in database." % (start_date, end_date)}
+        return {"success": True, "message": "Statistics from %s to %s stored in database." %
+                (queryparams['startDate'], queryparams['endDate'])}
 
     except ConnectionError as e:
         log.warn("Calling getServiceStatistics failed!")
@@ -801,18 +806,20 @@ def fetch_distinct_service_stats(context, data_dict):
 
     start_date = data_dict.get('start_date')
     end_date = data_dict.get('end_date')
+    yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
 
     try:
-        start_date, end_date = check_start_and_end_date(start_date, end_date)
+        start_date, end_date = validate_date_range(string_to_date(start_date) or yesterday,
+                                                   string_to_date(end_date) or yesterday)
     except ValueError as e:
         return {'success': False, 'message': str(e)}
 
     queryparams = {
-        'startDate': start_date,
-        'endDate': end_date
+        'startDate': date_to_string(start_date),
+        'endDate': date_to_string(end_date)
     }
 
-    log.info("Fetching X-Road distinct service stats from %s to %s" % (start_date, end_date))
+    log.info("Fetching X-Road distinct service stats from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
         statistics_data = xroad_catalog_query('getDistinctServiceStatistics', queryparams=queryparams).json()
@@ -838,7 +845,7 @@ def fetch_distinct_service_stats(context, data_dict):
                 XRoadDistinctServiceStat.create(date, statistics['numberOfDistinctServices'])
 
         return {"success": True, "message": "Distinct service statistics from %s to %s stored in database."
-                                            % (start_date, end_date)}
+                                            % (queryparams['startDate'], queryparams['endDate'])}
 
     except ConnectionError as e:
         log.warn("Calling getDistinctServiceStatistics failed!")

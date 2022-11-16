@@ -24,6 +24,24 @@ def get_latest_batch_run_results():
     return response['results']
 
 
+def validate_date_range(start_date, end_date):
+    if end_date and not start_date:
+        raise ValueError("Please give a start date to go with the end date")
+    if start_date and end_date and end_date < start_date:
+        raise ValueError("Start date cannot be later than end date")
+    if start_date and start_date > datetime.now():
+        raise ValueError("We unfortunately cannot predict the future :( (start date cannot be later than current time)")
+    if end_date and end_date > datetime.now():
+        raise ValueError("We unfortunately cannot predict the future :( (end date cannot be later than current time)")
+
+
+def date_to_string(date):
+    try:
+        return datetime.strftime(date, "%Y-%m-%d")
+    except Exception:
+        return None
+
+
 @click.group()
 def xroad():
     """X-Road related commands.
@@ -79,30 +97,18 @@ def update_xroad_organizations(ctx):
               help="""Optional. If not given current date is used as a default""",)
 def fetch_errors(ctx, start_date, end_date):
     """Fetches error log from catalog lister"""
-    if end_date and not start_date:
-        click.secho("Please give a start date to go with the end date", fg="red")
+    try:
+        validate_date_range(start_date, end_date)
+    except ValueError as e:
+        click.secho("%s" % (e), fg="red")
         return
-    if start_date and end_date and end_date < start_date:
-        click.secho("Start date cannot be later than end date", fg="red")
-        return
-    if start_date and start_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
-        return
-    if end_date and end_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
-        return
-
-    if start_date:
-        start_date = datetime.strftime(start_date, "%Y-%m-%d")
-    if end_date:
-        end_date = datetime.strftime(end_date, "%Y-%m-%d")
 
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         try:
             results = get_action('fetch_xroad_errors')({'ignore_auth': True},
-                                                       {'start_date': start_date,
-                                                        'end_date': end_date})
+                                                       {'start_date': date_to_string(start_date),
+                                                        'end_date': date_to_string(end_date)})
         except Exception as e:
             results = {'success': False, 'message': 'Exception: {}'.format(e)}
 
@@ -127,29 +133,17 @@ def fetch_errors(ctx, start_date, end_date):
 @click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
               help="""Optional. If not given current date is used as a default""",)
 def fetch_stats(ctx, start_date, end_date):
-    'Fetches X-Road stats from catalog lister'
-    if end_date and not start_date:
-        click.secho("Please give a start date to go with the end date", fg="red")
+    try:
+        validate_date_range(start_date, end_date)
+    except ValueError as e:
+        click.secho("%s" % (e), fg="red")
         return
-    if start_date and end_date and end_date < start_date:
-        click.secho("Start date cannot be later than end date", fg="red")
-        return
-    if start_date and start_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
-        return
-    if end_date and end_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
-        return
-
-    if start_date:
-        start_date = datetime.strftime(start_date, "%Y-%m-%d")
-    if end_date:
-        end_date = datetime.strftime(end_date, "%Y-%m-%d")
+        click.secho(e, fg="red")
 
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        data_dict = {"start_date": start_date,
-                     "end_date": end_date}
+        data_dict = {"start_date": date_to_string(start_date),
+                     "end_date": date_to_string(end_date)}
         try:
             results = get_action('fetch_xroad_stats')({'ignore_auth': True}, data_dict)
         except Exception as e:
@@ -177,27 +171,16 @@ def fetch_stats(ctx, start_date, end_date):
               help="""Optional. If not given current date is used as a default""",)
 def fetch_distinct_service_stats(ctx, start_date, end_date):
     'Fetches X-Road distinct service stats from catalog lister'
-    if end_date and not start_date:
-        click.secho("Please give a start date to go with the end date", fg="red")
-        return
-    if start_date and end_date and end_date < start_date:
-        click.secho("Start date cannot be later than end date", fg="red")
-        return
-    if start_date and start_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
-        return
-    if end_date and end_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
+    try:
+        validate_date_range(start_date, end_date)
+    except ValueError as e:
+        click.secho("%s" % (e), fg="red")
         return
 
-    if start_date:
-        start_date = datetime.strftime(start_date, "%Y-%m-%d")
-    if end_date:
-        end_date = datetime.strftime(end_date, "%Y-%m-%d")
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        data_dict = {"start_date": start_date,
-                     "end_date": end_date}
+        data_dict = {"start_date": date_to_string(start_date),
+                     "end_date": date_to_string(end_date)}
 
         try:
             results = get_action('fetch_distinct_service_stats')({'ignore_auth': True}, data_dict)
@@ -226,28 +209,16 @@ def fetch_distinct_service_stats(ctx, start_date, end_date):
               help="""Optional. If not given current date is used as a default""",)
 def fetch_service_list(ctx, start_date, end_date):
     'Fetches X-Road services from catalog lister'
-    if end_date and not start_date:
-        click.secho("Please give a start date to go with the end date", fg="red")
+    try:
+        validate_date_range(start_date, end_date)
+    except ValueError as e:
+        click.secho("%s" % (e), fg="red")
         return
-    if start_date and end_date and end_date < start_date:
-        click.secho("Start date cannot be later than end date", fg="red")
-        return
-    if start_date and start_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (start date cannot be later than current time)", fg="red")
-        return
-    if end_date and end_date > datetime.now():
-        click.secho("We unfortunately cannot predict the future :( (end date cannot be later than current time)", fg="red")
-        return
-
-    if start_date:
-        start_date = datetime.strftime(start_date, "%Y-%m-%d")
-    if end_date:
-        end_date = datetime.strftime(end_date, "%Y-%m-%d")
 
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
-        data_dict = {"start_date": start_date,
-                     "end_date": end_date}
+        data_dict = {"start_date": date_to_string(start_date),
+                     "end_date": date_to_string(end_date)}
 
         try:
             results = get_action('fetch_xroad_service_list')({'ignore_auth': True}, data_dict)
