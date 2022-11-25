@@ -138,7 +138,6 @@ def fetch_stats(ctx, start_date, end_date):
     except ValueError as e:
         click.secho("%s" % (e), fg="red")
         return
-        click.secho(e, fg="red")
 
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
