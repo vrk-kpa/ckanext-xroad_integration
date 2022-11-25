@@ -3,6 +3,9 @@ from multiprocessing import Process
 import os
 import pytest
 
+import ckan.model as model
+from ckanext.xroad_integration.model import init_table
+
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_adapter_mock as adapter_mock
 from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_mock as rest_mock
 
@@ -16,9 +19,9 @@ XROAD_REST_ADAPTERS = {
 XROAD_REST_SERVICES = {
     'heartbeat': {'host': '127.0.0.1', 'port': 9191, 'content': 'xroad-catalog-mock-responses/test_heartbeat.json'},
     'getOrganizationOrganizationData': {
-            'host': '127.0.0.1',
-            'port': 9192,
-            'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
+        'host': '127.0.0.1',
+        'port': 9192,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_organization_data.json'},
     'getOrganizationCompanyData': {
         'host': '127.0.0.1',
         'port': 9193,
@@ -26,7 +29,19 @@ XROAD_REST_SERVICES = {
     'getOrganizationEmptyData': {
         'host': '127.0.0.1',
         'port': 9194,
-        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'}
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_empty_data.json'},
+    'getListOfServices': {
+        'host': '127.0.0.1',
+        'port': 9195,
+        'content': 'xroad-catalog-mock-responses/test_getlistofservices.json'},
+    'getServiceStatistics': {
+        'host': '127.0.0.1',
+        'port': 9196,
+        'content': 'xroad-catalog-mock-responses/test_getservicestatistics.json'},
+    'getDistinctServiceStatistics': {
+        'host': '127.0.0.1',
+        'port': 9197,
+        'content': 'xroad-catalog-mock-responses/test_getdistinctservicestatistics.json'}
 }
 
 
@@ -75,9 +90,7 @@ def xroad_rest_mocks():
 
 @pytest.fixture
 def xroad_database_setup():
-    from ckanext.xroad_integration.utils import init_db
-
-    init_db()
+    init_table(model.meta.engine)
 
 
 def xroad_rest_adapter_url(adapter_name):
