@@ -288,7 +288,6 @@ def _prepare_xroad_organization_patch(organization, last_updated):
         log.warn("Exception")
         raise
 
-    organization_dict['email_address'] = 'rerere'
     return organization_dict
 
 
