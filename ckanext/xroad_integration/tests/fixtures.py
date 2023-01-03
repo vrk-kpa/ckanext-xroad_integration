@@ -41,7 +41,11 @@ XROAD_REST_SERVICES = {
     'getDistinctServiceStatistics': {
         'host': '127.0.0.1',
         'port': 9197,
-        'content': 'xroad-catalog-mock-responses/test_getdistinctservicestatistics.json'}
+        'content': 'xroad-catalog-mock-responses/test_getdistinctservicestatistics.json'},
+    'getOrganizationCompanyDataWithBusinessIdChanges': {
+        'host': '127.0.0.1',
+        'port': 9198,
+        'content': 'xroad-catalog-mock-responses/test_getorganizations_company_data_with_business_id_changes.json'},
 }
 
 

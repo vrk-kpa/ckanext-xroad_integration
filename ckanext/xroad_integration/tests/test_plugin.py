@@ -10,6 +10,9 @@ from ckantoolkit.tests.helpers import call_action
 from ckanext.harvest.tests.lib import run_harvest
 from .fixtures import xroad_rest_service_url, xroad_rest_adapter_url
 
+import logging
+log = logging.getLogger(__name__)
+
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 @pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
@@ -276,7 +279,7 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationCompanyData'))
-def test_xroad_get_organizations_company_data(xroad_rest_mocks):
+def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
     user = toolkit.get_action('get_site_user')({'model': model, 'ignore_auth': True}, {})['name']
@@ -293,7 +296,23 @@ def test_xroad_get_organizations_company_data(xroad_rest_mocks):
     assert updated_organization['company_language']['sv'] == "Finska"
     assert updated_organization['company_language']['en'] == "Finnish"
     assert updated_organization['company_registration_date'] == "1993-03-19T00:00:00"
-    assert updated_organization['old_business_ids'] == ""
+    assert updated_organization['old_business_ids'] is None
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
+                         xroad_rest_service_url('getOrganizationCompanyDataWithBusinessIdChanges'))
+def test_xroad_get_organizations_company_data_with_business_id_changes(xroad_rest_adapter_mocks, xroad_rest_mocks):
+    harvester = XRoadHarvesterPlugin()
+    run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
+    user = toolkit.get_action('get_site_user')({'model': model, 'ignore_auth': True}, {})['name']
+    context = {'model': model, 'session': model.Session, 'user': user, 'api_version': 3, 'ignore_auth': True}
+    result = call_action('update_xroad_organizations', context=context)
+    assert result['success'] is True
+    assert result['message'] == 'Updated 4 organizations'
+    updated_organization = call_action('organization_show', context=context, id='TEST.ORG.000000-0')
+
+    assert updated_organization['old_business_ids'] == ['124567-8', '7654321-8']
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
