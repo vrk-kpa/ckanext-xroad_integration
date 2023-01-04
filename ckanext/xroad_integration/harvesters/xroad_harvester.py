@@ -744,7 +744,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'postal_address': data_dict.get('postal_address'),
                     'company_language': data_dict.get('company_language', {}),
                     'company_registration_date': data_dict.get('company_registration_date'),
-                    'old_business_ids': data_dict.get('old_business_ids')}
+                    'old_business_ids': data_dict.get('old_business_ids', [])}
 
                 if not org.get('webpage_address_modified_in_catalog', False):
                     org_data['webpage_address'] = data_dict.get('webpage_address', {})
@@ -792,7 +792,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'postal_address': data_dict.get('postal_address'),
                 'company_language': data_dict.get('company_language', {}),
                 'company_registration_date': data_dict.get('company_registration_date'),
-                'old_business_ids': data_dict.get('old_business_ids'),
+                'old_business_ids': data_dict.get('old_business_ids', []),
                 'webpage_address': data_dict.get('webpage_address', {}),
                 'webpage_description': data_dict.get('webpage_description', {})}
 

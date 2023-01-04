@@ -296,7 +296,7 @@ def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_re
     assert updated_organization['company_language']['sv'] == "Finska"
     assert updated_organization['company_language']['en'] == "Finnish"
     assert updated_organization['company_registration_date'] == "1993-03-19T00:00:00"
-    assert updated_organization['old_business_ids'] is None
+    assert updated_organization['old_business_ids'] == []
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
@@ -317,7 +317,7 @@ def test_xroad_get_organizations_company_data_with_business_id_changes(xroad_res
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getOrganizationEmptyData'))
-def test_xroad_get_organizations_empty_data(xroad_rest_mocks):
+def test_xroad_get_organizations_empty_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
     user = toolkit.get_action('get_site_user')({'model': model, 'ignore_auth': True}, {})['name']

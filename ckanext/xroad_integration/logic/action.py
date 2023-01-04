@@ -282,7 +282,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
                         old_business_ids = [str(business_id_change.get('oldBusinessId'))
                                             for business_id_change in business_id_changes]
-                        organization_dict['old_business_ids'] = json.dumps(old_business_ids)
+                        organization_dict['old_business_ids'] = old_business_ids
 
     except Exception:
         log.warn("Exception")
