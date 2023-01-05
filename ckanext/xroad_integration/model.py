@@ -45,6 +45,10 @@ class XRoadError(Base, AsDictMixin):
     @classmethod
     def create(cls, message, code, created, xroad_instance, member_class, member_code, subsystem_code,
                service_code, service_version, server_code, security_category_code, group_code):
+
+        # Service version might be none for various reasons
+        if not service_version:
+            service_version = ""
         xroad_error = XRoadError(message=message, code=code, created=created, xroad_instance=xroad_instance,
                                  member_class=member_class, member_code=member_code, subsystem_code=subsystem_code,
                                  service_code=service_code, service_version=service_version, server_code=server_code,

@@ -1,6 +1,6 @@
 """Tests for plugin.py."""
 from datetime import datetime
-from ckanext.xroad_integration.model import XRoadServiceList, XRoadStat, XRoadDistinctServiceStat
+from ckanext.xroad_integration.model import XRoadServiceList, XRoadStat, XRoadDistinctServiceStat, XRoadError
 from ckan import model
 from ckan.plugins import toolkit
 import pytest
@@ -74,9 +74,26 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-def test_xroad_errors(xroad_rest_adapter_mocks, xroad_database_setup):
-    call_action('fetch_xroad_errors')
-    call_action('xroad_error_list')
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
+                         xroad_rest_service_url('get_list_errors_data'))
+def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, xroad_database_setup):
+    harvester = XRoadHarvesterPlugin()
+    run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
+
+    result = call_action('fetch_xroad_errors', start_date="2023-01-01", end_date="2023-01-05", limit=1)
+    assert result['message'] == 'Fetched errors for 1 harvest sources'
+    assert result['results'][0]['message'] == '12 errors stored to database.'
+
+    db_entry_count = model.Session.query(XRoadError).count()
+    assert db_entry_count == 12
+
+    first = model.Session.query(XRoadError).first().as_dict()
+    assert first['xroad_instance'] == 'FI-TEST'
+    assert first['member_class'] == 'GOV'
+    assert first['member_code'] == '1234567-8'
+    assert first['subsystem_code'] == 'some_member'
+    assert first['message'] == 'Fetch of REST services failed(url: https://somedomain/r1/' \
+                               'FI-TEST/GOV/1234567-8/some_member/listMethods): 500 Server Error'
 
 
 @pytest.mark.freeze_time('2022-01-02')

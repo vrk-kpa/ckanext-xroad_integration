@@ -50,6 +50,8 @@ adapter = TimeoutHTTPAdapter(max_retries=retry_strategy)
 http = requests.Session()
 http.mount("http://", adapter)
 
+error_count = 0
+
 log = logging.getLogger(__name__)
 
 
@@ -376,6 +378,8 @@ def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
     results = []
     errors = []
+
+    global error_count
     error_count = 0
     harvest_sources = xroad_harvest_sources(context)
 
@@ -420,17 +424,15 @@ def fetch_xroad_errors(context, data_dict):
                           organization.get('xroad_membercode')]
                 pagination = {"page": str(page), "limit": str(limit)}
                 try:
-                    no_of_pages = _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination,
-                                                    error_count=error_count)
+                    no_of_pages = _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination)
                 except ValueError:
                     return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                for page_no in range(1, no_of_pages - 1):
+                for page_no in range(1, no_of_pages):
                     try:
                         pagination = {"page": str(page_no), "limit": str(limit)}
                         try:
-                            _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination,
-                                              error_count=error_count)
+                            _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination)
                         except ValueError:
                             return {'success': False, 'message': 'Calling listErrors failed!'}
 
@@ -452,8 +454,9 @@ def fetch_xroad_errors(context, data_dict):
                 "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
 
-def _fetch_error_page(params, queryparams, pagination, error_count):
+def _fetch_error_page(params, queryparams, pagination):
 
+    global error_count
     error_data = xroad_catalog_query('listErrors',
                                      params=params,
                                      queryparams=queryparams,
@@ -466,20 +469,19 @@ def _fetch_error_page(params, queryparams, pagination, error_count):
     error_log_list = error_data.get('errorLogList', [])
 
     for error in error_log_list:
-        security_category_code = error.get('securityCategoryCode')
         mapped_error = {
-            "message": error.get('message') if error.get('message') is not None else '',
-            "code": error.get('code') if error.get('code') is not None else '',
+            "message": error.get('message', ''),
+            "code": error.get('code', ''),
             "created": parse_xroad_catalog_datetime(error['created']),
-            "xroad_instance": error.get('xroadInstance') if error.get('xroadInstance') is not None else '',
-            "member_class": error.get('memberClass') if error.get('memberClass') is not None else '',
-            "member_code": error.get('memberCode') if error.get('memberCode') is not None else '',
-            "subsystem_code": error.get('subsystemCode') if error.get('subsystemCode') is not None else '',
-            "service_code": error.get('serviceCode') if error.get('serviceCode') is not None else '',
-            "service_version": error.get('serviceVersion') if error.get('serviceVersion') is not None else '',
-            "server_code": error.get('serverCode') if error.get('serverCode') is not None else '',
-            "security_category_code": security_category_code if security_category_code is not None else '',
-            "group_code": error.get('groupCode') if error.get('groupCode') is not None else '',
+            "xroad_instance": error.get('xroadInstance', ''),
+            "member_class": error.get('memberClass', ''),
+            "member_code": error.get('memberCode', ''),
+            "subsystem_code": error.get('subsystemCode', ''),
+            "service_code": error.get('serviceCode', ''),
+            "service_version": error.get('serviceVersion', ''),
+            "server_code": error.get('serverCode', ''),
+            "security_category_code": error.get('securityCategoryCode', ''),
+            "group_code": error.get('groupCode', ''),
         }
         XRoadError.create(**mapped_error)
         error_count = error_count + 1
@@ -678,6 +680,9 @@ def parse_xroad_catalog_datetime(dt):
     if type(dt) is dict:
         return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
     elif type(dt) is list:
+        # Remove microseconds, as they might be too precise
+        if len(dt) == 7:
+            del dt[6]
         return datetime.datetime(*dt)
     else:
         return None
