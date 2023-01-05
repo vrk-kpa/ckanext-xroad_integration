@@ -49,8 +49,6 @@ adapter = TimeoutHTTPAdapter(max_retries=retry_strategy)
 http = requests.Session()
 http.mount("http://", adapter)
 
-error_count = 0
-
 log = logging.getLogger(__name__)
 
 
@@ -378,7 +376,6 @@ def fetch_xroad_errors(context, data_dict):
     results = []
     errors = []
 
-    global error_count
     error_count = 0
     harvest_sources = xroad_harvest_sources(context)
 
@@ -423,7 +420,9 @@ def fetch_xroad_errors(context, data_dict):
                           organization.get('xroad_membercode')]
                 pagination = {"page": str(page), "limit": str(limit)}
                 try:
-                    no_of_pages = _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination)
+                    no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
+                                                                        pagination=pagination)
+                    error_count += added_errors_count
                 except ValueError:
                     return {'success': False, 'message': 'Calling listErrors failed!'}
 
@@ -431,7 +430,9 @@ def fetch_xroad_errors(context, data_dict):
                     try:
                         pagination = {"page": str(page_no), "limit": str(limit)}
                         try:
-                            _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination)
+                            no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
+                                                                                pagination=pagination)
+                            error_count += added_errors_count
                         except ValueError:
                             return {'success': False, 'message': 'Calling listErrors failed!'}
 
@@ -455,7 +456,7 @@ def fetch_xroad_errors(context, data_dict):
 
 def _fetch_error_page(params, queryparams, pagination):
 
-    global error_count
+    error_count = 0
     error_data = xroad_catalog_query('listErrors',
                                      params=params,
                                      queryparams=queryparams,
@@ -485,7 +486,7 @@ def _fetch_error_page(params, queryparams, pagination):
         XRoadError.create(**mapped_error)
         error_count = error_count + 1
 
-    return error_data.get('numberOfPages', 0)
+    return error_data.get('numberOfPages', 0), error_count
 
 
 def xroad_catalog_query(service, params=[],
