@@ -405,60 +405,42 @@ def fetch_xroad_errors(context, data_dict):
 
         log.info("Fetching errors from %s to %s for %s" % (start_date, end_date, source_title))
 
+        organizations = toolkit.get_action('organization_list')(context, {})
+
         try:
-            pagination = {"page": str(page), "limit": str(limit)}
-            error_data = xroad_catalog_query('listErrors',
-                                             queryparams=queryparams,
-                                             pagination=pagination).json()
+            for org_name in organizations:
+                organization = toolkit.get_action('organization_show')(context, {'id': org_name})
+                if not (organization.get('xroad_instance') and organization.get('xroad_memberclass') and
+                        organization.get('xroad_membercode')):
+                    log.warning('Invalid xroad organization: %s, not fetching errors for it', organization['id'])
+                    continue
 
-            if error_data is None:
-                log.warn("Calling listErrors failed!")
-                return {'success': False, 'message': 'Calling listErrors failed!'}
-            elif "errorLogList" not in error_data:
-                return []
-
-            no_of_pages = error_data.get('numberOfPages', 0)
-            for page_no in range(no_of_pages):
+                params = [organization.get('xroad_instance'),
+                          organization.get('xroad_memberclass'),
+                          organization.get('xroad_membercode')]
+                pagination = {"page": str(page), "limit": str(limit)}
                 try:
-                    pagination = {"page": str(page_no), "limit": str(limit)}
-                    error_data = xroad_catalog_query('listErrors',
-                                                     queryparams=queryparams,
-                                                     pagination=pagination).json()
+                    no_of_pages = _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination,
+                                                    error_count=error_count)
+                except ValueError:
+                    return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                    if error_data is None:
-                        log.warn("Calling listErrors failed!")
-                        return {'success': False, 'message': 'Calling listErrors failed!'}
-                    elif "errorLogList" not in error_data:
-                        return []
+                for page_no in range(1, no_of_pages):
+                    try:
+                        pagination = {"page": str(page_no), "limit": str(limit)}
+                        try:
+                            _fetch_error_page(params=params, queryparams=queryparams, pagination=pagination,
+                                              error_count=error_count)
+                        except ValueError:
+                            return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                    error_log_list = error_data.get('errorLogList', [])
-
-                    for error in error_log_list:
-                        security_category_code = error.get('securityCategoryCode')
-                        mapped_error = {
-                            "message": error.get('message') if error.get('message') is not None else '',
-                            "code": error.get('code') if error.get('code') is not None else '',
-                            "created": parse_xroad_catalog_datetime(error['created']),
-                            "xroad_instance": error.get('xroadInstance') if error.get('xroadInstance') is not None else '',
-                            "member_class": error.get('memberClass') if error.get('memberClass') is not None else '',
-                            "member_code": error.get('memberCode') if error.get('memberCode') is not None else '',
-                            "subsystem_code": error.get('subsystemCode') if error.get('subsystemCode') is not None else '',
-                            "service_code": error.get('serviceCode') if error.get('serviceCode') is not None else '',
-                            "service_version": error.get('serviceVersion') if error.get('serviceVersion') is not None else '',
-                            "server_code": error.get('serverCode') if error.get('serverCode') is not None else '',
-                            "security_category_code": security_category_code if security_category_code is not None else '',
-                            "group_code": error.get('groupCode') if error.get('groupCode') is not None else '',
-                        }
-                        XRoadError.create(**mapped_error)
-                        error_count = error_count + 1
-
-                except ConnectionError as e:
-                    log.warn("Calling listErrors failed!")
-                    log.info(e)
-                    return {"success": False, "message": "Fetching errors failed."}
+                    except ConnectionError as e:
+                        log.warning("Calling listErrors failed!")
+                        log.info(e)
+                        return {"success": False, "message": "Fetching errors failed."}
 
         except ConnectionError as e:
-            log.warn("Calling listErrors failed!")
+            log.warning("Calling listErrors failed!")
             log.info(e)
             return {"success": False, "message": "Fetching errors failed."}
 
@@ -466,7 +448,43 @@ def fetch_xroad_errors(context, data_dict):
     if errors:
         return {"success": False, "message": ", ".join(errors)}
     else:
-        return {"success": True, "results": results, "message": 'Fetched errors for {} harvest sources'.format(len(results))}
+        return {"success": True, "results": results,
+                "message": 'Fetched errors for {} harvest sources'.format(len(results))}
+
+
+def _fetch_error_page(params, queryparams, pagination, error_count):
+
+    error_data = xroad_catalog_query('listErrors',
+                                     params=params,
+                                     queryparams=queryparams,
+                                     pagination=pagination).json()
+
+    if error_data is None:
+        log.warning("Calling listErrors failed!")
+        raise ValueError('Calling listErrors failed')
+
+    error_log_list = error_data.get('errorLogList', [])
+
+    for error in error_log_list:
+        security_category_code = error.get('securityCategoryCode')
+        mapped_error = {
+            "message": error.get('message') if error.get('message') is not None else '',
+            "code": error.get('code') if error.get('code') is not None else '',
+            "created": parse_xroad_catalog_datetime(error['created']),
+            "xroad_instance": error.get('xroadInstance') if error.get('xroadInstance') is not None else '',
+            "member_class": error.get('memberClass') if error.get('memberClass') is not None else '',
+            "member_code": error.get('memberCode') if error.get('memberCode') is not None else '',
+            "subsystem_code": error.get('subsystemCode') if error.get('subsystemCode') is not None else '',
+            "service_code": error.get('serviceCode') if error.get('serviceCode') is not None else '',
+            "service_version": error.get('serviceVersion') if error.get('serviceVersion') is not None else '',
+            "server_code": error.get('serverCode') if error.get('serverCode') is not None else '',
+            "security_category_code": security_category_code if security_category_code is not None else '',
+            "group_code": error.get('groupCode') if error.get('groupCode') is not None else '',
+        }
+        XRoadError.create(**mapped_error)
+        error_count = error_count + 1
+
+    return error_data.get('numberOfPages', 0)
 
 
 def xroad_catalog_query(service, params=[],
