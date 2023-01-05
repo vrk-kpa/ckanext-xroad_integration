@@ -425,7 +425,7 @@ def fetch_xroad_errors(context, data_dict):
                 except ValueError:
                     return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                for page_no in range(1, no_of_pages):
+                for page_no in range(1, no_of_pages - 1):
                     try:
                         pagination = {"page": str(page_no), "limit": str(limit)}
                         try:
