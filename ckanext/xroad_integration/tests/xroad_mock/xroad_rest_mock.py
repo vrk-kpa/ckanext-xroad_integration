@@ -29,6 +29,9 @@ def create_app(input_file):
     def getOrganization(business_code='000000-0'):
         return mock_data
 
+    @app.route('/listErrors/<instance>/<code>/<member>')
+    def list_errors(instance='TEST', code='000000-0', member='some_member'):
+        return mock_data
     return app
 
 

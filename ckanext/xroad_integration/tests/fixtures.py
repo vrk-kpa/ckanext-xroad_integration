@@ -46,7 +46,11 @@ XROAD_REST_SERVICES = {
         'host': '127.0.0.1',
         'port': 9198,
         'content': 'xroad-catalog-mock-responses/test_getorganizations_company_data_with_business_id_changes.json'},
-}
+    'get_list_errors_data': {
+        'host': '127.0.0.1',
+        'port': 9199,
+        'content': 'xroad-catalog-mock-responses/test_list_errors.txt'}
+    }
 
 
 @pytest.fixture(scope='module')
