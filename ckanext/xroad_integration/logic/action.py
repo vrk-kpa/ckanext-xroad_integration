@@ -4,7 +4,6 @@ import os.path
 
 from dateutil import relativedelta
 from sqlalchemy import and_, not_
-from typing import List
 
 import requests
 import datetime
