@@ -72,16 +72,14 @@ class Base(object):
         return json.dumps(dc.asdict(self), default=str)
 
 
+# Field mapping functions
+
 def optional(fn):
+    '''Modifies the provided function to return None if it receives None'''
     def parse(x):
-        if optional and x is None:
-            return None
-        else:
-            return fn(x)
+        return None if x is None else fn(x)
     return parse
 
-
-# Field mapping functions
 
 def xroad_list_value(key: str, cls):
     def parse(value) -> List[cls]:
