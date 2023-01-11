@@ -151,7 +151,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org = self._create_or_update_organization(org_id, member, harvest_job)
 
             if org is None:
-                self._save_gather_error(f'Failed to create organization with id: {org_id} and name: {member.name}', harvest_job)
+                self._save_gather_error(f'Failed to create organization with id: {org_id} and name: {member.name}',
+                                        harvest_job)
                 continue
 
             for subsystem in member.subsystems:
@@ -222,7 +223,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             self._save_object_error(service_type.get('error'), harvest_object, 'Fetch')
                     elif not service_type:
-                        log.info(f'Service type is unknown for subsystem {subsystem.subsystem_code} service {service.service_code}')
+                        log.info(f'Service type is unknown for subsystem {subsystem.subsystem_code} '
+                                 f'service {service.service_code}')
                     else:
                         service.service_type = service_type
 
