@@ -8,7 +8,6 @@ from sqlalchemy import and_, not_
 import requests
 import datetime
 import six
-from typing import List
 
 from ckan import model
 from requests.exceptions import ConnectionError
