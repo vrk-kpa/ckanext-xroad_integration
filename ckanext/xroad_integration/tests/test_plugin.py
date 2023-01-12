@@ -313,7 +313,7 @@ def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_re
     assert updated_organization['company_language']['sv'] == "Finska"
     assert updated_organization['company_language']['en'] == "Finnish"
     assert updated_organization['company_registration_date'] == "1993-03-19T00:00:00"
-    assert updated_organization['old_business_ids'] == []
+    assert 'old_business_ids' not in updated_organization
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
