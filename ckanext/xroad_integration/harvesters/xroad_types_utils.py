@@ -63,13 +63,16 @@ class Base(object):
     #    -> value_function(xroad_data) == value_function(str(value_function(xroad_data)))
     # 3. value_map functions accept None as input if they can output None
 
+    def as_dict(self):
+        return dc.asdict(self)
+
     @classmethod
     def deserialize_json(cls, data):
         obj = json.loads(data)
         return cls.from_dict(obj)
 
     def serialize_json(self):
-        return json.dumps(dc.asdict(self), default=str)
+        return json.dumps(self.as_dict(), default=str)
 
 
 # Field mapping functions

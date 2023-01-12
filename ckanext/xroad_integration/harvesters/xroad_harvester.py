@@ -166,7 +166,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                         'xRoadMemberClass': member.member_class,
                                         'xRoadMemberCode': member.member_code,
                                         'owner_name': org.get('name'),
-                                        'subsystem': subsystem.serialize()
+                                        'subsystem_dict': json.loads(subsystem.serialize_json()),
+                                        'subsystem_pickled': subsystem.serialize(),
                                     }))
 
                 obj.save()
@@ -180,7 +181,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         try:
             dataset = json.loads(harvest_object.content)
-            subsystem = Subsystem.deserialize(dataset['subsystem'])
+            subsystem = Subsystem.deserialize(dataset['subsystem_pickled'])
         except ValueError:
             log.info('Could not parse content for object {0}'.format(harvest_object.id),
                      harvest_object, 'Import')
@@ -228,7 +229,8 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     else:
                         service.service_type = service_type
 
-                dataset['subsystem'] = subsystem.serialize()
+                dataset['subsystem_pickled'] = subsystem.serialize()
+                dataset['subsystem_dict'] = json.loads(subsystem.serialize_json())
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except (TypeError, ContentFetchError):
@@ -243,7 +245,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         try:
             dataset = json.loads(harvest_object.content)
-            subsystem = Subsystem.deserialize(dataset['subsystem'])
+            subsystem = Subsystem.deserialize(dataset['subsystem_pickled'])
         except ValueError:
             log.info(f'Could not parse content for object {harvest_object.id}', harvest_object, 'Import')
             self._save_object_error(f'Could not parse content for object {harvest_object.id}', harvest_object, 'Import')
@@ -341,10 +343,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             service_description = service.wsdl or service.openapi or None
 
-            if service_description:
-                changed = service_description.changed or service_description.created
-            else:
-                changed = service.changed or service.created
+            changed = service_description.changed if service_description else service.changed
 
             # Construct updated resource data
 
@@ -395,7 +394,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 resource_data['url'] = unknown_service_link_url
                 timestamp_field = 'unknown_timestamp'
 
-            resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S') if changed else None
+            resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S')
 
             named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
 
@@ -660,8 +659,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if last_time is not None:
                     last_time = iso8601.parse_date(last_time)
 
-            changed_or_created = member.changed or member.created
-            if (last_time and last_time < changed_or_created) or self.config.get('force_organization_update'):
+            if (last_time and last_time < member.changed) or self.config.get('force_organization_update'):
                 if org['name'] == munged_title:
                     org_name = munged_title
                 else:

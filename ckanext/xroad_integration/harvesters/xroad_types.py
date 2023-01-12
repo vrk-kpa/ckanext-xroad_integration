@@ -10,14 +10,14 @@ class ServiceDescription(Base):
     field_map = {'externalId': 'external_id'}
     value_map = {
             'created': date_value,
-            'changed': optional(date_value),
-            'fetched': optional(date_value),
+            'changed': date_value,
+            'fetched': date_value,
             'removed': optional(date_value),
             }
     external_id: str
     created: datetime
-    changed: Optional[datetime] = field(default=None)
-    fetched: Optional[datetime] = field(default=None)
+    changed: datetime
+    fetched: datetime
     removed: Optional[datetime] = field(default=None)
     data: Optional[str] = field(default=None)
 
@@ -31,18 +31,18 @@ class Service(Base):
             'wsdl': optional(class_value(ServiceDescription)),
             'openapi': optional(class_value(ServiceDescription)),
             'created': date_value,
-            'changed': optional(date_value),
-            'fetched': optional(date_value),
+            'changed': date_value,
+            'fetched': date_value,
             'removed': optional(date_value),
             }
     service_code: str
     created: datetime
+    changed: datetime
+    fetched: datetime
     service_version: Optional[str] = field(default=None)
     service_type: Optional[str] = field(default=None)
     wsdl: Optional[ServiceDescription] = field(default=None)
     openapi: Optional[ServiceDescription] = field(default=None)
-    changed: Optional[datetime] = field(default=None)
-    fetched: Optional[datetime] = field(default=None)
     removed: Optional[datetime] = field(default=None)
 
 
@@ -52,14 +52,14 @@ class Subsystem(Base):
     value_map = {
             'services': xroad_list_value('service', Service),
             'created': date_value,
-            'changed': optional(date_value),
-            'fetched': optional(date_value),
+            'changed': date_value,
+            'fetched': date_value,
             'removed': optional(date_value),
             }
     subsystem_code: str
     created: datetime
-    changed: Optional[datetime] = field(default=None)
-    fetched: Optional[datetime] = field(default=None)
+    changed: datetime
+    fetched: datetime
     removed: Optional[datetime] = field(default=None)
     services: List[Service] = field(default_factory=list)
 
@@ -72,8 +72,8 @@ class Member(Base):
     value_map = {
             'subsystems': xroad_list_value('subsystem', Subsystem),
             'created': date_value,
-            'changed': optional(date_value),
-            'fetched': optional(date_value),
+            'changed': date_value,
+            'fetched': date_value,
             'removed': optional(date_value),
             }
     instance: str
@@ -81,8 +81,8 @@ class Member(Base):
     member_class: str
     name: str
     created: datetime
-    changed: Optional[datetime] = field(default=None)
-    fetched: Optional[datetime] = field(default=None)
+    changed: datetime
+    fetched: datetime
     removed: Optional[datetime] = field(default=None)
     member_type: Optional[str] = field(default=None)
     subsystems: List[Subsystem] = field(default_factory=list)
