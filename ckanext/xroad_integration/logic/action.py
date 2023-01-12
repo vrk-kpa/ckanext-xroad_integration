@@ -15,11 +15,16 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from ckan.plugins import toolkit
 from pprint import pformat
+from typing import Dict, Any, List, Union
 
 from ckanext.xroad_integration.model import (XRoadError, XRoadStat, XRoadServiceList, XRoadServiceListMember,
                                              XRoadServiceListSubsystem, XRoadServiceListService,
                                              XRoadServiceListSecurityServer, XRoadBatchResult, XRoadDistinctServiceStat,
                                              XRoadHeartbeat)
+
+
+# Type for json
+Json = Union[Dict[str, "Json"], List["Json"], str, int, float, bool, None]
 
 # PUBLIC_ORGANIZATION_CLASSES = ['GOV', 'MUN', 'ORG']
 # COMPANY_CLASSES = ['COM']
@@ -284,7 +289,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['old_business_ids'] = old_business_ids
 
     except Exception:
-        log.warn("Exception")
+        log.warning("Exception")
         raise
 
     return organization_dict
@@ -292,7 +297,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
 
 def _get_organization_information(business_code):
     try:
-        organization_json = xroad_catalog_query('getOrganization', params=[business_code]).json()
+        organization_json = xroad_catalog_query_json('getOrganization', params=[business_code])
 
         if organization_json.get('organizationData') or organization_json.get('companyData'):
             return organization_json
@@ -312,8 +317,8 @@ def _get_organization_changes(business_code, changed_after):
             'endDate': datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
         }
 
-        organization_changes = xroad_catalog_query('getOrganizationChanges',
-                                                   params=[business_code], queryparams=queryparams).json()
+        organization_changes = xroad_catalog_query_json('getOrganizationChanges',
+                                                        params=[business_code], queryparams=queryparams)
         return organization_changes.get('changed')
 
     except ConnectionError:
@@ -454,17 +459,16 @@ def fetch_xroad_errors(context, data_dict):
                 "message": 'Fetched errors for {} harvest sources'.format(len(results))}
 
 
-def _fetch_error_page(params, queryparams, pagination):
+def _fetch_error_page(params, queryparams, pagination) -> (int, int):
 
     error_count = 0
-    error_data = xroad_catalog_query('listErrors',
-                                     params=params,
-                                     queryparams=queryparams,
-                                     pagination=pagination).json()
+    error_data = xroad_catalog_query_json('listErrors',
+                                          params=params,
+                                          queryparams=queryparams,
+                                          pagination=pagination)
 
     if error_data is None:
-        log.warning("Calling listErrors failed!")
-        raise ValueError('Calling listErrors failed')
+        return 0, 0
 
     error_log_list = error_data.get('errorLogList', [])
 
@@ -489,8 +493,14 @@ def _fetch_error_page(params, queryparams, pagination):
     return error_data.get('numberOfPages', 0), error_count
 
 
-def xroad_catalog_query(service, params=[],
-                        queryparams={}, content_type='application/json', accept='application/json', pagination=None):
+def xroad_catalog_query(service, params: List = None,
+                        queryparams: Dict[str, Any] = None, content_type='application/json', accept='application/json',
+                        pagination: Dict[str, str] = None):
+    if params is None:
+        params = []
+    if queryparams is None:
+        queryparams = {}
+
     xroad_catalog_address = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_address', '')  # type: str
     xroad_catalog_certificate = toolkit.config.get('ckanext.xroad_integration.xroad_catalog_certificate')
     xroad_client_id = toolkit.config.get('ckanext.xroad_integration.xroad_client_id')
@@ -501,6 +511,10 @@ def xroad_catalog_query(service, params=[],
         raise ContentFetchError("Invalid X-Road catalog url %s" % xroad_catalog_address)
 
     url = '{address}/{service}'.format(address=xroad_catalog_address, service=service)
+
+    if pagination:
+        queryparams['page'] = pagination['page']
+        queryparams['limit'] = pagination['limit']
 
     for param in params:
         url += '/' + param
@@ -519,6 +533,19 @@ def xroad_catalog_query(service, params=[],
         certificate_args['cert'] = xroad_client_certificate
 
     return http.get(url, params=queryparams, headers=headers, **certificate_args)
+
+
+def xroad_catalog_query_json(service, params: List = None, queryparams: Dict[str, Any] = None,
+                             pagination: Dict[str, str] = None) -> Json:
+    if params is None:
+        params = []
+    if queryparams is None:
+        queryparams = {}
+    response = xroad_catalog_query(service, params=params, queryparams=queryparams, pagination=pagination)
+    if response.status_code == 204:
+        log.warning("Received empty response for service %s", service)
+        return
+    return response.json()
 
 
 def fetch_xroad_service_list(context, data_dict):
@@ -541,14 +568,14 @@ def fetch_xroad_service_list(context, data_dict):
     log.info("Fetching X-Road services from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
-        service_list_data = xroad_catalog_query('getListOfServices', queryparams=queryparams).json()
+        service_list_data = xroad_catalog_query_json('getListOfServices', queryparams=queryparams)
     except ConnectionError as e:
-        log.warn("Connection error calling getListOfServices")
+        log.warning("Connection error calling getListOfServices")
         log.info(e)
         return {'success': False, 'message': 'Connection error calling getListOfServices'}
 
     if service_list_data is None:
-        log.warn('Invalid configuration for calling getListOfServices')
+        log.warning('Invalid configuration for calling getListOfServices')
         return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
     elif 'memberData' not in service_list_data:
         print(service_list_data)
@@ -569,7 +596,7 @@ def fetch_xroad_service_list(context, data_dict):
             address = security_server_data.get('address')
 
             if not all((instance, member_class, member_code, server_code, address)):
-                log.warn('Security server %s.%s (%s) is missing required information, skipping.',
+                log.warning('Security server %s.%s (%s) is missing required information, skipping.',
                          member_class, member_code, server_code)
                 continue
 
@@ -792,10 +819,10 @@ def fetch_xroad_stats(context, data_dict):
     log.info("Fetching X-Road stats from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
-        statistics_data = xroad_catalog_query('getServiceStatistics', queryparams=queryparams).json()
+        statistics_data = xroad_catalog_query_json('getServiceStatistics', queryparams=queryparams)
 
         if statistics_data is None:
-            log.warn("Calling getServiceStatistics failed!")
+            log.warning("Calling getServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getServiceStatistics failed!'}
         elif 'serviceStatisticsList' not in statistics_data:
             return {'success': False, 'message': 'Calling getServiceStatistics returned message: "{}"'
@@ -846,10 +873,10 @@ def fetch_distinct_service_stats(context, data_dict):
     log.info("Fetching X-Road distinct service stats from %s to %s" % (queryparams['startDate'], queryparams['endDate']))
 
     try:
-        statistics_data = xroad_catalog_query('getDistinctServiceStatistics', queryparams=queryparams).json()
+        statistics_data = xroad_catalog_query_json('getDistinctServiceStatistics', queryparams=queryparams)
 
         if statistics_data is None:
-            log.warn("Calling getDistinctServiceStatistics failed!")
+            log.warning("Calling getDistinctServiceStatistics failed!")
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics failed!'}
         elif 'distinctServiceStatisticsList' not in statistics_data:
             return {'success': False, 'message': 'Calling getDistinctServiceStatistics returned message: "{}"'
