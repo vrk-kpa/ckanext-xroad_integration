@@ -381,7 +381,6 @@ def fetch_xroad_errors(context, data_dict):
     errors = []
     error_count = 0
 
-
     start_date = string_to_date(data_dict.get('start_date'))
     end_date = string_to_date(data_dict.get('end_date'))
 
@@ -594,7 +593,7 @@ def fetch_xroad_service_list(context, data_dict):
 
             if not all((instance, member_class, member_code, server_code, address)):
                 log.warning('Security server %s.%s (%s) is missing required information, skipping.',
-                         member_class, member_code, server_code)
+                            member_class, member_code, server_code)
                 continue
 
             XRoadServiceListSecurityServer.create(service_list.id, instance, member_class, member_code,
