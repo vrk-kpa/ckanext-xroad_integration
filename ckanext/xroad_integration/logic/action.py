@@ -360,7 +360,7 @@ def set_date_range_defaults(start_date, end_date):
 
     yesterday = datetime.datetime.now() - relativedelta.relativedelta(days=+1)
     start_date = start_date or yesterday
-    end_date = end_date or yesterday
+    end_date = end_date or datetime.datetime.now()
 
     return start_date, end_date
 

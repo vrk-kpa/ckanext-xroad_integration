@@ -119,9 +119,14 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
     "start_date, end_date, exp",
     [
         (
+          None,
+          None,
+          'Services from 2022-01-06 to 2022-01-07 stored in database.'
+        ),
+        (
             "2022-01-01",
             None,
-            'Services from 2022-01-01 to 2022-01-06 stored in database.'
+            'Services from 2022-01-01 to 2022-01-07 stored in database.'
         ),
         (
             None,
@@ -172,9 +177,14 @@ def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
     "start_date, end_date, exp",
     [
         (
+          None,
+          None,
+          'Statistics from 2022-01-06 to 2022-01-07 stored in database.'
+        ),
+        (
             "2022-01-01",
             None,
-            'Statistics from 2022-01-01 to 2022-01-06 stored in database.'
+            'Statistics from 2022-01-01 to 2022-01-07 stored in database.'
         ),
         (
             None,
@@ -224,9 +234,14 @@ def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_databas
     "start_date, end_date, exp",
     [
         (
+          None,
+          None,
+          "Distinct service statistics from 2022-01-06 to 2022-01-07 stored in database."
+        ),
+        (
             "2022-01-01",
             None,
-            "Distinct service statistics from 2022-01-01 to 2022-01-06 stored in database."
+            "Distinct service statistics from 2022-01-01 to 2022-01-07 stored in database."
         ),
         (
             None,
