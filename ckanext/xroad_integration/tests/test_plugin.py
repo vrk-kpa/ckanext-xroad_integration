@@ -104,7 +104,7 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
     sl = model.Session.query(XRoadServiceList).all()
     assert len(sl) == 1
     sl = sl[0].as_dict_full()
-    assert result['message'] == 'Services from 2022-01-01 to 2022-01-01 stored in database.'
+    assert result['message'] == 'Services from 2022-01-01 to 2022-01-02 stored in database.'
     assert len(sl['security_servers']) == 3
     org = sl.get("security_servers")[0]
     assert org["server_code"] == "Commercial"
@@ -165,7 +165,7 @@ def test_fetch_xroad_service_list_with_date_ranges(xroad_rest_mocks,
 def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_stats')
     stats = model.Session.query(XRoadStat).first()
-    assert result['message'] == 'Statistics from 2022-01-01 to 2022-01-01 stored in database.'
+    assert result['message'] == 'Statistics from 2022-01-01 to 2022-01-02 stored in database.'
     assert stats.date == datetime(2022, 1, 1, 0, 0)
     assert stats.soap_service_count == 1
     assert stats.rest_service_count == 1
@@ -224,7 +224,7 @@ def test_fetch_xroad_service_statistics_with_date_ranges(xroad_rest_mocks,
 def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_distinct_service_stats')
     stats = model.Session.query(XRoadDistinctServiceStat).first()
-    assert result['message'] == 'Distinct service statistics from 2022-01-01 to 2022-01-01 stored in database.'
+    assert result['message'] == 'Distinct service statistics from 2022-01-01 to 2022-01-02 stored in database.'
     assert stats.date == datetime(2022, 1, 1, 0, 0)
     assert stats.distinct_service_count == 1
 
