@@ -118,8 +118,7 @@ def fetch_errors(ctx, start_date, end_date):
                                                                         'message': results.get('message')})
 
         if success:
-            for result in results.get('results', []):
-                click.secho(result['message'], fg="green")
+            click.secho(results['message'], fg="green")
 
         else:
             click.secho(results['message'], fg="red")

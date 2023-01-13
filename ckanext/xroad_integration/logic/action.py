@@ -378,85 +378,82 @@ def validate_date_range(start_date, end_date):
 
 def fetch_xroad_errors(context, data_dict):
     toolkit.check_access('fetch_xroad_errors', context)
-    results = []
     errors = []
-
     error_count = 0
-    harvest_sources = xroad_harvest_sources(context)
 
-    for harvest_source in harvest_sources:
-        source_title = harvest_source.get('title', '')
 
-        start_date = string_to_date(data_dict.get('start_date'))
-        end_date = string_to_date(data_dict.get('end_date'))
+    start_date = string_to_date(data_dict.get('start_date'))
+    end_date = string_to_date(data_dict.get('end_date'))
 
-        try:
-            start_date, end_date = set_date_range_defaults(start_date, end_date)
-            validate_date_range(start_date, end_date)
-        except ValueError as e:
-            return {'success': False, 'message': str(e)}
+    try:
+        start_date, end_date = set_date_range_defaults(start_date, end_date)
+        validate_date_range(start_date, end_date)
+    except ValueError as e:
+        return {'success': False, 'message': str(e)}
 
-        queryparams = {
-            'startDate': date_to_string(start_date),
-            'endDate': date_to_string(end_date)
-        }
+    queryparams = {
+        'startDate': date_to_string(start_date),
+        'endDate': date_to_string(end_date)
+    }
 
-        page = 0
-        if "page" in data_dict and data_dict.get('page') is not None:
-            page = data_dict.get('page')
-        limit = DEFAULT_LIST_ERRORS_PAGE_LIMIT
-        if "limit" in data_dict and data_dict.get('limit') is not None:
-            limit = data_dict.get('limit')
+    page = 0
+    if "page" in data_dict and data_dict.get('page') is not None:
+        page = data_dict.get('page')
+    limit = DEFAULT_LIST_ERRORS_PAGE_LIMIT
+    if "limit" in data_dict and data_dict.get('limit') is not None:
+        limit = data_dict.get('limit')
 
-        log.info("Fetching errors from %s to %s for %s" % (start_date, end_date, source_title))
+    log.info("Fetching errors from %s to %s" % (start_date, end_date))
 
-        organizations = toolkit.get_action('organization_list')(context, {})
+    organizations = toolkit.get_action('organization_list')(context, {})
+    log.warning(organizations)
+    try:
+        for org_name in organizations:
+            log.warning(org_name)
+            organization = toolkit.get_action('organization_show')(context, {'id': org_name})
+            if not (organization.get('xroad_instance') and organization.get('xroad_memberclass') and
+                    organization.get('xroad_membercode')):
+                log.warning('Invalid xroad organization: %s, not fetching errors for it', organization['id'])
+                continue
 
-        try:
-            for org_name in organizations:
-                organization = toolkit.get_action('organization_show')(context, {'id': org_name})
-                if not (organization.get('xroad_instance') and organization.get('xroad_memberclass') and
-                        organization.get('xroad_membercode')):
-                    log.warning('Invalid xroad organization: %s, not fetching errors for it', organization['id'])
-                    continue
+            params = [organization.get('xroad_instance'),
+                      organization.get('xroad_memberclass'),
+                      organization.get('xroad_membercode')]
+            pagination = {"page": str(page), "limit": str(limit)}
+            try:
+                no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
+                                                                    pagination=pagination)
+                error_count += added_errors_count
+            except ValueError:
+                return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                params = [organization.get('xroad_instance'),
-                          organization.get('xroad_memberclass'),
-                          organization.get('xroad_membercode')]
-                pagination = {"page": str(page), "limit": str(limit)}
+            for page_no in range(1, no_of_pages):
                 try:
-                    no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
-                                                                        pagination=pagination)
-                    error_count += added_errors_count
-                except ValueError:
-                    return {'success': False, 'message': 'Calling listErrors failed!'}
-
-                for page_no in range(1, no_of_pages):
+                    pagination = {"page": str(page_no), "limit": str(limit)}
                     try:
-                        pagination = {"page": str(page_no), "limit": str(limit)}
-                        try:
-                            no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
-                                                                                pagination=pagination)
-                            error_count += added_errors_count
-                        except ValueError:
-                            return {'success': False, 'message': 'Calling listErrors failed!'}
+                        no_of_pages, added_errors_count = _fetch_error_page(params=params, queryparams=queryparams,
+                                                                            pagination=pagination)
+                        error_count += added_errors_count
+                    except ValueError:
+                        return {'success': False, 'message': 'Calling listErrors failed!'}
 
-                    except ConnectionError as e:
-                        log.warning("Calling listErrors failed!")
-                        log.info(e)
-                        return {"success": False, "message": "Fetching errors failed."}
+                except ConnectionError as e:
+                    log.warning("Calling listErrors failed!")
+                    log.info(e)
+                    return {"success": False, "message": "Fetching errors failed."}
 
-        except ConnectionError as e:
-            log.warning("Calling listErrors failed!")
-            log.info(e)
-            return {"success": False, "message": "Fetching errors failed."}
+    except ConnectionError as e:
+        log.warning("Calling listErrors failed!")
+        log.info(e)
+        return {"success": False, "message": "Fetching errors failed."}
 
-    results.append({"message": "%d errors stored to database." % error_count})
+    log.warning(error_count)
+    results = {"message": "%d errors stored to database." % error_count}
     if errors:
         return {"success": False, "message": ", ".join(errors)}
     else:
         return {"success": True, "results": results,
-                "message": 'Fetched errors for {} harvest sources'.format(len(results))}
+                "message": 'Fetched errors for xroad'}
 
 
 def _fetch_error_page(params, queryparams, pagination) -> (int, int):

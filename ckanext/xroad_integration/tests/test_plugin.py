@@ -81,8 +81,8 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, xroad_database
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
     result = call_action('fetch_xroad_errors', start_date="2023-01-01", end_date="2023-01-05", limit=1)
-    assert result['message'] == 'Fetched errors for 1 harvest sources'
-    assert result['results'][0]['message'] == '12 errors stored to database.'
+    assert result['message'] == 'Fetched errors for xroad'
+    assert result['results']['message'] == '12 errors stored to database.'
 
     db_entry_count = model.Session.query(XRoadError).count()
     assert db_entry_count == 12
