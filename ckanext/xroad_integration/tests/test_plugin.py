@@ -104,7 +104,7 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
     sl = model.Session.query(XRoadServiceList).all()
     assert len(sl) == 1
     sl = sl[0].as_dict_full()
-    assert result['message'] == 'Services from 2022-01-01 to 2022-01-02 stored in database.'
+    assert result['message'] == 'Services from 2022-01-01 to 2022-01-01 stored in database.'
     assert len(sl['security_servers']) == 3
     org = sl.get("security_servers")[0]
     assert org["server_code"] == "Commercial"
@@ -121,12 +121,12 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
         (
           None,
           None,
-          'Services from 2022-01-06 to 2022-01-07 stored in database.'
+          'Services from 2022-01-06 to 2022-01-06 stored in database.'
         ),
         (
             "2022-01-01",
             None,
-            'Services from 2022-01-01 to 2022-01-07 stored in database.'
+            'Services from 2022-01-01 to 2022-01-06 stored in database.'
         ),
         (
             None,
@@ -179,12 +179,12 @@ def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
         (
           None,
           None,
-          'Statistics from 2022-01-06 to 2022-01-07 stored in database.'
+          'Statistics from 2022-01-06 to 2022-01-06 stored in database.'
         ),
         (
             "2022-01-01",
             None,
-            'Statistics from 2022-01-01 to 2022-01-07 stored in database.'
+            'Statistics from 2022-01-01 to 2022-01-06 stored in database.'
         ),
         (
             None,
@@ -236,12 +236,12 @@ def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_databas
         (
           None,
           None,
-          "Distinct service statistics from 2022-01-06 to 2022-01-07 stored in database."
+          "Distinct service statistics from 2022-01-06 to 2022-01-06 stored in database."
         ),
         (
             "2022-01-01",
             None,
-            "Distinct service statistics from 2022-01-01 to 2022-01-07 stored in database."
+            "Distinct service statistics from 2022-01-01 to 2022-01-06 stored in database."
         ),
         (
             None,
