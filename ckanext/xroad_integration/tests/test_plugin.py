@@ -81,8 +81,8 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, xroad_database
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
     result = call_action('fetch_xroad_errors', start_date="2023-01-01", end_date="2023-01-05", limit=1)
-    assert result['message'] == 'Fetched errors for 1 harvest sources'
-    assert result['results'][0]['message'] == '12 errors stored to database.'
+    assert result['message'] == 'Fetched errors for xroad'
+    assert result['results']['message'] == '12 errors stored to database.'
 
     db_entry_count = model.Session.query(XRoadError).count()
     assert db_entry_count == 12
@@ -118,6 +118,11 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
 @pytest.mark.parametrize(
     "start_date, end_date, exp",
     [
+        (
+          None,
+          None,
+          'Services from 2022-01-06 to 2022-01-06 stored in database.'
+        ),
         (
             "2022-01-01",
             None,
@@ -172,6 +177,11 @@ def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
     "start_date, end_date, exp",
     [
         (
+          None,
+          None,
+          'Statistics from 2022-01-06 to 2022-01-06 stored in database.'
+        ),
+        (
             "2022-01-01",
             None,
             'Statistics from 2022-01-01 to 2022-01-06 stored in database.'
@@ -223,6 +233,11 @@ def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_databas
 @pytest.mark.parametrize(
     "start_date, end_date, exp",
     [
+        (
+          None,
+          None,
+          "Distinct service statistics from 2022-01-06 to 2022-01-06 stored in database."
+        ),
         (
             "2022-01-01",
             None,

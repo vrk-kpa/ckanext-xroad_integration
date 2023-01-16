@@ -118,8 +118,7 @@ def fetch_errors(ctx, start_date, end_date):
                                                                         'message': results.get('message')})
 
         if success:
-            for result in results.get('results', []):
-                click.secho(result['message'], fg="green")
+            click.secho(results['message'], fg="green")
 
         else:
             click.secho(results['message'], fg="red")
@@ -131,7 +130,7 @@ def fetch_errors(ctx, start_date, end_date):
               help="""Optional, unless end-date is given in which case start-date is also required.
               If not given yesterday is used as a default.""",)
 @click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
-              help="""Optional. If not given current date is used as a default""",)
+              help="""Optional. If not given yesterday date is used as a default""",)
 def fetch_stats(ctx, start_date, end_date):
     try:
         validate_date_range(start_date, end_date)
@@ -167,7 +166,7 @@ def fetch_stats(ctx, start_date, end_date):
               help="""Optional, unless end-date is given in which case start-date is also required.
               If not given yesterday is used as a default.""",)
 @click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
-              help="""Optional. If not given current date is used as a default""",)
+              help="""Optional. If not given yesterday date is used as a default""",)
 def fetch_distinct_service_stats(ctx, start_date, end_date):
     'Fetches X-Road distinct service stats from catalog lister'
     try:
@@ -205,7 +204,7 @@ def fetch_distinct_service_stats(ctx, start_date, end_date):
               help="""Optional, unless end-date is given in which case start-date is also required.
               If not given yesterday is used as a default.""",)
 @click.option(u'-e', u'--end-date', type=click.DateTime(formats=["%Y-%m-%d"]),
-              help="""Optional. If not given current date is used as a default""",)
+              help="""Optional. If not given yesterday date is used as a default""",)
 def fetch_service_list(ctx, start_date, end_date):
     'Fetches X-Road services from catalog lister'
     try:
