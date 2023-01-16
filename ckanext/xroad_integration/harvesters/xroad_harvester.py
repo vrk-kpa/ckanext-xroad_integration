@@ -400,24 +400,27 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             # Create or update resources
 
-            if not named_resources:
-                p.toolkit.get_action('resource_create')(context, resource_data)
-                result = True
-            else:
-                for resource in named_resources:
-                    try:
-                        previous_string = resource.get(timestamp_field, None)
-                        previous = iso8601.parse_date(previous_string) if previous_string else None
-                    except iso8601.ParseError as e:
-                        log.error('Error parsing previous timestamp: %s' % e)
-                        continue
+            try:
+                if not named_resources:
+                    p.toolkit.get_action('resource_create')(context, resource_data)
+                    result = True
+                else:
+                    for resource in named_resources:
+                        try:
+                            previous_string = resource.get(timestamp_field, None)
+                            previous = iso8601.parse_date(previous_string) if previous_string else None
+                        except iso8601.ParseError as e:
+                            log.error('Error parsing previous timestamp: %s' % e)
+                            continue
 
-                    if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
-                        log.info('Service %s.%s changed after last harvest, replacing...',
-                                 resource.get('xroad_servicecode'), resource.get('xroad_serviceversion'))
-                        resource_data['id'] = resource['id']
-                        p.toolkit.get_action('resource_patch')(context, resource_data)
-                        result = True
+                        if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
+                            log.info('Service %s.%s changed after last harvest, replacing...',
+                                     resource.get('xroad_servicecode'), resource.get('xroad_serviceversion'))
+                            resource_data['id'] = resource['id']
+                            p.toolkit.get_action('resource_patch')(context, resource_data)
+                            result = True
+            except p.toolkit.ValidationError as e:
+                log.warning(f'Validation error while updating/creating {name}: {e}')
 
             if file_name:
                 os.unlink(file_name)
@@ -695,7 +698,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     org_data['webpage_description'] = {}
 
                 log.info(f'Patching organization {org_name}')
-                org = p.toolkit.get_action('organization_patch')(context, org_data)
+                try:
+                    org = p.toolkit.get_action('organization_patch')(context, org_data)
+                except p.toolkit.ValidationError as e:
+                    log.warning(f'Validation error updating organization {org_id}: {e}')
+                    org = None
 
         else:
             log.info(f'Organization {member.name} not found, creating...')
@@ -729,7 +736,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
             }
 
             log.info(f'Creating organization {org_name}')
-            org = p.toolkit.get_action('organization_create')(context, org_data)
+            try:
+                org = p.toolkit.get_action('organization_create')(context, org_data)
+            except p.toolkit.ValidationError as e:
+                log.warning(f'Validation error creating organization {org_id}: {e}')
+                org = None
 
         return org
 
