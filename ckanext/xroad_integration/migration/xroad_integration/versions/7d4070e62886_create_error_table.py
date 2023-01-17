@@ -1,7 +1,7 @@
 """Create error table
 
 Revision ID: 7d4070e62886
-Revises: 
+Revises:
 Create Date: 2023-01-17 07:46:03.674300
 
 """

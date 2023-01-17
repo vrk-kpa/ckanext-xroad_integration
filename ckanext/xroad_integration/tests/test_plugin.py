@@ -98,6 +98,7 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks):
     assert first['message'] == 'Fetch of REST services failed(url: https://somedomain/r1/' \
                                'FI-TEST/GOV/1234567-8/some_member/listMethods): 500 Server Error'
 
+
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 def test_list_xroad_errors_for_organization(migrate_db_for):

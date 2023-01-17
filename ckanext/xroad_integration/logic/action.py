@@ -8,7 +8,6 @@ from sqlalchemy import and_, not_
 import requests
 import datetime
 import six
-import iso8601
 
 from ckan import model
 from requests.exceptions import ConnectionError
@@ -729,9 +728,6 @@ def xroad_error_list(context, data_dict):
         start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     end = start.replace(hour=23, minute=59, second=59)
-    date_start = start
-    date_end = start
-    show_history = False
 
     rest_services_failed_errors = model.Session.query(XRoadError) \
         .filter(XRoadError.message.like("Fetch of REST services failed%")) \

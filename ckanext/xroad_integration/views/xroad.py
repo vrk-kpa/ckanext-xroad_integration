@@ -57,7 +57,6 @@ xroad_organization.add_url_rule(u'/<organization>/errors/<date>', view_func=orga
 xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
 
 
-
 def stats():
     try:
         context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
