@@ -6,7 +6,7 @@ import requests
 import lxml.etree as etree
 import six
 import iso8601
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from sqlalchemy import text, exists
 from datetime import datetime
@@ -148,11 +148,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
             # Create organization id
             org_id = substitute_ascii_equivalents(f'{member.instance}.{member.member_class}.{member.member_code}')
 
-            org = self._create_or_update_organization(org_id, member, harvest_job)
+            try:
+                org = self._create_or_update_organization(org_id, member, harvest_job)
+            except p.toolkit.ValidationError as e:
+                log.warning(f'Validation error creating/updating organization {org_id}: {e}')
+                self._save_gather_error(f'Validation error creating/updating organization {org_id}: {e}', harvest_job)
+                continue
 
             if org is None:
-                self._save_gather_error(f'Failed to create organization with id: {org_id} and name: {member.name}',
-                                        harvest_job)
+                # Organization has been removed
                 continue
 
             for subsystem in member.subsystems:
@@ -400,24 +404,29 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             # Create or update resources
 
-            if not named_resources:
-                p.toolkit.get_action('resource_create')(context, resource_data)
-                result = True
-            else:
-                for resource in named_resources:
-                    try:
-                        previous_string = resource.get(timestamp_field, None)
-                        previous = iso8601.parse_date(previous_string) if previous_string else None
-                    except iso8601.ParseError as e:
-                        log.error('Error parsing previous timestamp: %s' % e)
-                        continue
+            try:
+                if not named_resources:
+                    p.toolkit.get_action('resource_create')(context, resource_data)
+                    result = True
+                else:
+                    for resource in named_resources:
+                        try:
+                            previous_string = resource.get(timestamp_field, None)
+                            previous = iso8601.parse_date(previous_string) if previous_string else None
+                        except iso8601.ParseError as e:
+                            log.error('Error parsing previous timestamp: %s' % e)
+                            continue
 
-                    if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
-                        log.info('Service %s.%s changed after last harvest, replacing...',
-                                 resource.get('xroad_servicecode'), resource.get('xroad_serviceversion'))
-                        resource_data['id'] = resource['id']
-                        p.toolkit.get_action('resource_patch')(context, resource_data)
-                        result = True
+                        if not previous or (changed and changed > previous) or self.config.get('force_resource_update'):
+                            log.info('Service %s.%s changed after last harvest, replacing...',
+                                     resource.get('xroad_servicecode'), resource.get('xroad_serviceversion'))
+                            resource_data['id'] = resource['id']
+                            p.toolkit.get_action('resource_patch')(context, resource_data)
+                            result = True
+            except p.toolkit.ValidationError as e:
+                log.warning(f'Validation error while updating/creating {name}: {e}')
+                self._save_object_error(f'Validation error processing {owner_name}.{subsystem.subsystem_code}.{name} '
+                                        f'in {harvest_object.id}', harvest_object, 'Import')
 
             if file_name:
                 os.unlink(file_name)
@@ -630,7 +639,11 @@ class XRoadHarvesterPlugin(HarvesterBase):
         # All variants were taken as well, probably some kind of error
         return None
 
-    def _create_or_update_organization(self, org_id, member, harvest_job):
+    def _create_or_update_organization(self, org_id, member, harvest_job) -> Optional[Dict[str, Any]]:
+        '''Creates or updates an organization based on member.
+        Raises a ValidationError if contents are invalid or there's no suitable name available
+        Returns updated organization on success or None if the organization has been removed.
+        '''
         context = {
             'model': model,
             'session': model.Session,
@@ -666,8 +679,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     org_name = self._ensure_own_unique_name(org_id, munged_title, context)
 
                 if org_name is None:
-                    log.error(f'Organization name {munged_title} and tried variants already in use!')
-                    return None
+                    raise p.toolkit.ValidationError(f'Organization name {munged_title} and tried variants already in use!')
 
                 org_description = org.get('description_translated', {}) \
                     if (org.get('description_translated') != {'fi': '', 'sv': '', 'en': ''}
@@ -711,8 +723,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org_name = self._ensure_own_unique_name(org_id, munged_title, context)
 
             if org_name is None:
-                log.error('Organization name {munged_title} and tried variants already in use!')
-                return None
+                raise p.toolkit.ValidationError(f'Organization name {munged_title} and tried variants already in use!')
 
             # Get rid of auth audit on the context otherwise we'll get an
             # exception
