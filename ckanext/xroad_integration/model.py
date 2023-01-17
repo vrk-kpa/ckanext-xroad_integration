@@ -31,24 +31,21 @@ class XRoadError(Base, AsDictMixin):
     id = Column(types.UnicodeText, primary_key=True, default=make_uuid)
     message = Column(types.UnicodeText, nullable=False)
     code = Column(types.Integer, nullable=False)
-    created = Column(types.DateTime, nullable=False)
-    xroad_instance = Column(types.UnicodeText, nullable=False)
-    member_class = Column(types.UnicodeText, nullable=False)
-    member_code = Column(types.UnicodeText, nullable=False)
-    subsystem_code = Column(types.UnicodeText, nullable=False)
-    service_code = Column(types.UnicodeText, nullable=False)
-    service_version = Column(types.UnicodeText, nullable=False)
-    server_code = Column(types.UnicodeText, nullable=False)
-    security_category_code = Column(types.UnicodeText, nullable=False)
-    group_code = Column(types.UnicodeText, nullable=False)
+    created = Column(types.DateTime)
+    xroad_instance = Column(types.UnicodeText)
+    member_class = Column(types.UnicodeText)
+    member_code = Column(types.UnicodeText)
+    subsystem_code = Column(types.UnicodeText)
+    service_code = Column(types.UnicodeText)
+    service_version = Column(types.UnicodeText)
+    server_code = Column(types.UnicodeText)
+    security_category_code = Column(types.UnicodeText)
+    group_code = Column(types.UnicodeText)
 
     @classmethod
     def create(cls, message, code, created, xroad_instance, member_class, member_code, subsystem_code,
                service_code, service_version, server_code, security_category_code, group_code):
 
-        # Service version might be none for various reasons
-        if not service_version:
-            service_version = ""
         xroad_error = XRoadError(message=message, code=code, created=created, xroad_instance=xroad_instance,
                                  member_class=member_class, member_code=member_code, subsystem_code=subsystem_code,
                                  service_code=service_code, service_version=service_version, server_code=server_code,
