@@ -3,3 +3,8 @@
 {% block title %}
     <h1>Errors for {{ error_list.organization }} on {{ h.render_datetime(error_list.date) }}</h1>
 {% endblock %}
+
+{% block date_links %}
+    <a href="{{ h.url_for('xroad.errors', organization=error_list.organization, date=error_list.previous) }}">Previous</a>
+    <a href="{{ h.url_for('xroad.errors', organization=error_list.organization, date=error_list.next) }}">Next</a>
+{% endblock %}
