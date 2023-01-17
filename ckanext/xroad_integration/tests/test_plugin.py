@@ -132,6 +132,7 @@ def test_list_xroad_errors_for_organization(migrate_db_for):
 
 
 @pytest.mark.freeze_time('2023-01-17')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 def test_view_xroad_errors_for_organization(migrate_db_for, app):
     migrate_db_for('xroad_integration')
