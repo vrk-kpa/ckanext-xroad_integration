@@ -1,11 +1,11 @@
 name: Tests
-on: [push, pull_request, workflow_dispatch, workflow_call]
+on: [push, workflow_dispatch, workflow_call]
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
       - name: Install requirements
@@ -46,7 +46,7 @@ jobs:
       CKAN_REDIS_URL: redis://redis:6379/1
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
       - name: Install requirements
@@ -80,11 +80,19 @@ jobs:
           pip install -e .
           # Replace default path to CKAN core config file with the one on the container
           sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
+
       - name: Setup extension
         run: |
+          
+          # Enable plugins in test.ini temporarily
+          sed -i -e 's/#ckan.plugins/ckan.plugins/' test.ini
+          
           ckan -c test.ini db init
           ckan -c test.ini harvester initdb
           ckan -c test.ini xroad init-db
+          
+          # Disable plugins in test.ini
+          sed -i -e 's/ckan.plugins/#ckan.plugins/' test.ini
       - name: Run tests
         run: pytest --ckan-ini=test.ini --cov=ckanext.xroad_integration --disable-warnings ckanext/xroad_integration/tests
       - name: Coveralls

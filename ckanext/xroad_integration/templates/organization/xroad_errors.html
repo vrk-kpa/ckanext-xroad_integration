@@ -1,6 +1,5 @@
 {% extends "admin/xroad_errors.html" %}
 
-{% block date_links %}
-    <a href="{{ h.url_for('xroad_organization.organization_errors', organization=error_list.organization, page=error_list.previous_page) }}">Previous</a>
-    <a href="{{ h.url_for('xroad_organization.organization_errors', organization=error_list.organization, page=error_list.next_page) }}">Next</a>
+{% block title %}
+    <h1>Errors for {{ error_list.organization }} on {{ h.render_datetime(error_list.date) }}</h1>
 {% endblock %}

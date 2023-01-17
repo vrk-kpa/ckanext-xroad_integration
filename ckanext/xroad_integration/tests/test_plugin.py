@@ -1,8 +1,11 @@
 """Tests for plugin.py."""
 from datetime import datetime
+
+import six
 from ckanext.xroad_integration.model import XRoadServiceList, XRoadStat, XRoadDistinctServiceStat, XRoadError
 from ckan import model
 from ckan.plugins import toolkit
+from ckan.tests.factories import Organization, User
 import pytest
 import json
 from ckanext.xroad_integration.harvesters.xroad_harvester import XRoadHarvesterPlugin
@@ -74,9 +77,13 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('get_list_errors_data'))
-def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, xroad_database_setup):
+def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, migrate_db_for):
+    migrate_db_for('xroad_integration')
+
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
@@ -96,8 +103,73 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, xroad_database
                                'FI-TEST/GOV/1234567-8/some_member/listMethods): 500 Server Error'
 
 
+@pytest.mark.freeze_time('2023-01-17')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+def test_list_xroad_errors_for_organization(migrate_db_for):
+    migrate_db_for('xroad_integration')
+
+    Organization(id="FI-TEST.GOV.1234567-8")
+
+    XRoadError.create(
+        message='Test message',
+        code=500,
+        created=datetime(2023, 1, 17),
+        xroad_instance="FI-TEST",
+        member_class="GOV",
+        member_code="1234567-8",
+        subsystem_code="some_error_member",
+        service_code="some_service",
+        service_version="",
+        group_code="",
+        server_code="",
+        security_category_code=""
+    )
+
+    org_errors = call_action('xroad_error_list', {}, organization="FI-TEST.GOV.1234567-8")
+    assert org_errors['list_errors'][0]['code'] == 500
+    assert org_errors['list_errors'][0]['message'] == "Test message"
+    assert org_errors['list_errors'][0]['xroad_instance'] == "FI-TEST"
+    assert org_errors['list_errors'][0]['member_class'] == "GOV"
+    assert org_errors['list_errors'][0]['member_code'] == "1234567-8"
+    assert org_errors['next'] == "2023-01-18"
+    assert org_errors['previous'] == "2023-01-16"
+
+
+@pytest.mark.freeze_time('2023-01-17')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+def test_view_xroad_errors_for_organization(migrate_db_for, app):
+    migrate_db_for('xroad_integration')
+
+    user = User()
+    env = {"REMOTE_USER": six.ensure_str(user["name"])}
+
+    Organization(id="FI-TEST.GOV.1234567-8", users=[{"name": user["name"], "capacity": "admin"}])
+
+    XRoadError.create(
+        message='Test message',
+        code=500,
+        created=datetime(2023, 1, 17),
+        xroad_instance="FI-TEST",
+        member_class="GOV",
+        member_code="1234567-8",
+        subsystem_code="some_error_member",
+        service_code="some_service",
+        service_version="",
+        group_code="",
+        server_code="",
+        security_category_code=""
+    )
+
+    res = app.get('/organization/xroad/FI-TEST.GOV.1234567-8/errors', extra_environ=env)
+
+    assert 'Test message' in res
+
+
 @pytest.mark.freeze_time('2022-01-02')
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getListOfServices'))
 def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_service_list')
@@ -150,7 +222,8 @@ def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
         ),
     ]
 )
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getListOfServices'))
 def test_fetch_xroad_service_list_with_date_ranges(xroad_rest_mocks,
@@ -160,7 +233,8 @@ def test_fetch_xroad_service_list_with_date_ranges(xroad_rest_mocks,
 
 
 @pytest.mark.freeze_time('2022-01-02')
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getServiceStatistics'))
 def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_stats')
@@ -208,7 +282,8 @@ def test_fetch_xroad_service_statistics(xroad_rest_mocks, xroad_database_setup):
         ),
     ]
 )
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getServiceStatistics'))
 def test_fetch_xroad_service_statistics_with_date_ranges(xroad_rest_mocks,
@@ -218,7 +293,8 @@ def test_fetch_xroad_service_statistics_with_date_ranges(xroad_rest_mocks,
 
 
 @pytest.mark.freeze_time('2022-01-02')
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getDistinctServiceStatistics'))
 def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_database_setup):
@@ -265,7 +341,8 @@ def test_fetch_xroad_distinct_service_statistics(xroad_rest_mocks, xroad_databas
         ),
     ]
 )
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getDistinctServiceStatistics'))
 def test_fetch_xroad_distinct_service_statistics_with_date_ranges(xroad_rest_mocks,
@@ -274,7 +351,8 @@ def test_fetch_xroad_distinct_service_statistics_with_date_ranges(xroad_rest_moc
     assert result['message'] == exp
 
 
-@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('heartbeat'))
 def test_xroad_heartbeat(xroad_rest_mocks):
     result = call_action('fetch_xroad_heartbeat')
@@ -283,6 +361,8 @@ def test_xroad_heartbeat(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationOrganizationData'))
 def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
@@ -309,6 +389,8 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationCompanyData'))
 def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
@@ -332,6 +414,8 @@ def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_re
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationCompanyDataWithBusinessIdChanges'))
 def test_xroad_get_organizations_company_data_with_business_id_changes(xroad_rest_adapter_mocks, xroad_rest_mocks):
@@ -348,6 +432,8 @@ def test_xroad_get_organizations_company_data_with_business_id_changes(xroad_res
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getOrganizationEmptyData'))
 def test_xroad_get_organizations_empty_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()

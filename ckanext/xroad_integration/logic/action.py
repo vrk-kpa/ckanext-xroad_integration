@@ -414,10 +414,8 @@ def fetch_xroad_errors(context, data_dict):
     log.info("Fetching errors from %s to %s" % (start_date, end_date))
 
     organizations = toolkit.get_action('organization_list')(context, {})
-    log.warning(organizations)
     try:
         for org_name in organizations:
-            log.warning(org_name)
             organization = toolkit.get_action('organization_show')(context, {'id': org_name})
             if not (organization.get('xroad_instance') and organization.get('xroad_memberclass') and
                     organization.get('xroad_membercode')):
@@ -730,9 +728,6 @@ def xroad_error_list(context, data_dict):
         start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     end = start.replace(hour=23, minute=59, second=59)
-    date_start = start
-    date_end = start
-    show_history = False
 
     rest_services_failed_errors = model.Session.query(XRoadError) \
         .filter(XRoadError.message.like("Fetch of REST services failed%")) \
@@ -771,11 +766,8 @@ def xroad_error_list(context, data_dict):
                 .filter(XRoadError.member_class == xroad_id[1]) \
                 .filter(XRoadError.member_code == xroad_id[2])
 
-            date_start = start - datetime.timedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)
-            date_end = start
-            show_history = True
         else:
-            raise toolkit.Invalid(toolkit._(u"Organization id is not valid X-Road id"))
+            raise toolkit.ValidationError(toolkit._(u"Organization id is not valid X-Road id"))
 
     rest_services_failed_errors = rest_services_failed_errors.all()
     other_errors = other_errors.all()
@@ -792,12 +784,9 @@ def xroad_error_list(context, data_dict):
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
         "list_errors": [error.as_dict() for error in list_errors],
         "other_errors": [error.as_dict() for error in other_errors],
-        "date": start,
-        "date_start": date_start,
-        "date_end": date_end,
-        "show_history": show_history,
-        "previous": (start - relativedelta.relativedelta(days=1)).date(),
-        "next": (start + relativedelta.relativedelta(days=1)).date(),
+        "date": start.isoformat(),
+        "previous": (start - relativedelta.relativedelta(days=1)).date().strftime("%Y-%m-%d"),
+        "next": (start + relativedelta.relativedelta(days=1)).date().strftime("%Y-%m-%d"),
         "organization": organization_id,
         "previous_page": previous_page,
         "next_page": next_page

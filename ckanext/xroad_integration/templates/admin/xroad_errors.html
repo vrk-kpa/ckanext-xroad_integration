@@ -7,92 +7,61 @@
         <a href="{{ h.url_for('xroad.errors', date=error_list.next) }}">Next</a>
     {% endblock %}
 
-    {% if error_list.show_history %}
-        <h1>Errors for {{ h.render_datetime(error_list.date_start) }} - {{ h.render_datetime(error_list.date_end) }}</h1>
-        <div class="summary">
-            <dl>
-                <dt>Errors:</dt><dd>{{ error_list.list_errors | length }}</dd>
-            </dl>
-        </div>
-
-        <h2>Errors</h2>
-        <table class="table table-bordered" style="table-layout:fixed;">
-            <thead>
-                <tr>
-                    <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
-                    <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for error in error_list.list_errors %}
-                <tr>
-                    <td>{{ h.render_datetime(error.created) }}</td>
-                    <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
-                    <td>{{ error.service_code }}.{{ error.service_version }}</td>
-                    <td>{{ error.message }}</td>
-                    <td>{{ error.code }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
+    {% block title %}
         <h1>Errors for {{ h.render_datetime(error_list.date) }}</h1>
-        <div class="summary">
-            <dl>
-                <dt>Other errors:</dt><dd>{{ error_list.other_errors | length }}</dd>
-                <dt>Rest service errors:</dt><dd>{{ error_list.rest_services_failed_errors | length }}</dd>
-            </dl>
-        </div>
-        <h2>Other errors</h2>
-        <table class="table table-bordered" style="table-layout:fixed;">
-            <thead>
-                <tr>
-                    <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
-                    <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for error in error_list.other_errors %}
-                <tr>
-                    <td>{{ h.render_datetime(error.created) }}</td>
-                    <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
-                    <td>{{ error.service_code }}.{{ error.service_version }}</td>
-                    <td>{{ error.message }}</td>
-                    <td>{{ error.code }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <h2>Rest services failed to fetch</h2>
-        <table class="table table-bordered" style="table-layout:fixed;">
-            <thead>
-                <tr>
-                    <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
-                    <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
-                    <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
-                    <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for error in error_list.rest_services_failed_errors %}
-                <tr>
-                    <td>{{ h.render_datetime(error.created) }}</td>
-                    <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
-                    <td>{{ error.service_code }}.{{ error.service_version }}</td>
-                    <td>{{ error.message }}</td>
-                    <td>{{ error.code }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    {% endblock %}
+    <div class="summary">
+        <dl>
+            <dt>Other errors:</dt><dd>{{ error_list.other_errors | length }}</dd>
+            <dt>Rest service errors:</dt><dd>{{ error_list.rest_services_failed_errors | length }}</dd>
+        </dl>
+    </div>
+    <h2>Other errors</h2>
+    <table class="table table-bordered" style="table-layout:fixed;">
+        <thead>
+            <tr>
+                <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
+                <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
+                <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
+                <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
+                <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for error in error_list.other_errors %}
+            <tr>
+                <td>{{ h.render_datetime(error.created) }}</td>
+                <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
+                <td>{{ error.service_code }}.{{ error.service_version }}</td>
+                <td>{{ error.message }}</td>
+                <td>{{ error.code }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h2>Rest services failed to fetch</h2>
+    <table class="table table-bordered" style="table-layout:fixed;">
+        <thead>
+            <tr>
+                <th style="width: 10%">{% trans %}Created{% endtrans %}</th>
+                <th style="width: 10%">{% trans %}Subsystem{% endtrans %}</th>
+                <th style="width: 10%">{% trans %}Service{% endtrans %}</th>
+                <th style="width: 65%">{% trans %}Message{% endtrans %}</th>
+                <th style="width: 5%">{% trans %}Code{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for error in error_list.rest_services_failed_errors %}
+            <tr>
+                <td>{{ h.render_datetime(error.created) }}</td>
+                <td>{{ error.xroad_instance }}.{{ error.member_class }}.{{ error.member_code }}.{{ error.subsystem_code }}</td>
+                <td>{{ error.service_code }}.{{ error.service_version }}</td>
+                <td>{{ error.message }}</td>
+                <td>{{ error.code }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 
     {{ self.date_links() }}
 
