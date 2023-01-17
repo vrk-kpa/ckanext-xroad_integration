@@ -72,6 +72,12 @@ jobs:
 
           cd ../ckanext-markdown_editor
           pip install -e .
+          
+          cd ../ckanext-pages
+          pip install -e .
+          
+          cd ../ckanext-contact
+          pip install -e .
 
           cd ../../..
 
