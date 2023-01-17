@@ -83,7 +83,7 @@ def test_delete(xroad_rest_adapter_mocks):
                          xroad_rest_service_url('get_list_errors_data'))
 def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, migrate_db_for):
     migrate_db_for('xroad_integration')
-    
+
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
