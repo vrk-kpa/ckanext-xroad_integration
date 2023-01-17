@@ -8,6 +8,7 @@ from sqlalchemy import and_, not_
 import requests
 import datetime
 import six
+import iso8601
 
 from ckan import model
 from requests.exceptions import ConnectionError
@@ -769,11 +770,8 @@ def xroad_error_list(context, data_dict):
                 .filter(XRoadError.member_class == xroad_id[1]) \
                 .filter(XRoadError.member_code == xroad_id[2])
 
-            date_start = start - datetime.timedelta(days=DEFAULT_LIST_ERRORS_HISTORY_IN_DAYS)
-            date_end = start
-            show_history = True
         else:
-            raise toolkit.Invalid(toolkit._(u"Organization id is not valid X-Road id"))
+            raise toolkit.ValidationError(toolkit._(u"Organization id is not valid X-Road id"))
 
     rest_services_failed_errors = rest_services_failed_errors.all()
     other_errors = other_errors.all()
@@ -790,12 +788,9 @@ def xroad_error_list(context, data_dict):
         "rest_services_failed_errors": [error.as_dict() for error in rest_services_failed_errors],
         "list_errors": [error.as_dict() for error in list_errors],
         "other_errors": [error.as_dict() for error in other_errors],
-        "date": start,
-        "date_start": date_start,
-        "date_end": date_end,
-        "show_history": show_history,
-        "previous": (start - relativedelta.relativedelta(days=1)).date(),
-        "next": (start + relativedelta.relativedelta(days=1)).date(),
+        "date": start.isoformat(),
+        "previous": (start - relativedelta.relativedelta(days=1)).date().strftime("%Y-%m-%d"),
+        "next": (start + relativedelta.relativedelta(days=1)).date().strftime("%Y-%m-%d"),
         "organization": organization_id,
         "previous_page": previous_page,
         "next_page": next_page

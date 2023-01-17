@@ -33,6 +33,30 @@ def errors(date=None):
 xroad.add_url_rule(u'/errors/<date>', view_func=errors, strict_slashes=False)
 xroad.add_url_rule(u'/errors', view_func=errors, strict_slashes=False)
 
+xroad_organization = Blueprint(u'xroad_organization', __name__, url_prefix=u'/organization/xroad')
+
+
+def organization_errors(organization, date=None):
+    try:
+        context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
+        check_access(u'organization_update', context, {'id': organization})
+    except NotAuthorized:
+        abort(403, _(u'Need to be organization administrator to administer'))
+
+    try:
+        error_list = get_action('xroad_error_list')({}, {"organization": organization, "date": date})
+    except ObjectNotFound:
+        abort(404, _(u'Organization not found'))
+    except Invalid as e:
+        abort(404, e.error)
+
+    return render('organization/xroad_errors.html', extra_vars={"error_list": error_list})
+
+
+xroad_organization.add_url_rule(u'/<organization>/errors/<date>', view_func=organization_errors, strict_slashes=False)
+xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
+
+
 
 def stats():
     try:
@@ -169,30 +193,6 @@ def services():
 
 
 xroad.add_url_rule(u'/services', view_func=services)
-
-
-xroad_organization = Blueprint(u'xroad_organization', __name__, url_prefix=u'/organization/xroad')
-
-
-def organization_errors(organization):
-    try:
-        context = dict(model=model, user=g.user, auth_user_obj=g.userobj)
-        check_access(u'organization_update', context, {'id': organization})
-    except NotAuthorized:
-        abort(403, _(u'Need to be organization administrator to administer'))
-
-    try:
-        page = request.args.get(u'page')
-        error_list = get_action('xroad_error_list')({}, {"organization": organization, "page": page})
-    except ObjectNotFound:
-        abort(404, _(u'Organization not found'))
-    except Invalid as e:
-        abort(404, e.error)
-
-    return render('organization/xroad_errors.html', extra_vars={"error_list": error_list})
-
-
-xroad_organization.add_url_rule(u'/<organization>/errors', view_func=organization_errors, strict_slashes=False)
 
 
 def graphs():
