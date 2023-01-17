@@ -414,10 +414,8 @@ def fetch_xroad_errors(context, data_dict):
     log.info("Fetching errors from %s to %s" % (start_date, end_date))
 
     organizations = toolkit.get_action('organization_list')(context, {})
-    log.warning(organizations)
     try:
         for org_name in organizations:
-            log.warning(org_name)
             organization = toolkit.get_action('organization_show')(context, {'id': org_name})
             if not (organization.get('xroad_instance') and organization.get('xroad_memberclass') and
                     organization.get('xroad_membercode')):
