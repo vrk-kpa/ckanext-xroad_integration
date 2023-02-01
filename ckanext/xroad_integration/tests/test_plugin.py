@@ -58,22 +58,40 @@ def test_base_twice(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
 def test_delete(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
     to_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
-    assert to_be_removed_org.get('state') == 'active'
+    assert to_be_removed_org.get('xroad_removed') is not True
 
-    results = run_harvest(url=xroad_rest_adapter_url('delete_one_of_each'), harvester=harvester)
-    large = call_action('package_show', id='TEST.ORG.000003-3.LargeSubsystem')
+    run_harvest(url=xroad_rest_adapter_url('delete_one_of_each'), harvester=harvester)
+
+    should_have_removed_resource = call_action('package_show', id='TEST.ORG.000003-3.LargeSubsystem')
+    assert sum(1 for r in should_have_removed_resource.get('resources', [])
+               if r.get('xroad_removed') is True) == 1
+
+    should_be_removed_subsystem = call_action('package_show', id='TEST.ORG.000003-3.EmptySubsystem')
+    assert should_be_removed_subsystem.get('xroad_removed') is True
 
     # FIXME: Unclear whether organizations should actually be removed
-    # hould_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
-    # assert(should_be_removed_org.get('state') == 'deleted')
-    assert results['TEST.ORG.000003-3.EmptySubsystem']['report_status'] == 'deleted'
-    assert set(r['name'] for r in large.get('resources', [])) == set(['openapiService.1', 'unknown', 'unknownWithVersion.1'])
+    should_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
+    assert should_be_removed_org.get('xroad_removed') is True
+
+    run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
+
+    should_have_all_resources = call_action('package_show', id='TEST.ORG.000003-3.LargeSubsystem')
+    assert sum(1 for r in should_have_all_resources .get('resources', [])
+               if r.get('xroad_removed') is True) == 0
+
+    should_not_be_removed_subsystem = call_action('package_show', id='TEST.ORG.000003-3.EmptySubsystem')
+    assert should_not_be_removed_subsystem.get('xroad_removed') is False
+
+    # FIXME: Unclear whether organizations should actually be removed
+    should_not_be_removed_org = call_action('organization_show', id='one-wsdl-subsystem-organization')
+    assert should_not_be_removed_org.get('xroad_removed') is False
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')

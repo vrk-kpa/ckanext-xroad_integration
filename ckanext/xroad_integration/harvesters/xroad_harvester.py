@@ -17,6 +17,7 @@ from requests.packages.urllib3.util.retry import Retry
 from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestGatherError
 import ckan.plugins as p
+from ckan.lib.search.common import SearchIndexError
 
 from ckan.lib.munge import munge_title_to_name, substitute_ascii_equivalents
 from ckan import model
@@ -132,10 +133,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         object_ids = []
         for member in member_list.members:
-            # If member has been deleted in exchange layer
-            if member.removed:
-                continue
-
             # TODO: X-Road Catalog IsProvider is not in use for now, restore by utilizing _get_member_type
 
             # If X-Road catalog is not used, following sets member_type to provider
@@ -154,8 +151,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 log.warning(f'Validation error creating/updating organization {org_id}: {e}')
                 self._save_gather_error(f'Validation error creating/updating organization {org_id}: {e}', harvest_job)
                 continue
+            except SearchIndexError as e:
+                log.warning(f'Indexing error creating/updating organization {org_id}: {e}')
+                self._save_gather_error(f'Indexing error creating/updating organization {org_id}: {e}', harvest_job)
+                continue
 
-            if org is None:
+            if org is None or member.removed:
                 # Organization has been removed
                 continue
 
@@ -289,12 +290,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             'ignore_auth': True,
         }
 
-        if subsystem.removed:
-            log.info('Removing API %s', package_dict.get('name'))
-            p.toolkit.get_action('package_delete')(context, {'id': package_dict['id']})
-            harvest_object.current = False
-            return True
-
         if owner_name is not None:
             local_org = owner_name
         package_dict['owner_org'] = local_org
@@ -311,6 +306,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
         package_dict['private'] = False
         package_dict['access_restriction_level'] = 'public'
 
+        new_xroad_removed = subsystem.removed is not None
+        current_xroad_removed = p.toolkit.asbool(package_dict.get('xroad_removed', False))
+        if new_xroad_removed != current_xroad_removed:
+            log.info(f'Setting API as removed: {package_dict}')
+            del package_dict['metadata_modified']
+        else:
+            package_dict['metadata_modified'] = subsystem.changed.isoformat()
+
+        package_dict['xroad_removed'] = new_xroad_removed
         package_dict['xroad_instance'] = dataset['xRoadInstance']
         package_dict['xroad_memberclass'] = dataset['xRoadMemberClass']
         package_dict['xroad_membercode'] = dataset['xRoadMemberCode']
@@ -322,14 +326,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
         for service in subsystem.services:
             name = generate_service_name(service)
 
-            try:
-                if service.removed:
-                    named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
-                    for resource in named_resources:
-                        log.info(f'Service deleted: {name}')
-                        p.toolkit.get_action('resource_delete')(context, {'id': resource['id']})
-            except iso8601.ParseError as e:
-                log.error(f'Error parsing Service remove timestamp: {e}')
+            named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
+            for resource in named_resources:
+                new_xroad_removed = service.removed is not None
+                xroad_removed = p.toolkit.asbool(resource.get('xroad_removed', False))
+                if xroad_removed != new_xroad_removed:
+                    p.toolkit.get_action('resource_patch')(context, {'id': resource['id'], 'xroad_removed': new_xroad_removed})
 
         if result not in (True, 'unchanged'):
             return result
@@ -426,6 +428,10 @@ class XRoadHarvesterPlugin(HarvesterBase):
             except p.toolkit.ValidationError as e:
                 log.warning(f'Validation error while updating/creating {name}: {e}')
                 self._save_object_error(f'Validation error processing {owner_name}.{subsystem.subsystem_code}.{name} '
+                                        f'in {harvest_object.id}', harvest_object, 'Import')
+            except SearchIndexError as e:
+                log.warning(f'Indexing error while updating/creating {name}: {e}')
+                self._save_object_error(f'Indexing error processing {owner_name}.{subsystem.subsystem_code}.{name} '
                                         f'in {harvest_object.id}', harvest_object, 'Import')
 
             if file_name:
@@ -659,12 +665,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             org = None
 
         if org:
-
-            if member.removed:
-                log.info('Organization was removed, removing from catalog..')
-                p.toolkit.get_action('organization_delete')(context, org)
-                return None
-
             if self.config.get('force_all', False) is True:
                 last_time = iso8601.parse_date('2011-01-01')
             else:
@@ -672,7 +672,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 if last_time is not None:
                     last_time = iso8601.parse_date(last_time)
 
-            if (last_time and last_time < member.changed) or self.config.get('force_organization_update'):
+            new_xroad_removed = member.removed is not None
+            current_xroad_removed = p.toolkit.asbool(org.get('xroad_removed', False))
+            if (last_time and last_time < member.changed) or new_xroad_removed != current_xroad_removed or self.config.get('force_organization_update'):
                 if org['name'] == munged_title:
                     org_name = munged_title
                 else:
@@ -697,6 +699,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     'xroad_memberclass': member.member_class,
                     'xroad_membercode': member.member_code,
                     'xroad_member_type': member.member_type,
+                    'xroad_removed': new_xroad_removed,
                     'description_translated': org_description,
                 }
 
@@ -737,6 +740,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'xroad_memberclass': member.member_class,
                 'xroad_membercode': member.member_code,
                 'xroad_member_type': member.member_type,
+                'xroad_removed': False,
             }
 
             log.info(f'Creating organization {org_name}')
