@@ -674,7 +674,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             new_xroad_removed = member.removed is not None
             current_xroad_removed = p.toolkit.asbool(org.get('xroad_removed', False))
-            if (last_time and last_time < member.changed) or new_xroad_removed != current_xroad_removed or self.config.get('force_organization_update'):
+
+            changed_since_last_harvest = last_time and last_time < member.changed
+            forced_update = self.config.get('force_organization_update') is True
+            removed_changed = new_xroad_removed != current_xroad_removed
+
+            if changed_since_last_harvest or removed_changed or forced_update:
                 if org['name'] == munged_title:
                     org_name = munged_title
                 else:
