@@ -58,7 +58,7 @@ def test_base_twice(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 def test_delete(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
@@ -95,7 +95,7 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('get_list_errors_data'))
@@ -379,7 +379,7 @@ def test_xroad_heartbeat(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationOrganizationData'))
@@ -407,7 +407,7 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationCompanyData'))
@@ -432,7 +432,7 @@ def test_xroad_get_organizations_company_data(xroad_rest_adapter_mocks, xroad_re
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationCompanyDataWithBusinessIdChanges'))
@@ -450,7 +450,7 @@ def test_xroad_get_organizations_company_data_with_business_id_changes(xroad_res
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup', 'xroad_database_setup')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog sitesearch scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getOrganizationEmptyData'))
 def test_xroad_get_organizations_empty_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
