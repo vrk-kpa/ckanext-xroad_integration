@@ -441,10 +441,14 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
         return result
 
-    def _get_xroad_catalog(self, url, changed_after: str):
+    def _get_xroad_catalog(self, url, start_date: str):
         # type: (str, str) -> dict
+
+        today = datetime.today().strftime('%Y-%m-%d')
+
         try:
-            r = http.get(url + '/Consumer/ListMembers', params={'changedAfter': changed_after},
+            r = http.get(url + '/Consumer/ListMembers', params={'startDateTime': start_date,
+                                                                'endDateTime': today},
                          headers={'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError('Calling XRoad service ListMembers failed!')
