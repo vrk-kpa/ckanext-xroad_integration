@@ -2,6 +2,7 @@ import logging
 import json
 import os.path
 
+import iso8601
 from dateutil import relativedelta
 from sqlalchemy import and_, not_
 
@@ -453,7 +454,6 @@ def fetch_xroad_errors(context, data_dict):
         log.info(e)
         return {"success": False, "message": "Fetching errors failed."}
 
-    log.warning(error_count)
     results = {"message": "%d errors stored to database." % error_count}
     if errors:
         return {"success": False, "message": ", ".join(errors)}
@@ -709,6 +709,8 @@ def parse_xroad_catalog_datetime(dt):
         return dt
     if type(dt) is dict:
         return datetime.datetime(dt['year'], dt['monthValue'], dt['dayOfMonth'], dt['hour'], dt['minute'], dt['second'])
+    elif type(dt) is str:
+        return iso8601.parse_date(dt)
     elif type(dt) is list:
         # Remove microseconds, as they might be too precise
         if len(dt) == 7:
