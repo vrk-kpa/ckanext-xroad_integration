@@ -9,7 +9,7 @@ import iso8601
 from typing import Optional, Dict, Any
 
 from sqlalchemy import text, exists
-from datetime import datetime
+from datetime import datetime, timedelta
 from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -112,7 +112,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
         else:
             last_time = self._last_error_free_job_time(harvest_job) or '2011-01-01'
 
-        log.info('Searching for apis modified since: %s UTC', last_time)
         try:
             catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
 
@@ -444,11 +443,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
     def _get_xroad_catalog(self, url, start_date: str):
         # type: (str, str) -> dict
 
-        today = datetime.today().strftime('%Y-%m-%d')
+        start_of_next_day = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
         try:
+            log.info('Searching for apis modified from: %s UTC to %s UTC' % (start_date, start_of_next_day))
             r = http.get(url + '/Consumer/ListMembers', params={'startDateTime': start_date,
-                                                                'endDateTime': today},
+                                                                'endDateTime': start_of_next_day},
                          headers={'Accept': 'application/json'})
         except ConnectionError:
             raise ContentFetchError('Calling XRoad service ListMembers failed!')
