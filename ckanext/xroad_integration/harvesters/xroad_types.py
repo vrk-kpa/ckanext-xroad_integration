@@ -6,6 +6,14 @@ from .xroad_types_utils import Base, optional, date_value, class_value, xroad_li
 
 
 @dataclass
+class Error(Base):
+    actor: str
+    code: str
+    string: str
+    detail: str
+
+
+@dataclass
 class ServiceDescription(Base):
     field_map = {'externalId': 'external_id'}
     value_map = {
@@ -93,3 +101,4 @@ class MemberList(Base):
     field_map = {'memberList': 'members'}
     value_map = {'members': xroad_list_value('member', Member)}
     members: List[Member] = field(default_factory=list)
+    error: Optional[Error] = field(default=None)

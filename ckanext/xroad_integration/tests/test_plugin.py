@@ -95,6 +95,19 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+def test_listmembers_on_error(xroad_rest_adapter_mocks):
+    harvester = XRoadHarvesterPlugin()
+    results = run_harvest(url=xroad_rest_adapter_url('listmembers_error'), harvester=harvester)
+
+    assert results == {}
+    harvest_jobs = call_action('harvest_job_list')
+    harvest_report = call_action('harvest_job_report', id=harvest_jobs[0].get('id'))
+    assert len(harvest_report['gather_errors']) == 1
+    assert "There was an error on xroad catalog" in harvest_report['gather_errors'][0]['message']
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 @pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',

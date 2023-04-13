@@ -13,7 +13,9 @@ from ckanext.xroad_integration.tests.xroad_mock import xroad_rest_mock as rest_m
 XROAD_REST_ADAPTERS = {
     'base': {'host': '127.0.0.1', 'port': 9091, 'content': 'xroad-catalog-mock-responses/test_listmembers.json'},
     'delete_one_of_each': {'host': '127.0.0.1', 'port': 9092,
-                           'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'}
+                           'content': 'xroad-catalog-mock-responses/test_delete_listmembers.json'},
+    'listmembers_error': {'host': '127.0.0.1', 'port': 9093,
+                          'content': 'xroad-catalog-mock-responses/test_listmembers_error.json'}
 }
 
 XROAD_REST_SERVICES = {
