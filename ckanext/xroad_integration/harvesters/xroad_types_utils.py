@@ -95,6 +95,7 @@ def xroad_list_value(key: str, cls):
             elif type(list_or_dict) is dict:
                 items = [list_or_dict]
             else:
+                # TODO: this defaults missing values to empty list
                 items = []
         return [cls.from_dict(item) for item in items]
     return parse

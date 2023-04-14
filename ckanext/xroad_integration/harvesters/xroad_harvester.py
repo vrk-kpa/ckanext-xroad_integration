@@ -116,6 +116,9 @@ class XRoadHarvesterPlugin(HarvesterBase):
             catalog = self._get_xroad_catalog(harvest_job.source.url, last_time)
 
             member_list = MemberList.from_dict(catalog)
+            if member_list.error:
+                self._save_gather_error('There was an error on xroad catalog %r' % member_list.error, harvest_job)
+                return False
         except ContentFetchError as e:
             self._save_gather_error('%r' % e.args, harvest_job)
             return False
