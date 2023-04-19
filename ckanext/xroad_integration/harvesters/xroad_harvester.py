@@ -365,7 +365,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'access_restriction_level': 'public'
             }
 
-            if service_description:
+            if service_description and service_description.data:
                 service_description_data_utf8 = service_description.data.encode('utf-8')
 
                 # Todo: Validity of openapi ?
