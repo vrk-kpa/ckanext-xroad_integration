@@ -548,7 +548,10 @@ def xroad_catalog_query_json(service, params: List = None, queryparams: Dict[str
     if response.status_code == 204:
         log.warning("Received empty response for service %s", service)
         return
-    return response.json()
+    try:
+        return response.json()
+    except requests.exceptions.JSONDecodeError as e:
+        raise ContentFetchError(f'Expected JSON: {e}')
 
 
 def fetch_xroad_service_list(context, data_dict):
