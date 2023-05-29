@@ -79,7 +79,7 @@ def update_xroad_organizations(ctx):
     with flask_app.test_request_context():
         try:
             toolkit.g.user = _admin_user()['name']
-            context = {'ignore_auth': True, 'user': toolkit.g.user }
+            context = {'ignore_auth': True, 'user': toolkit.g.user}
             result = get_action('update_xroad_organizations')(context, {})
         except Exception as e:
             result = {'success': False, 'message': 'Exception: {}'.format(e)}
