@@ -78,7 +78,9 @@ def update_xroad_organizations(ctx):
     flask_app = ctx.meta["flask_app"]
     with flask_app.test_request_context():
         try:
-            result = get_action('update_xroad_organizations')({'ignore_auth': True}, {})
+            toolkit.g.user = _admin_user()['name']
+            context = {'ignore_auth': True, 'user': toolkit.g.user }
+            result = get_action('update_xroad_organizations')(context, {})
         except Exception as e:
             result = {'success': False, 'message': 'Exception: {}'.format(e)}
 
@@ -316,3 +318,9 @@ def send_latest_batch_run_results_email(dryrun):
 
     if dryrun:
         print(msg)
+
+
+def _admin_user():
+    from ckan import model
+    context = {"model": model, "session": model.Session, "ignore_auth": True}
+    return toolkit.get_action("get_site_user")(context, {})
