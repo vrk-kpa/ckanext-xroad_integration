@@ -48,7 +48,7 @@ class Service(Base):
     changed: datetime
     fetched: datetime
     service_version: Optional[str] = field(default=None)
-    service_type: Optional[str] = field(default=None)
+    serviceType: Optional[str] = field(default=None)
     wsdl: Optional[ServiceDescription] = field(default=None)
     openapi: Optional[ServiceDescription] = field(default=None)
     removed: Optional[datetime] = field(default=None)
