@@ -360,7 +360,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'name': name,
                 'xroad_servicecode': service.service_code,
                 'xroad_serviceversion': service.service_version,
-                #'xroad_service_type': service.service_type,
+                # TODO: use data from xroad catalog 'xroad_service_type': service.service_type,
                 'harvested_from_xroad': True,
                 'access_restriction_level': 'public'
             }
