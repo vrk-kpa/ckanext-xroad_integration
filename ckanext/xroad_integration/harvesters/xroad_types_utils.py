@@ -47,7 +47,7 @@ class Base(object):
     @classmethod
     def deserialize(cls, data):
         obj = pickle.loads(base64.decodebytes(data.encode('utf-8')))
-        if type(obj) != cls:
+        if not isinstance(obj, cls):
             raise ValueError(f'Deserialized data describes a {type(obj)}, expected {cls}')
         return obj
 
