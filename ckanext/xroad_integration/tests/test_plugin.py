@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
 def test_base(xroad_rest_adapter_mocks):
 
     results = run_harvest(
