@@ -217,7 +217,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             log.warn(f'Empty OpenApi service description returned for {generate_service_name(service)}')
 
-
                 dataset['subsystem_pickled'] = subsystem.serialize()
                 dataset['subsystem_dict'] = json.loads(subsystem.serialize_json())
                 harvest_object.content = json.dumps(dataset)
