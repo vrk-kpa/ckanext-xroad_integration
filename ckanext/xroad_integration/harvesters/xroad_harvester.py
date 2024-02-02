@@ -217,24 +217,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             log.warn(f'Empty OpenApi service description returned for {generate_service_name(service)}')
 
-                    service_type = self._get_service_type(harvest_object.source.url,
-                                                          dataset.get('xRoadInstance'),
-                                                          dataset.get('xRoadMemberClass'),
-                                                          dataset.get('xRoadMemberCode'),
-                                                          subsystem.subsystem_code,
-                                                          service.service_code,
-                                                          service.service_version)
-                    if type(service_type) is dict:
-                        # Don't generate error if the error is unknown service
-                        if service_type.get('error') == 'Unknown service':
-                            log.info(service_type.get('error'))
-                        else:
-                            self._save_object_error(service_type.get('error'), harvest_object, 'Fetch')
-                    elif not service_type:
-                        log.info(f'Service type is unknown for subsystem {subsystem.subsystem_code} '
-                                 f'service {service.service_code}')
-                    else:
-                        service.service_type = service_type
 
                 dataset['subsystem_pickled'] = subsystem.serialize()
                 dataset['subsystem_dict'] = json.loads(subsystem.serialize_json())
