@@ -91,8 +91,6 @@ jobs:
           ckan -c test.ini db upgrade -p harvest
           ckan -c test.ini xroad init-db
           
-          # Disable plugins in test.ini
-          sed -i -e 's/ckan.plugins/#ckan.plugins/' test.ini
       - name: Run tests
         run: pytest --ckan-ini=test.ini --cov=ckanext.xroad_integration --disable-warnings ckanext/xroad_integration/tests
       - name: Coveralls
