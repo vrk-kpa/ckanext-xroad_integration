@@ -42,9 +42,15 @@ def test_base(xroad_rest_adapter_mocks):
 
     # Subsystem with one unknown type service
     assert len(results['TEST.ORG.000003-3.OneEmptyServiceSubsystem']['dataset']['resources']) == 1
+    assert results['TEST.ORG.000003-3.OneEmptyServiceSubsystem']['dataset']['resources'][0]['xroad_service_type'] == "UNKNOWN"
 
-    # Subsystem with two unknown type services, one soap service and one rest service
-    assert len(results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources']) == 4
+    # Subsystem with two unknown type services, one soap service, one openapi service and one rest service
+    assert len(results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources']) == 5
+    assert results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources'][0]['xroad_service_type'] == "UNKNOWN"
+    assert results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources'][1]['xroad_service_type'] == "UNKNOWN"
+    assert results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources'][2]['xroad_service_type'] == "SOAP"
+    assert results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources'][3]['xroad_service_type'] == "OPENAPI"
+    assert results['TEST.ORG.000003-3.LargeSubsystem']['dataset']['resources'][4]['xroad_service_type'] == "REST"
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
