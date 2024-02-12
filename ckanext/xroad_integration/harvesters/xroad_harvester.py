@@ -218,7 +218,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             log.warn(f'Empty OpenApi service description returned for {generate_service_name(service)}')
 
-                    log.warning(f'service type: {service.service_type}')
                     if service.service_type.lower() == 'rest':
                         try:
                             path = '/'.join(['getRest', dataset['xRoadInstance'], dataset['xRoadMemberClass'], dataset['xRoadMemberCode'],
