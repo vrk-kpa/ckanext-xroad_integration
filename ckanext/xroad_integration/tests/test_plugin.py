@@ -480,3 +480,18 @@ def test_xroad_get_organizations_empty_data(xroad_rest_adapter_mocks, xroad_rest
     result = call_action('update_xroad_organizations', context=context)
     assert result['success'] is True
     assert result['message'] == 'Updated 0 organizations'
+
+
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'xroad_database_setup')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
+                                         'xroad_harvester xroad_integration')
+@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getRest'))
+def test_getrest(xroad_rest_adapter_mocks, xroad_rest_mocks):
+    harvester = XRoadHarvesterPlugin()
+    run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
+
+    subsystem = call_action('package_show', id='TEST.ORG.000003-3.LargeSubsystem')
+    rest_service = next(s for s in subsystem.get('resources', []) if s['xroad_servicecode'] == 'restService')
+    assert {'method': 'POST', 'path': '/PostSomething/v1'} in rest_service['rest_endpoints']['endpoints']
+    assert {'method': 'GET', 'path': '/ComeGetSome/v1'} in rest_service['rest_endpoints']['endpoints']
+

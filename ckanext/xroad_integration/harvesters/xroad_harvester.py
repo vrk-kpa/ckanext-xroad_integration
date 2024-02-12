@@ -25,7 +25,8 @@ from ckan import logic
 
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 
-from .xroad_types import MemberList, Subsystem
+from .xroad_types import MemberList, Subsystem, RestServices
+from ckanext.xroad_integration.xroad_utils import xroad_catalog_query_json, ContentFetchError
 
 try:
     from ckan.common import asbool  # CKAN 2.9
@@ -217,6 +218,22 @@ class XRoadHarvesterPlugin(HarvesterBase):
                         else:
                             log.warn(f'Empty OpenApi service description returned for {generate_service_name(service)}')
 
+                    log.warning(f'service type: {service.service_type}')
+                    if service.service_type.lower() == 'rest':
+                        try:
+                            path = '/'.join(['getRest', dataset['xRoadInstance'], dataset['xRoadMemberClass'], dataset['xRoadMemberCode'],
+                                             subsystem.subsystem_code, service.service_code])
+                            rest_services_data = xroad_catalog_query_json(path)
+                            service.rest_services = RestServices.from_dict(rest_services_data)
+                        except ContentFetchError:
+                            error = f'Could not retrieve REST services {harvest_object.id}'
+                            log.info(error, harvest_object, 'Fetch')
+                            self._save_object_error(error, harvest_object, 'Fetch')
+                        except ValueError:
+                            error = f'Error parsing REST services {harvest_object.id}'
+                            log.info(error, harvest_object, 'Fetch')
+                            self._save_object_error(error, harvest_object, 'Fetch')
+
                 dataset['subsystem_pickled'] = subsystem.serialize()
                 dataset['subsystem_dict'] = json.loads(subsystem.serialize_json())
                 harvest_object.content = json.dumps(dataset)
@@ -341,7 +358,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'name': name,
                 'xroad_servicecode': service.service_code,
                 'xroad_serviceversion': service.service_version,
-                'xroad_service_type': service.serviceType,
+                'xroad_service_type': service.service_type,
                 'harvested_from_xroad': True,
                 'access_restriction_level': 'public'
             }
@@ -373,6 +390,13 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 resource_data['upload'] = FlaskFileStorage(open(file_name, 'rb'), target_name, content_length=content_length)
                 resource_data['format'] = resource_format
                 resource_data['valid_content'] = 'yes' if valid_wsdl else 'no'
+            elif service.service_type.lower() == 'rest':
+                file_name = None
+                if service.rest_services is not None:
+                    endpoints = [endpoint.as_dict()
+                                 for rest_service in service.rest_services.services
+                                 for endpoint in rest_service.endpoints]
+                    resource_data['rest_endpoints'] = {'endpoints': endpoints}
             elif unknown_service_link_url is None:
                 log.warn('Unknown type service %s.%s harvested, but '
                          'ckanext.xroad_integration.unknown_service_link_url is not set!',
@@ -756,10 +780,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
             return False
 
         return True
-
-
-class ContentFetchError(Exception):
-    pass
 
 
 def generate_service_name(service) -> Optional[str]:
