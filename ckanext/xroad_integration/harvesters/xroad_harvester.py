@@ -220,8 +220,12 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                     if service.service_type.lower() == 'rest':
                         try:
-                            path = '/'.join(['getRest', dataset['xRoadInstance'], dataset['xRoadMemberClass'], dataset['xRoadMemberCode'],
-                                             subsystem.subsystem_code, service.service_code])
+                            path = '/'.join(['getRest',
+                                             dataset['xRoadInstance'],
+                                             dataset['xRoadMemberClass'],
+                                             dataset['xRoadMemberCode'],
+                                             subsystem.subsystem_code,
+                                             service.service_code])
                             rest_services_data = xroad_catalog_query_json(path)
                             service.rest_services = RestServices.from_dict(rest_services_data)
                         except ContentFetchError:
