@@ -400,6 +400,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                  for rest_service in service.rest_services.services
                                  for endpoint in rest_service.endpoints]
                     resource_data['rest_endpoints'] = {'endpoints': endpoints}
+                    timestamp_field = 'rest_timestamp'
             elif unknown_service_link_url is None:
                 log.warn('Unknown type service %s.%s harvested, but '
                          'ckanext.xroad_integration.unknown_service_link_url is not set!',
