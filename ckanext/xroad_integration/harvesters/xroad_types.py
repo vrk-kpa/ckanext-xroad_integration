@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from datetime import datetime
 
-from .xroad_types_utils import Base, optional, date_value, class_value, xroad_list_value, xroad_service_version_value
+from .xroad_types_utils import (Base, optional, date_value, class_value, xroad_list_value,
+                                xroad_service_version_value, class_list_value)
 
 
 @dataclass
@@ -11,6 +12,38 @@ class Error(Base):
     code: str
     string: str
     detail: str
+
+
+@dataclass
+class RestServiceEndpoint(Base):
+    method: str
+    path: str
+
+
+@dataclass
+class RestService(Base):
+    field_map = {'endpointList': 'endpoints',
+                 'xroadInstance': 'instance',
+                 'memberClass': 'member_class',
+                 'memberCode': 'member_code',
+                 'subsystemCode': 'subsystem_code',
+                 'serviceCode': 'service_code',
+                 'serviceVersion': 'service_version'}
+    value_map = {'endpoints': class_list_value(RestServiceEndpoint)}
+    endpoints: List[RestServiceEndpoint]
+    instance: str
+    member_class: str
+    member_code: str
+    subsystem_code: str
+    service_code: str
+    service_version: str
+
+
+@dataclass
+class RestServices(Base):
+    field_map = {'listOfServices': 'services'}
+    value_map = {'services': class_list_value(RestService)}
+    services: List[RestService]
 
 
 @dataclass
@@ -33,7 +66,8 @@ class ServiceDescription(Base):
 @dataclass
 class Service(Base):
     field_map = {'serviceCode': 'service_code',
-                 'serviceVersion': 'service_version'}
+                 'serviceVersion': 'service_version',
+                 'serviceType': 'service_type'}
     value_map = {
             'service_version': xroad_service_version_value,
             'wsdl': optional(class_value(ServiceDescription)),
@@ -48,10 +82,11 @@ class Service(Base):
     changed: datetime
     fetched: datetime
     service_version: Optional[str] = field(default=None)
-    serviceType: Optional[str] = field(default=None)
+    service_type: Optional[str] = field(default=None)
     wsdl: Optional[ServiceDescription] = field(default=None)
     openapi: Optional[ServiceDescription] = field(default=None)
     removed: Optional[datetime] = field(default=None)
+    rest_services: Optional[RestServices] = field(default=None)
 
 
 @dataclass

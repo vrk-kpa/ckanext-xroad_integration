@@ -119,3 +119,9 @@ date_value = iso8601.parse_date
 
 def class_value(cls):
     return cls.from_dict
+
+
+def class_list_value(cls):
+    def parse(items) -> List[cls]:
+        return [cls.from_dict(item) for item in items]
+    return parse

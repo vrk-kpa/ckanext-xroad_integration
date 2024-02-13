@@ -51,7 +51,11 @@ XROAD_REST_SERVICES = {
     'get_list_errors_data': {
         'host': '127.0.0.1',
         'port': 9199,
-        'content': 'xroad-catalog-mock-responses/test_list_errors.json'}
+        'content': 'xroad-catalog-mock-responses/test_list_errors.json'},
+    'getRest': {
+        'host': '127.0.0.1',
+        'port': 9200,
+        'content': 'xroad-catalog-mock-responses/test_getrest.json'},
     }
 
 

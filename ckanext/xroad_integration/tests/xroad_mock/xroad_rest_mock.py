@@ -32,6 +32,19 @@ def create_app(input_file):
     @app.route('/listErrors/<instance>/<code>/<member>')
     def list_errors(instance='TEST', code='000000-0', member='some_member'):
         return mock_data
+
+    @app.route('/getRest/<instance>/<member_class>/<member_code>/<subsystem_code>/<service_code>')
+    @app.route('/getRest/<instance>/<member_class>/<member_code>/<subsystem_code>/<service_code>/<service_version>')
+    def getRest(instance, member_class, member_code, subsystem_code, service_code, service_version=None):
+        result = mock_data.copy()
+        for service in result.get('listOfServices', []):
+            service['xroadInstance'] = instance
+            service['memberClass'] = member_class
+            service['memberCode'] = member_code
+            service['subsystemCode'] = subsystem_code
+            service['serviceCode'] = service_code
+        return result
+
     return app
 
 
