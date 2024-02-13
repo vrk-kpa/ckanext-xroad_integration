@@ -19,8 +19,7 @@ log = logging.getLogger(__name__)
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 @pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
-@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getRest'))
-def test_base(xroad_rest_adapter_mocks, xroad_rest_mocks):
+def test_base(xroad_rest_adapter_mocks):
 
     results = run_harvest(
         url=xroad_rest_adapter_url('base'),
@@ -56,8 +55,7 @@ def test_base(xroad_rest_adapter_mocks, xroad_rest_mocks):
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 @pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
-@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getRest'))
-def test_base_twice(xroad_rest_adapter_mocks, xroad_rest_mocks):
+def test_base_twice(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
     url = xroad_rest_adapter_url('base')
     config = json.dumps({"force_all": True})
@@ -68,8 +66,7 @@ def test_base_twice(xroad_rest_adapter_mocks, xroad_rest_mocks):
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 @pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_datasets scheming_organizations fluent harvest '
                                          'xroad_harvester xroad_integration')
-@pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getRest'))
-def test_delete(xroad_rest_adapter_mocks, xroad_rest_mocks):
+def test_delete(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester)
 
