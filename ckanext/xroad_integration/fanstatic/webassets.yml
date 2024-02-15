@@ -29,3 +29,21 @@ xroad_stats_css:
   output: ckanext-xroad_integration/%(version)s_xroad-stats.css
   contents:
     - css/Chart.css
+
+xroad_statistics_js:
+  filters: rjsmin
+  output: ckanext-xroad_integration/%(version)s_xroad-statistics.js
+  extra:
+    preload:
+      - base/main
+      - xroad_integration/chartjs_js
+  contents:
+    - javascript/xroad_statistics.js
+
+xroad_statistics_css:
+  output: ckanext-xroad_integration/%(version)s_xroad-statistics.css
+  extra:
+    preload:
+      - xroad_integration/xroad_stats_css
+  contents:
+    - css/xroad_statistics.css
