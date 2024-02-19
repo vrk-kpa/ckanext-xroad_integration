@@ -398,7 +398,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                     valid_content = True
                     timestamp_field = 'rest_timestamp'
                     target_name = 'service.json'
-                    resource_format = 'openapi-json'
+                    resource_format = 'rest'
                 else:
                     log.error('Unhandled service description type: {}!'.format(service_description_type))
                     continue
