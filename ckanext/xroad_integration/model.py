@@ -132,8 +132,8 @@ class XRoadServiceList(Base, AsDictMixin):
     @classmethod
     def within_range(cls, start, end):
         return (model.Session.query(XRoadServiceList)
-                .filter(and_(XRoadServiceList.timestamp > start),
-                            (XRoadServiceList.timestamp < end)).all())
+                .filter(and_(XRoadServiceList.timestamp >= start),
+                            (XRoadServiceList.timestamp <= end)).all())
 
     def security_servers(self):
         return (model.Session.query(XRoadServiceListSecurityServer)
