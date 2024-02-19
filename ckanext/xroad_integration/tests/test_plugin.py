@@ -494,4 +494,4 @@ def test_getrest(xroad_rest_adapter_mocks, xroad_rest_mocks):
     rest_service = next(s for s in subsystem.get('resources', []) if s['xroad_servicecode'] == 'restService')
     assert {'method': 'POST', 'path': '/PostSomething/v1'} in rest_service['rest_endpoints']['endpoints']
     assert {'method': 'GET', 'path': '/ComeGetSome/v1'} in rest_service['rest_endpoints']['endpoints']
-    assert rest_service.get('format') == 'OPENAPI-JSON'
+    assert rest_service.get('format') == 'REST'
