@@ -1,9 +1,11 @@
 {% extends "admin/base.html" %}
 
+{% block primary_col_no_nav %}col-sm-12{% endblock %}
+
 {% block primary_content %}
 
-{% asset "apicatalog/xroad_statistics_js" %}
-{% asset "apicatalog/xroad_statistics_css" %}
+{% asset "xroad_integration/xroad_statistics_js" %}
+{% asset "xroad_integration/xroad_statistics_css" %}
 
 {% set xroad_stats = h.fetch_xroad_statistics(return_json=True) %}
 <div class="container" style="max-width: 100%;">
