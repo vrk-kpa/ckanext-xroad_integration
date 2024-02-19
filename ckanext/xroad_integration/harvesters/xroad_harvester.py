@@ -25,7 +25,7 @@ from ckan import logic
 
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 
-from .xroad_types import MemberList, Subsystem, RestServices
+from .xroad_types import MemberList, Subsystem, RestServices, Service
 from ckanext.xroad_integration.xroad_utils import xroad_catalog_query_json, ContentFetchError
 
 try:
@@ -350,9 +350,23 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
             name = generate_service_name(service)
 
-            service_description = service.wsdl or service.openapi or None
-
-            changed = service_description.changed if service_description else service.changed
+            # Determine description type and content
+            if service.wsdl:
+                service_description_type = 'wsdl'
+                service_description_data = service.wsdl.data
+                changed = service.wsdl.changed
+            elif service.openapi:
+                service_description_type = 'openapi'
+                service_description_data = service.openapi.data
+                changed = service.openapi.changed
+            elif service.rest_services:
+                service_description_type = 'rest'
+                service_description_data = json.dumps(generate_openapi(service))
+                changed = service.changed
+            else:
+                service_description_type = 'unknown'
+                service_description_data = None
+                changed = service.changed
 
             # Construct updated resource data
 
@@ -366,25 +380,32 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 'access_restriction_level': 'public'
             }
 
-            if service_description and service_description.data:
-                service_description_data_utf8 = service_description.data.encode('utf-8')
+            if service_description_data is not None:
+                service_description_data_utf8 = service_description_data.encode('utf-8')
 
-                # Todo: Validity of openapi ?
-                if service.wsdl:
-                    valid_wsdl = self._is_valid_wsdl(service_description_data_utf8)
+                if service_description_type == 'wsdl':
+                    valid_content = self._is_valid_wsdl(service_description_data_utf8)
                     timestamp_field = 'wsdl_timestamp'
                     target_name = 'service.wsdl'
                     resource_format = 'wsdl'
-                else:
-                    valid_wsdl = True
+                elif service_description_type == 'openapi':
+                    # TODO: Validity of openapi ?
+                    valid_content = True
                     timestamp_field = 'openapi_timestamp'
                     target_name = 'service.json'
                     resource_format = 'openapi-json'
+                elif service_description_type == 'rest':
+                    valid_content = True
+                    timestamp_field = 'rest_timestamp'
+                    target_name = 'service.json'
+                    resource_format = 'rest'
+                else:
+                    log.error('Unhandled service description type: {}!'.format(service_description_type))
+                    continue
 
-                f = tempfile.NamedTemporaryFile(delete=False)
-                f.write(service_description_data_utf8)
-                f.close()
-                file_name = f.name
+                with tempfile.NamedTemporaryFile(delete=False) as f:
+                    f.write(service_description_data_utf8)
+                    file_name = f.name
 
                 # Prepare file upload
                 content_length = len(service_description_data_utf8)
@@ -392,15 +413,7 @@ class XRoadHarvesterPlugin(HarvesterBase):
                           service_version_name(service.service_code, service.service_version), content_length)
                 resource_data['upload'] = FlaskFileStorage(open(file_name, 'rb'), target_name, content_length=content_length)
                 resource_data['format'] = resource_format
-                resource_data['valid_content'] = 'yes' if valid_wsdl else 'no'
-            elif service.service_type.lower() == 'rest':
-                file_name = None
-                if service.rest_services is not None:
-                    endpoints = [endpoint.as_dict()
-                                 for rest_service in service.rest_services.services
-                                 for endpoint in rest_service.endpoints]
-                    resource_data['rest_endpoints'] = {'endpoints': endpoints}
-                    timestamp_field = 'rest_timestamp'
+                resource_data['valid_content'] = 'yes' if valid_content else 'no'
             elif unknown_service_link_url is None:
                 log.warn('Unknown type service %s.%s harvested, but '
                          'ckanext.xroad_integration.unknown_service_link_url is not set!',
@@ -411,6 +424,15 @@ class XRoadHarvesterPlugin(HarvesterBase):
                 resource_data['url'] = unknown_service_link_url
                 timestamp_field = 'unknown_timestamp'
 
+            # Insert REST endpoints
+            if service.service_type.lower() == 'rest':
+                rest_services = service.rest_services.services if service.rest_services else []
+                endpoints = [endpoint.as_dict()
+                             for rest_service in rest_services
+                             for endpoint in rest_service.endpoints]
+                resource_data['rest_endpoints'] = {'endpoints': endpoints}
+
+            # Update timestamp
             resource_data[timestamp_field] = changed.strftime('%Y-%m-%dT%H:%M:%S')
 
             named_resources = [r for r in package_dict.get('resources', []) if r.get('name') == name]
@@ -798,3 +820,17 @@ def service_version_name(service_code: str, service_version: Optional[str]) -> s
         return service_code
 
     return f'{service_code}.{service_version}'
+
+
+def generate_openapi(service: Service) -> Dict[str, Any]:
+    paths = {endpoint.path: {endpoint.method.lower(): {}}
+             for rest_service in service.rest_services.services
+             for endpoint in rest_service.endpoints}
+    return {
+        'openapi': '3.0.0',
+        'info': {
+            'title': service.service_code,
+            'version': service.service_version
+        },
+        'paths': paths
+    }
