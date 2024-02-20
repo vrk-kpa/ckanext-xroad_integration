@@ -270,7 +270,7 @@ def _get_organization_information(business_code):
         organization_json = xroad_catalog_query_json('getOrganization', params=[business_code])
 
         if organization_json is None:
-            error = "XRoad service getOrganization returned an empty response for member {}".format(business_code) 
+            error = "XRoad service getOrganization returned an empty response for member {}".format(business_code)
             log.warning(error)
             raise ContentFetchError(error)
         elif organization_json.get('organizationData') or organization_json.get('companyData'):
