@@ -91,6 +91,9 @@ def xroad_catalog_query_json(service, params: List = None, queryparams: Dict[str
     if response.status_code == 204:
         log.warning("Received empty response for service %s", service)
         return
+    elif response.status_code == 404:
+        log.warning("Resource not found: %s/%s", service, '/'.join(params))
+        return
     try:
         return response.json()
     except JSONDecodeError as e:
