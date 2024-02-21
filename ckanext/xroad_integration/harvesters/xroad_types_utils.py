@@ -13,6 +13,7 @@ import pickle
 import base64
 import json
 import six
+import lzma
 
 
 class Base(object):
@@ -46,13 +47,13 @@ class Base(object):
 
     @classmethod
     def deserialize(cls, data):
-        obj = pickle.loads(base64.decodebytes(data.encode('utf-8')))
+        obj = pickle.loads(lzma.decompress(base64.decodebytes(data.encode('utf-8'))))
         if not isinstance(obj, cls):
             raise ValueError(f'Deserialized data describes a {type(obj)}, expected {cls}')
         return obj
 
     def serialize(self):
-        return base64.encodebytes(pickle.dumps(self)).decode('utf-8')
+        return base64.encodebytes(lzma.compress(pickle.dumps(self))).decode('utf-8')
 
     # ====== ASSUMPTIONS ======
     # JSON (De)serialization
