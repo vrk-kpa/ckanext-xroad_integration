@@ -3,6 +3,7 @@
 import json
 import jinja2
 from ckan.lib import mailer
+from ckanext.xroad_integration.harvesters.xroad_types import Subsystem
 
 from datetime import datetime
 
@@ -318,6 +319,22 @@ def send_latest_batch_run_results_email(dryrun):
 
     if dryrun:
         print(msg)
+
+
+@xroad.command()
+@click.pass_context
+@click.argument('object_id')
+def subsystem_from_harvest_object(ctx, object_id):
+    'Decodes a subsystem JSON representation from harvest object '
+    flask_app = ctx.meta["flask_app"]
+    with flask_app.test_request_context():
+        try:
+            result = get_action('harvest_object_show')({'ignore_auth': True}, {'id': object_id})
+            content = json.loads(result['content'])
+            subsystem = Subsystem.deserialize(content['subsystem_pickled'])
+            click.secho(subsystem.serialize_json())
+        except Exception as e:
+            click.secho('Error fetching harvest object: \n %s' % e, fg='red')
 
 
 def _admin_user():

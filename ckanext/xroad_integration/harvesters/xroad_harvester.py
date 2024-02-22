@@ -174,7 +174,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                         'xRoadMemberClass': member.member_class,
                                         'xRoadMemberCode': member.member_code,
                                         'owner_name': org.get('name'),
-                                        'subsystem_dict': json.loads(subsystem.serialize_json()),
                                         'subsystem_pickled': subsystem.serialize(),
                                     }))
 
