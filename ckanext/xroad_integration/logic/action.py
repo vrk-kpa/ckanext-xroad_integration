@@ -259,7 +259,7 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['old_business_ids'] = old_business_ids
 
     except Exception:
-        log.warning("Exception")
+        log.warning("Exception while processing %s (%s)", organization_name, member_code)
         raise
 
     return organization_dict
@@ -269,7 +269,11 @@ def _get_organization_information(business_code):
     try:
         organization_json = xroad_catalog_query_json('getOrganization', params=[business_code])
 
-        if organization_json.get('organizationData') or organization_json.get('companyData'):
+        if organization_json is None:
+            error = "XRoad service getOrganization returned an empty response for member {}".format(business_code)
+            log.warning(error)
+            raise ContentFetchError(error)
+        elif organization_json.get('organizationData') or organization_json.get('companyData'):
             return organization_json
         else:
             return None
