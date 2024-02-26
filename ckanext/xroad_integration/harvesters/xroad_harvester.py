@@ -174,7 +174,6 @@ class XRoadHarvesterPlugin(HarvesterBase):
                                         'xRoadMemberClass': member.member_class,
                                         'xRoadMemberCode': member.member_code,
                                         'owner_name': org.get('name'),
-                                        'subsystem_dict': json.loads(subsystem.serialize_json()),
                                         'subsystem_pickled': subsystem.serialize(),
                                     }))
 
@@ -239,6 +238,16 @@ class XRoadHarvesterPlugin(HarvesterBase):
 
                 dataset['subsystem_pickled'] = subsystem.serialize()
                 dataset['subsystem_dict'] = json.loads(subsystem.serialize_json())
+
+                def truncate(obj, field, max_length=1024):
+                    data = obj.get(field)
+                    if isinstance(data, str) and len(data) > max_length:
+                        obj[field] = data[:max_length] + ' (truncated)'
+
+                for service in dataset['subsystem_dict'].get('services', []):
+                    truncate(service, 'wsdl')
+                    truncate(service, 'openapi')
+
                 harvest_object.content = json.dumps(dataset)
                 harvest_object.save()
         except (TypeError, ContentFetchError):
