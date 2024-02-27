@@ -832,7 +832,11 @@ def service_version_name(service_code: str, service_version: Optional[str]) -> s
 
 
 def generate_openapi(service: Service) -> Dict[str, Any]:
-    paths = {endpoint.path: {endpoint.method.lower(): {}}
+    paths = {endpoint.path: {
+                endpoint.method.lower(): {
+                    'description': p.toolkit._('This endpoint description is generated from incomplete data.')
+                }
+             }
              for rest_service in service.rest_services.services
              for endpoint in rest_service.endpoints}
     return {

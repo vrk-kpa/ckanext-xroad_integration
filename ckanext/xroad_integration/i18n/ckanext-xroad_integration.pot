@@ -1,15 +1,15 @@
 # Translations template for ckanext-xroad_integration.
-# Copyright (C) 2022 ORGANIZATION
+# Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the
 # ckanext-xroad_integration project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-xroad_integration 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-05-02 13:29+0300\n"
+"POT-Creation-Date: 2024-02-27 10:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,12 +26,16 @@ msgstr ""
 msgid "WSDL"
 msgstr ""
 
-#: ckanext/xroad_integration/logic/action.py:647
-#: ckanext/xroad_integration/views/xroad.py:186
+#: ckanext/xroad_integration/harvesters/xroad_harvester.py:837
+msgid "This endpoint description is generated from incomplete data."
+msgstr ""
+
+#: ckanext/xroad_integration/logic/action.py:672
+#: ckanext/xroad_integration/views/xroad.py:49
 msgid "Organization not found"
 msgstr ""
 
-#: ckanext/xroad_integration/logic/action.py:668
+#: ckanext/xroad_integration/logic/action.py:690
 msgid "Organization id is not valid X-Road id"
 msgstr ""
 
@@ -44,7 +48,7 @@ msgid "File size too large for preview, download the file to view its contents."
 msgstr ""
 
 #: ckanext/xroad_integration/templates/admin/xroad_distinct_service_stats.html:22
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:11
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:12
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:25
 msgid "Date"
 msgstr ""
@@ -53,88 +57,95 @@ msgstr ""
 msgid "Number of Distinct services"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:22
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:53
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:76
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:27
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:23
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:46
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:28
 msgid "Created"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:23
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:54
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:77
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:24
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:24
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:47
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:25
 msgid "Subsystem"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:24
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:55
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:78
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:25
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:25
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:48
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:26
 msgid "Service"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:25
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:56
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:79
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:26
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:49
 msgid "Message"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:26
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:57
-#: ckanext/xroad_integration/templates/admin/xroad_errors.html:80
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:27
+#: ckanext/xroad_integration/templates/admin/xroad_errors.html:50
 msgid "Code"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:9
+#: ckanext/xroad_integration/templates/admin/xroad_graphs.html:15
+msgid "X-Road Graphs"
+msgstr ""
+
+#: ckanext/xroad_integration/templates/admin/xroad_graphs.html:21
+msgid "FI"
+msgstr ""
+
+#: ckanext/xroad_integration/templates/admin/xroad_graphs.html:22
+msgid "FI-TEST"
+msgstr ""
+
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:10
 #: ckanext/xroad_integration/templates/admin/xroad_stats.html:20
 msgid "Download CSV"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:11
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:12
 msgid "2005-01-01"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:14
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:15
 msgid ""
 "If organization has at least one service on any of its subsystems, the member"
 " type is provider. This includes SOAP, Rest and unknown types for services. "
 "Otherwise member type is consumer"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:20
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:21
 msgid "Member"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:21
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:22
 msgid "Member name"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:22
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:23
 msgid "Member type (current)"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:23
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:24
 msgid "Security servers"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:26
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:27
 msgid "Active"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:37
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:38
 msgid "Provider"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:37
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:38
 msgid "Consumer"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:47
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:48
 msgid "Yes"
 msgstr ""
 
-#: ckanext/xroad_integration/templates/admin/xroad_services.html:47
+#: ckanext/xroad_integration/templates/admin/xroad_services.html:48
 msgid "No"
 msgstr ""
 
@@ -150,14 +161,18 @@ msgstr ""
 msgid "Number of OpenAPI services"
 msgstr ""
 
-#: ckanext/xroad_integration/views/xroad.py:24
-#: ckanext/xroad_integration/views/xroad.py:40
-#: ckanext/xroad_integration/views/xroad.py:84
-#: ckanext/xroad_integration/views/xroad.py:107
+#: ckanext/xroad_integration/views/xroad.py:26
+#: ckanext/xroad_integration/views/xroad.py:65
+#: ckanext/xroad_integration/views/xroad.py:109
+#: ckanext/xroad_integration/views/xroad.py:132
 msgid "Need to be system administrator to administer"
 msgstr ""
 
-#: ckanext/xroad_integration/views/xroad.py:180
+#: ckanext/xroad_integration/views/xroad.py:44
 msgid "Need to be organization administrator to administer"
+msgstr ""
+
+#: ckanext/xroad_integration/views/xroad.py:203
+msgid "Not authorized to see this page"
 msgstr ""
 
