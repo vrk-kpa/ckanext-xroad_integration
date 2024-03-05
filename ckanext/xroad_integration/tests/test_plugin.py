@@ -402,7 +402,7 @@ def test_xroad_heartbeat(xroad_rest_mocks):
                                          'xroad_harvester xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address',
                          xroad_rest_service_url('getOrganizationOrganizationData'))
-def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
+def test_xroad_get_organizations_organization_data(xroad_rest_adapter_mocks, xroad_rest_mocks):
     harvester = XRoadHarvesterPlugin()
     run_harvest(url=xroad_rest_adapter_url('base'), harvester=harvester, config=json.dumps({"force_all": True}))
     user = toolkit.get_action('get_site_user')({'model': model, 'ignore_auth': True}, {})['name']
@@ -421,8 +421,13 @@ def test_xroad_get_organizations_organization_data(xroad_rest_mocks):
     assert updated_organization['webpage_address']['sv'] == ""
     assert updated_organization['webpage_address']['en'] == ""
     assert updated_organization['webpage_description']['fi'] == "Testiorganisaation kotisivu"
-    assert updated_organization['webpage_address']['sv'] == ""
-    assert updated_organization['webpage_address']['en'] == ""
+    assert updated_organization['webpage_description']['sv'] == ""
+    assert updated_organization['webpage_description']['en'] == ""
+    # Should pick the first valid email address
+    assert updated_organization['email_address_translated']['fi'] == "test@example.com"
+    # Missing email address languages should be copied from default language
+    assert updated_organization['email_address_translated']['sv'] == "test@example.com"
+    assert updated_organization['email_address_translated']['en'] == "test@example.com"
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'xroad_database_setup')

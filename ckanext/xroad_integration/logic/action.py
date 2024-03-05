@@ -191,15 +191,27 @@ def _prepare_xroad_organization_patch(organization, last_updated):
                         organization_dict['webpage_description'] = webpage_descriptions
 
                     if organization_info.get('emails'):
+                        email_validator = toolkit.get_validator('email_validator')
+
+                        def is_valid_email(x):
+                            try:
+                                email_validator(x, {})
+                                return True
+                            except toolkit.Invalid:
+                                log.warning(f'Invalid email address for {member_code}: "{x}"')
+                                return False
+
                         email_data = _convert_xroad_value_to_uniform_list(organization_info.get('emails'))
                         if email_data:
-                            languages = set(item['language'] for item in email_data)
-                            emails = {lang: [item['value']
-                                             for item in email_data
-                                             if 'value' in item and item.get('language') == lang]
+                            languages = ['fi', 'sv', 'en']
+                            emails = {lang: next((item['value']
+                                                 for item in email_data
+                                                 if 'value' in item
+                                                 and item.get('language') == lang
+                                                 and is_valid_email(item['value'])), '')
                                       for lang in languages}
                             if emails:
-                                organization_dict['email_address'] = emails
+                                organization_dict['email_address_translated'] = emails
 
                     organization_dict['organization_guid'] = organization_info.get('guid', '')
             else:
@@ -499,7 +511,6 @@ def fetch_xroad_service_list(context, data_dict):
         log.warning('Invalid configuration for calling getListOfServices')
         return {'success': False, 'message': 'Invalid configuration for calling getListOfServices'}
     elif 'memberData' not in service_list_data:
-        print(service_list_data)
         return {'success': False, 'message': 'Calling getListOfServices returned message: "{}"'
                 .format(service_list_data.get('message', ''))}
 
