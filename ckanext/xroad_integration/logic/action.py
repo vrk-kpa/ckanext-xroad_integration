@@ -42,8 +42,6 @@ def update_xroad_organizations(context, data_dict):
     organization_names = organization_list(context, {})
     timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
-    harvest_source_error_limit = 10
-
     errors_by_source = {}
 
     updated = 0
@@ -84,9 +82,6 @@ def update_xroad_organizations(context, data_dict):
                     log.debug('Nothing to do for %s from %s', organization_name, source_title)
             except ContentFetchError as cfe:
                 errors.append(', '.join(repr(a) for a in cfe.args))
-
-                if len(errors) > harvest_source_error_limit:
-                    break
 
         if errors:
             errors_by_source[source_title] = list(set(errors))
