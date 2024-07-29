@@ -1,0 +1,7 @@
+git:
+  filters:
+    - filter_type: file
+      file_format: PO
+      source_language: en
+      source_file: 'ckanext-xroad_integration/ckanext/xroad_integration/i18n/ckanext-xroad_integration.pot'
+      translation_files_expression: 'ckanext-xroad_integration/ckanext/xroad_integration/i18n/<lang>/LC_MESSAGES/ckanext-xroad_integration.po'
