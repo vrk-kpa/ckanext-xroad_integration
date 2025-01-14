@@ -7,7 +7,9 @@
 {% asset "apicatalog/datetimepicker_js" %}
 {% asset "apicatalog/datetimepicker_css" %}
 
-<a href="{{ h.url_for('xroad.services', date=selected_date, format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
+<div>
+  <a href="{{ h.url_for('xroad.services', date=selected_date, format='csv') }}" class="btn btn-primary pull-right">{{ _('Download CSV') }}</a>
+</div>
     <form method="get" action="">
       {{ form.input('date', id='field-date', label=_('Date'), placeholder=_('2005-01-01'), value=selected_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'YYYY-MM-DD', 'autosubmit': True}) }}
     </form>
