@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_harvester')
 def test_base(xroad_rest_adapter_mocks):
 
     results = run_harvest(
@@ -54,7 +54,7 @@ def test_base(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_harvester')
 def test_base_twice(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
     url = xroad_rest_adapter_url('base')
@@ -101,7 +101,7 @@ def test_delete(xroad_rest_adapter_mocks):
 
 
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_harvester')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_harvester')
 def test_listmembers_on_error(xroad_rest_adapter_mocks):
     harvester = XRoadHarvesterPlugin()
     results = run_harvest(url=xroad_rest_adapter_url('listmembers_error'), harvester=harvester)
@@ -142,7 +142,7 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, migrate_db_for
 
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_integration')
 def test_list_xroad_errors_for_organization(migrate_db_for):
     migrate_db_for('xroad_integration')
 
@@ -175,9 +175,13 @@ def test_list_xroad_errors_for_organization(migrate_db_for):
 
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_integration activity pages')
 def test_view_xroad_errors_for_organization(migrate_db_for, app):
     migrate_db_for('xroad_integration')
+
+    # required for rendering the site header when getting the errors page
+    migrate_db_for('activity')
+    migrate_db_for('pages')
 
     user = User()
     env = {"REMOTE_USER": six.ensure_str(user["name"])}
@@ -206,7 +210,7 @@ def test_view_xroad_errors_for_organization(migrate_db_for, app):
 
 @pytest.mark.freeze_time('2022-01-02')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_integration')
 @pytest.mark.ckan_config('ckanext.xroad_integration.xroad_catalog_address', xroad_rest_service_url('getListOfServices'))
 def test_fetch_xroad_service_list(xroad_rest_mocks, xroad_database_setup):
     result = call_action('fetch_xroad_service_list')
