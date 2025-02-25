@@ -175,13 +175,13 @@ def test_list_xroad_errors_for_organization(migrate_db_for):
 
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_integration activity pages')
+@pytest.mark.ckan_config('ckan.plugins', 'apicatalog scheming_organizations fluent harvest xroad_integration activity')
 def test_view_xroad_errors_for_organization(migrate_db_for, app):
     migrate_db_for('xroad_integration')
 
     # required for rendering the site header when getting the errors page
     migrate_db_for('activity')
-    migrate_db_for('pages')
+    #migrate_db_for('pages')
 
     user = User()
     env = {"REMOTE_USER": six.ensure_str(user["name"])}
