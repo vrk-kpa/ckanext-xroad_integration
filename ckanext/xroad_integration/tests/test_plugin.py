@@ -142,7 +142,7 @@ def test_xroad_errors(xroad_rest_adapter_mocks, xroad_rest_mocks, migrate_db_for
 
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration scheming_organizations fluent')
 def test_list_xroad_errors_for_organization(migrate_db_for):
     migrate_db_for('xroad_integration')
 
@@ -175,7 +175,7 @@ def test_list_xroad_errors_for_organization(migrate_db_for):
 
 @pytest.mark.freeze_time('2023-01-17')
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
-@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration')
+@pytest.mark.ckan_config('ckan.plugins', 'harvest xroad_integration scheming_organizations fluent')
 def test_view_xroad_errors_for_organization(migrate_db_for, app):
     migrate_db_for('xroad_integration')
 
