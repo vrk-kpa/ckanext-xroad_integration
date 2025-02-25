@@ -14,6 +14,12 @@
       "form_snippet": null,
       "validators": "ignore_not_sysadmin boolean_validator",
       "output_validators": "scheming_load_json boolean_validator"
+    },
+    {
+      "field_name": "metadata_updated_from_xroad_timestamp",
+      "validators": "ignore_not_sysadmin",
+      "form_snippet": null,
+      "display_snippet": null
     }
   ]
 }
