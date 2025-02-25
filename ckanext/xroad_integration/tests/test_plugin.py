@@ -181,7 +181,7 @@ def test_view_xroad_errors_for_organization(migrate_db_for, app):
 
     # required for rendering the site header when getting the errors page
     migrate_db_for('activity')
-    #migrate_db_for('pages')
+    # migrate_db_for('pages')
 
     user = User()
     env = {"REMOTE_USER": six.ensure_str(user["name"])}
