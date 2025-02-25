@@ -20,6 +20,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.ITranslation)
+    plugins.implements(plugins.IValidators)
 
     if toolkit.check_ckan_version(min_version="2.9"):
         plugins.implements(plugins.IClick)
@@ -115,3 +116,17 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
 
     def get_commands(self):
         return cli.get_commands()
+
+
+    def get_validators(self):
+        return {
+            'default_value': default_value
+        }
+
+
+def default_value(default):
+    from ckan.lib.navl.dictization_functions import missing
+
+    def converter(value, context):
+        return value if value is not missing else default
+    return converter

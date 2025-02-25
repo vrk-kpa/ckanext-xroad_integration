@@ -17,7 +17,7 @@
     },
     {
       "field_name": "metadata_updated_from_xroad_timestamp",
-      "validators": "ignore_not_sysadmin",
+      "validators": "ignore_not_sysadmin default_value()",
       "form_snippet": null,
       "display_snippet": null
     }
