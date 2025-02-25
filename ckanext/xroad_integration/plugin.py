@@ -117,7 +117,6 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     def get_commands(self):
         return cli.get_commands()
 
-
     def get_validators(self):
         return {
             'default_value': default_value
