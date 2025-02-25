@@ -7,6 +7,13 @@
       "display_snippet": null,
       "form_snippet": null,
       "validators": "ignore_missing empty_if_not_sysadmin unicode_safe"
+    },
+    {
+      "field_name": "xroad_removed",
+      "label": "X-Road subsystem code",
+      "form_snippet": null,
+      "validators": "ignore_not_sysadmin boolean_validator",
+      "output_validators": "scheming_load_json boolean_validator"
     }
   ]
 }
