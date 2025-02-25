@@ -118,14 +118,15 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
         return cli.get_commands()
 
     def get_validators(self):
+        from ckanext.apicatalog import validators
         return {
-            'default_value': default_value
+            'default_value': validators.default_value,
+            'json_string_to_list': validators.json_string_to_list,
+            'list_to_json_string': validators.list_to_json_string,
+            'empty_to_list': validators.empty_to_list,
+            'only_default_lang_required': validators.only_default_lang_required,
+            'override_field_with_default_translation': validators.override_field_with_default_translation,
+            'mark_as_modified_in_catalog_if_changed': validators.mark_as_modified_in_catalog_if_changed,
+            'keep_old_value_if_missing': validators.keep_old_value_if_missing,
+            'override_translation_with_default_language': validators.override_translation_with_default_language
         }
-
-
-def default_value(default):
-    from ckan.lib.navl.dictization_functions import missing
-
-    def converter(value, context):
-        return value if value is not missing else default
-    return converter

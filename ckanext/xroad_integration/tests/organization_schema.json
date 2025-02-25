@@ -4,22 +4,80 @@
   "fields": [
     {
       "field_name":  "id",
-      "display_snippet": null,
-      "form_snippet": null,
       "validators": "ignore_missing empty_if_not_sysadmin unicode_safe"
     },
     {
+      "field_name": "title_translated",
+      "preset": "fluent_core_title_translated",
+      "form_languages": ["fi", "sv", "en"]
+    },
+    {
+      "field_name": "description_translated",
+      "validators": "fluent_text mark_as_modified_in_catalog_if_changed",
+      "preset": "fluent_markdown_editor",
+      "form_languages": ["fi", "sv", "en"]
+    },
+    {
+      "field_name": "old_business_ids",
+      "validators": "ignore_not_sysadmin empty_to_list list_to_json_string default_value()",
+      "output_validators": "json_string_to_list"
+    },
+    {
+      "field_name": "company_type",
+      "preset": "fluent_text"
+    },
+    {
+      "field_name": "company_language",
+      "preset": "fluent_text"
+    },
+    {
+      "field_name": "company_registration_date",
+      "preset": "datetime"
+    },
+    {
+      "field_name": "postal_address",
+      "validators": "ignore_missing"
+    },
+    {
+      "field_name": "webpage_address",
+      "preset": "fluent_text",
+      "validators": "keep_old_value_if_missing fluent_text"
+    },
+    {
+      "field_name": "webpage_description",
+      "preset": "fluent_text",
+      "validators": "keep_old_value_if_missing fluent_text"
+    },
+    {
+      "field_name": "email_address_translated",
+      "validators": "fluent_text override_translation_with_default_language",
+      "output_validators": "fluent_core_translated_output",
+      "form_languages": ["fi", "sv", "en"]
+    },
+    {
+      "field_name": "xroad_instance",
+      "validators": "ignore_not_sysadmin default_value()"
+    },
+    {
+      "field_name": "xroad_memberclass",
+      "validators": "ignore_not_sysadmin default_value()"
+    },
+    {
+      "field_name": "xroad_membercode",
+      "validators": "ignore_not_sysadmin default_value()"
+    },
+    {
+      "field_name": "xroad_member_type",
+      "validators": "ignore_not_sysadmin default_value()"
+    },
+    {
       "field_name": "xroad_removed",
-      "label": "X-Road subsystem code",
-      "form_snippet": null,
       "validators": "ignore_not_sysadmin boolean_validator",
       "output_validators": "scheming_load_json boolean_validator"
     },
     {
       "field_name": "metadata_updated_from_xroad_timestamp",
-      "validators": "ignore_not_sysadmin default_value()",
-      "form_snippet": null,
-      "display_snippet": null
+      "validators": "ignore_not_sysadmin default_value()"
     }
   ]
 }
