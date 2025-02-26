@@ -20,6 +20,7 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.ITranslation)
+    plugins.implements(plugins.IValidators)
 
     if toolkit.check_ckan_version(min_version="2.9"):
         plugins.implements(plugins.IClick)
@@ -115,3 +116,17 @@ class Xroad_IntegrationPlugin(plugins.SingletonPlugin, DefaultTranslation):
 
     def get_commands(self):
         return cli.get_commands()
+
+    def get_validators(self):
+        from ckanext.apicatalog import validators
+        return {
+            'default_value': validators.default_value,
+            'json_string_to_list': validators.json_string_to_list,
+            'list_to_json_string': validators.list_to_json_string,
+            'empty_to_list': validators.empty_to_list,
+            'only_default_lang_required': validators.only_default_lang_required,
+            'override_field_with_default_translation': validators.override_field_with_default_translation,
+            'mark_as_modified_in_catalog_if_changed': validators.mark_as_modified_in_catalog_if_changed,
+            'keep_old_value_if_missing': validators.keep_old_value_if_missing,
+            'override_translation_with_default_language': validators.override_translation_with_default_language
+        }
